@@ -1221,7 +1221,7 @@ check_method:
         // Directly check if method matches any in the rule's list
         pasgmethod = (ASGMETHOD *)ellFirst(&pasgrule->methodList);
         while(pasgmethod) {
-           if (epicsStrCaseCmp(pasgmethod->name, pasgclient->identity.method) == 0) {
+           if (strcmp(pasgmethod->name, pasgclient->identity.method) == 0) {
                 goto check_authority;
             }
             pasgmethod = (ASGMETHOD *)ellNext(&pasgmethod->node);

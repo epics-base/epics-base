@@ -48,10 +48,6 @@ static void         *freeListPvt = NULL;
 
 #define DEFAULT "DEFAULT"
 
-/* Maximum length of the concatenated authority chain string (root to issuer)
- * that asDumpFP() will copy for tokenizing. Large enough for any realistic chain. */
-#define MAX_AUTH_CHAIN_STRING 2048
-
 /* Defined in asLib.y */
 static int myParse(ASINPUTFUNCPTR inputfunction);
 
@@ -64,8 +60,10 @@ static UAG *asUagAdd(const char *uagName);
 static long asUagAddUser(UAG *puag,const char *user);
 static HAG *asHagAdd(const char *hagName);
 static long asHagAddHost(HAG *phag,const char *host);
-static AUTHCHAIN *asAddAuthority(const char *name, const char *chain);
-static const char *asGetAuthority(const char *name);
+static AUTHORITY *asAuthorityPush(AUTHORITY *parent,const char *id,const char *commonName);
+static AUTHORITY *asGetAuthorityNode(ELLLIST *plist,const char *id);
+static const char *asGetAuthority(const char *id);
+static void asFreeAuthorityTree(ELLLIST *plist);
 static ASG *asAsgAdd(const char *asgName);
 static long asAsgAddInp(ASG *pasg,const char *inp,int inpIndex);
 static ASGRULE *asAsgAddRule(ASG *pasg,asAccessRights access,int level);
@@ -585,6 +583,39 @@ int epicsStdCall asDump(
 }
 
 /**
+ * @brief Recursively dump a list of AUTHORITY definitions as nested ACF blocks.
+ *
+ * Emits each node as AUTHORITY(id, "commonName") (or AUTHORITY("commonName") for
+ * an unnamed intermediate), followed by a brace-enclosed block of its children
+ * when it has any. The output is valid ACF that re-parses to the same tree.
+ *
+ * @param fp    Output file.
+ * @param plist List of sibling AUTHORITY nodes to print.
+ * @param depth Nesting depth, used for tab indentation.
+ */
+static void asDumpAuthorityFP(FILE *fp,ELLLIST *plist,int depth)
+{
+    AUTHORITY *pauth = (AUTHORITY *)ellFirst(plist);
+    while(pauth) {
+        int i;
+        for(i=0;i<depth;i++) fprintf(fp,"\t");
+        if(pauth->id)
+            fprintf(fp,"AUTHORITY(%s, \"%s\")",pauth->id,pauth->commonName);
+        else
+            fprintf(fp,"AUTHORITY(\"%s\")",pauth->commonName);
+        if(ellCount(&pauth->children)>0) {
+            fprintf(fp," {\n");
+            asDumpAuthorityFP(fp,&pauth->children,depth+1);
+            for(i=0;i<depth;i++) fprintf(fp,"\t");
+            fprintf(fp,"}\n");
+        } else {
+            fprintf(fp,"\n");
+        }
+        pauth = (AUTHORITY *)ellNext(&pauth->node);
+    }
+}
+
+/**
  * @brief Dump the ASG to a file
  * This function dumps the ASG to a normalized ACF file.
  * It calls the member callback for each member and
@@ -606,7 +637,6 @@ int epicsStdCall asDumpFP(
     UAGNAME     *puagname;
     HAG         *phag;
     HAGNAME     *phagname;
-    AUTHCHAIN   *pauthchain;
     ASG         *pasg;
     ASGINP      *pasginp;
     ASGRULE     *pasgrule;
@@ -643,22 +673,7 @@ int epicsStdCall asDumpFP(
         }
         phag = (HAG *)ellNext(&phag->node);
     }
-    pauthchain = (AUTHCHAIN *)ellFirst(&pasbase->authList);
-    while(pauthchain) {
-        fprintf(fp,"AUTHORITY(%s: ",pauthchain->name);
-        char token_buf[MAX_AUTH_CHAIN_STRING];
-        strncpy(token_buf, pauthchain->chain, sizeof(token_buf));
-        token_buf[sizeof(token_buf) - 1] = '\0';
-        const char *token = strtok(token_buf, "\n");
-        int first = 1;
-        while (token) {
-            fprintf(fp,"%s%s", (first ? "" : " -> "), token);
-            first = 0;
-            token = strtok(NULL, "\n");
-        }
-        fprintf(fp,")\n");
-        pauthchain = (AUTHCHAIN *)ellNext(&pauthchain->node);
-    }
+    asDumpAuthorityFP(fp,(ELLLIST *)&pasbase->authList,0);
     pasg = (ASG *)ellFirst(&pasbase->asgList);
     if(!pasg) fprintf(fp,"No ASGs\n");
     while(pasg) {
@@ -1353,10 +1368,32 @@ void asFreeAll(ASBASE *pasbase)
         free(pasg);
         pasg = pnext;
     }
+    asFreeAuthorityTree(&pasbase->authList);
     gphFreeMem(pasbase->phash);
     free(pasbase);
 }
-
+
+/**
+ * @brief Recursively frees an authority tree (children first, then each node).
+ *
+ * Also frees each node's lazily-built chain cache. The id/commonName strings
+ * live in the node's own allocation and are freed with it.
+ *
+ * @param plist List of sibling AUTHORITY nodes to free.
+ */
+static void asFreeAuthorityTree(ELLLIST *plist)
+{
+    AUTHORITY *pauth = (AUTHORITY *)ellFirst(plist);
+    while(pauth) {
+        AUTHORITY *pnext = (AUTHORITY *)ellNext(&pauth->node);
+        asFreeAuthorityTree(&pauth->children);
+        ellDelete(plist,&pauth->node);
+        free((void *)pauth->chain);
+        free(pauth);
+        pauth = pnext;
+    }
+}
+
 /*Beginning of routines called by lex code*/
 static UAG *asUagAdd(const char *uagName)
 {
@@ -1475,91 +1512,110 @@ static long asHagAddHost(HAG *phag,const char *host)
 }
 
 /**
- * @brief Adds a new authority chain to the linked list of authority chains.
- * Inserts the new authority chain in alphabetical order based on its name.
+ * @brief Creates an AUTHORITY definition node and links it into the tree.
  *
- * If a duplicate name is found, the function logs an error message and returns NULL.
+ * The ACF AUTHORITY blocks form a tree of certificate authorities. This adds a
+ * single node as a child of @p parent (or as a new root when @p parent is NULL).
+ * The node stores the certificate common name and, when named, the id a RULE may
+ * reference. The id and commonName are copied into the node's own allocation.
  *
- * @param name The name of the authority chain to be added.
- * @param chain The authority chain string (a chain of common names - newline-delimited, ordered from Root to Issuer).
- * @return A pointer to the newly created AUTHCHAIN structure if successful, or NULL if an error occurs.
+ * If @p id duplicates an existing named authority, an error is logged and NULL
+ * is returned.
+ *
+ * @param parent     Parent authority, or NULL to add a root authority.
+ * @param id         ACF reference id, or NULL for an unnamed intermediate.
+ * @param commonName Certificate common name at this level (required).
+ * @return The new AUTHORITY node, or NULL on error.
  */
-AUTHCHAIN *asAddAuthority(const char *name, const char *chain) {
-    AUTHCHAIN         *pprev;
-    AUTHCHAIN         *pnext;
-    AUTHCHAIN         *pauth;
-    int         cmpvalue;
+AUTHORITY *asAuthorityPush(AUTHORITY *parent,const char *id,const char *commonName) {
     ASBASE      *pasbase = (ASBASE *)pasbasenew;
+    ELLLIST     *plist = parent ? &parent->children : &pasbase->authList;
 
-    /*Insert in alphabetic order*/
-    pnext = (AUTHCHAIN *)ellFirst(&pasbase->authList);
-    while(pnext) {
-        cmpvalue = strcmp(name,pnext->name);
-        if(cmpvalue<0) break;
-        if(cmpvalue==0) {
-            errlogPrintf("Duplicate Named Certificate Authority '%s'\n", name);
-            return(NULL);
-        }
-        pnext = (AUTHCHAIN *)ellNext(&pnext->node);
+    if(id && asGetAuthorityNode(&pasbase->authList, id)) {
+        errlogPrintf("Duplicate Named Certificate Authority '%s'\n", id);
+        return(NULL);
     }
-    const size_t name_len = strlen(name);
-    const size_t chain_len = strlen(chain);
-    pauth = asCalloc(1,sizeof(AUTHCHAIN)+name_len+chain_len+2);
-    ellInit(&pauth->list);
-    char *pname = (char *)(pauth+1);
-    char *pchain = pname+name_len+1;
-    memcpy(pname, name, name_len+1);
-    memcpy(pchain, chain, chain_len+1);
-    pauth->name = pname;
-    pauth->chain = pchain;
-    if(pnext==NULL) { /*Add to end of list*/
-        ellAdd(&pasbase->authList,&pauth->node);
-    } else {
-        pprev = (AUTHCHAIN *)ellPrevious(&pnext->node);
-        ellInsert(&pasbase->authList,&pprev->node,&pauth->node);
-    }
+
+    const size_t id_len = id ? strlen(id) : 0;
+    const size_t cn_len = strlen(commonName);
+    AUTHORITY *pauth = asCalloc(1,sizeof(AUTHORITY)+id_len+cn_len+2);
+    ellInit(&pauth->children);
+    char *pid = (char *)(pauth+1);
+    char *pcn = pid+id_len+1;
+    if(id) memcpy(pid, id, id_len+1);
+    memcpy(pcn, commonName, cn_len+1);
+    pauth->id = id ? pid : NULL;
+    pauth->commonName = pcn;
+    pauth->parent = parent;
+    ellAdd(plist,&pauth->node);
     return(pauth);
 }
 
 /**
- * @brief Retrieves the authority chain associated with a given name.
+ * @brief Recursively searches an authority tree for a node with the given id.
  *
- * This function searches for a specified authority name in an alphabetically
- * ordered list. If the name is found, the corresponding authority chain is
- * returned. If the name is not found, an error message is logged, and a
- * `NULL` value is returned.
+ * @param plist List of sibling AUTHORITY nodes to search (with their subtrees).
+ * @param id    Authority id to find.
+ * @return The matching node, or NULL if not found.
+ */
+static AUTHORITY *asGetAuthorityNode(ELLLIST *plist,const char *id) {
+    AUTHORITY *pauth = (AUTHORITY *)ellFirst(plist);
+    while(pauth) {
+        if(pauth->id && strcmp(pauth->id, id) == 0) return pauth;
+        AUTHORITY *found = asGetAuthorityNode(&pauth->children, id);
+        if(found) return found;
+        pauth = (AUTHORITY *)ellNext(&pauth->node);
+    }
+    return NULL;
+}
+
+/**
+ * @brief Retrieves the root-to-issuer chain for a named authority.
  *
- * @param name The name of the authority to search for.
- *             Expected to be unique and match the order in the list.
+ * Finds the authority node with the given id and returns its certificate chain
+ * (common names from root to issuer, newline-delimited). The chain is built by
+ * walking parent links and cached on the node for reuse. If the id is not
+ * defined an error is logged and NULL is returned.
  *
- * @return The corresponding authority chain for the specified name as a
- *         constant character pointer. If the authority name is not found,
- *         returns `NULL`.  newline-delimited, ordered from Root to Issuer
- *
- * @note The function assumes that the list of authorities in `authList` is
- *       in alphabetical order for efficient searching.
- *
- * @note Logs an error if the specified authority name is not found in the
- *       list.
+ * @param id The authority id to look up.
+ * @return The cached chain string, or NULL if the id is not defined.
  *
  * @warning If the global pointer `pasbasenew` is uninitialized or invalid,
  *          behavior is undefined.
  */
-const char *asGetAuthority(const char *name) {
+const char *asGetAuthority(const char *id) {
     ASBASE      *pasbase = (ASBASE *)pasbasenew;
+    AUTHORITY   *pauth = asGetAuthorityNode(&pasbase->authList, id);
 
-    /*Assumes the list is in alphabetic order*/
-    AUTHCHAIN *pnext = (AUTHCHAIN *) ellFirst(&pasbase->authList);
-    while(pnext) {
-        const int comparison = strcmp(name, pnext->name);
-        if(comparison<0) break;
-        if(comparison==0) {
-            return pnext->chain;
-        }
-        pnext = (AUTHCHAIN *)ellNext(&pnext->node);
+    if(!pauth) {
+        errlogPrintf("Certificate Authority Not Defined '%s'\n", id);
+        return(NULL);
     }
-    errlogPrintf("Certificate Authority Not Defined '%s'\n", name);
-    return(NULL);
+    if(!pauth->chain) {
+        size_t depth = 0, total = 1; /* nul terminator */
+        for(AUTHORITY *p = pauth; p; p = p->parent) {
+            total += strlen(p->commonName);
+            depth++;
+        }
+        total += depth - 1; /* newline separators between levels */
+        char *chain = asCalloc(1, total);
+        char *out = chain;
+        /* parent links run issuer->root, so collect into an array and emit
+         * in reverse to produce root->issuer order */
+        AUTHORITY **anc = asCalloc(depth, sizeof(*anc));
+        size_t i = depth;
+        for(AUTHORITY *p = pauth; p; p = p->parent) anc[--i] = p;
+        for(i = 0; i < depth; i++) {
+            if(i) *out++ = '\n';
+            const size_t cn = strlen(anc[i]->commonName);
+            memcpy(out, anc[i]->commonName, cn);
+            out += cn;
+        }
+        *out = '\0';
+        free(anc);
+        pauth->chain = chain;
+    }
+    return pauth->chain;
 }
 
 static ASG *asAsgAdd(const char *asgName)

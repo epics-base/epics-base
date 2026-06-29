@@ -208,13 +208,21 @@ typedef struct hag{
     char            *name;
     ELLLIST         list;   /*list of HAGNAME*/
 } HAG;
-// Defs for Authority Chains
-typedef struct authchain {
-    ELLNODE         node;
-    const char *    name;       /* Authority chain ID */
-    const char *    chain;      /* Authority Chain: Common Name or newline-separated Chain of Common Names (root to issuer) */
-    ELLLIST         list;       /* List of named Authority definitions (pointer to this list) */
-} AUTHCHAIN;
+/* Defs for Authority definitions.
+ * The ACF AUTHORITY blocks form a tree: a certificate authority (commonName)
+ * may sign several child authorities. Each node optionally carries an id
+ * (the name a RULE's AUTHORITY(...) references); intermediate nodes may have
+ * no id. The tree is the authoritative representation: it preserves the input
+ * structure so it can be dumped back as valid ACF, and the root-to-issuer
+ * chain for a named node is derived by walking parent links. */
+typedef struct authority {
+    ELLNODE          node;      /* sibling link within the parent's children list */
+    const char      *id;        /* ACF reference id, or NULL for an unnamed intermediate */
+    const char      *commonName;/* certificate common name at this level */
+    struct authority *parent;   /* parent authority, or NULL for a root */
+    ELLLIST          children;  /* child AUTHORITY definitions */
+    const char      *chain;     /* lazily-built root-to-issuer chain cache (newline-delimited) */
+} AUTHORITY;
 /*Defs for Access SecurityGroups*/
 typedef struct {
     ELLNODE         node;

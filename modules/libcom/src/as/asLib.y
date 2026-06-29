@@ -20,23 +20,10 @@ static HAG *yyHag=NULL;
 static ASG *yyAsg=NULL;
 static ASGRULE *yyAsgRule=NULL;
 
-static ELLLIST yyCertPath;
-typedef struct {
-    ELLNODE node;
-    char *commonName;
-} CertPathNode_t;
+static AUTHORITY *yyCurrentAuthority=NULL;  /* parent for AUTHORITY nodes being parsed */
 
-static int saveAuthorityEntry(char *name);
-
-static int pushCertPath(char *commonName);
-static void popCertPath();
-
-static char *getCurrentCertPath();
-
-static void initCertPathStack();
-static void freeCertPathStack();
-
-static int _pushCertPath(const char *commonName);
+static int asAuthorityNew(char *id, char *commonName);
+static void asAuthorityClose();
 static char* yystrdup(const char *inp);
 %}
 
@@ -70,7 +57,7 @@ asconfig_item:  tokenUAG uag_head uag_body
     |   tokenUAG uag_head
     |   tokenHAG hag_head hag_body
     |   tokenHAG hag_head
-    |   tokenAUTHORITY top_auth { popCertPath(); }
+    |   tokenAUTHORITY top_auth { asAuthorityClose(); }
     |   tokenASG asg_head asg_body
     |   tokenASG asg_head
     |   generic_item
@@ -238,15 +225,7 @@ top_auth: top_auth_head  auth_body
     | top_auth_head
     ;
 
-top_auth_head:   '(' tokenSTRING ',' tokenSTRING ')'
-    {
-        pushCertPath($4);         // Add this new Certificate Path component to the Certificate Chain
-        saveAuthorityEntry($2);   // Then create a new EPICS Security AUTHORITY with the given name
-    }
-    | '(' tokenSTRING ')'
-    {
-        pushCertPath($2);         // Add this new Certificate Path component to the Certificate Chain
-    }
+top_auth_head: auth_head
     ;
 
 auth_body: '{' auth_body_item_list '}'
@@ -256,29 +235,28 @@ auth_body_item_list: auth_body_item auth_body_item_list
     | auth_body_item
     ;
 
-auth_body_item: tokenAUTHORITY auth_head
+auth_body_item: tokenAUTHORITY auth_head auth_body
     {
-        saveAuthorityEntry($2);   // Create a new EPICS Security AUTHORITY with the given name
-    } auth_body
-    {
-        popCertPath();
+        asAuthorityClose();
     }
     | tokenAUTHORITY auth_head
     {
-        saveAuthorityEntry($2);   // Then create a new EPICS Security AUTHORITY with the given name
-        popCertPath();
+        asAuthorityClose();
     }
     ;
 
+/* Create the AUTHORITY node and descend into it; the enclosing rule calls
+ * asAuthorityClose() to ascend after any child block is parsed.
+ * Two-arg form is (id, "commonName"); one-arg form is an unnamed ("commonName"). */
 auth_head: '(' tokenSTRING ',' tokenSTRING ')'
     {
-        pushCertPath($4);
-        $$ = $2;
+        if (asAuthorityNew($2, $4))
+            yyerror("");
     }
     | '(' tokenSTRING ')'
     {
-        pushCertPath($2);
-        $$ = NULL;
+        if (asAuthorityNew(NULL, $2))
+            yyerror("");
     }
     ;
 
@@ -474,130 +452,35 @@ static int myParse(ASINPUTFUNCPTR inputfunction)
         yyrestart(NULL);
     }
     FirstFlag = 0;
-    initCertPathStack();    // Initialise the Certificate Chain to store an ongoing stack of certificates as they are parsed
+    yyCurrentAuthority = NULL;   // Start parsing authorities at the tree root
     rtnval = yyparse();
-    freeCertPathStack();    // Free the Certificate Chain
     if(rtnval!=0 || yyFailed) return(-1); else return(0);
 }
 
 /**
- * Add the given Certificate Authority's Common Name to the Certificate Chain
- * and signal errors to parser if it fails.
- * Free up the given Common Name once consumed
+ * Create an AUTHORITY definition node for the certificate authority currently
+ * being parsed and descend into it, so any nested AUTHORITY blocks become its
+ * children. @p id is the (optional) ACF reference name; @p commonName is the
+ * certificate common name. Both are consumed (freed) here.
  */
-static int pushCertPath(char *commonName) {
-    if (_pushCertPath(commonName) != 0) {
-        yyerror("Out of memory");
-        free(commonName);
-        return -1;
-    }
+static int asAuthorityNew(char *id, char *commonName) {
+    AUTHORITY *pauth = asAuthorityPush(yyCurrentAuthority, id, commonName);
+    free(id);
     free(commonName);
-    return 0;
-}
-
-/**
- * Make an actual entry in EPICS Security in the list of declared named AUTHORITIES keyed on the given AUTHORITY ID.
- *
- * This will retrieve the Certificate Chain that has been parsed up till now, including
- * all parent components that have been seen, and will associate it with the given AUTHORITY ID by
- * calling `asAddAuthority` to add it to EPICS Security as a named AUTHORITY entry
- * that can be referenced in an ASG RULE.
- */
-static int saveAuthorityEntry(char *name) {
-    if (name) {
-        char *auth_chain = getCurrentCertPath();
-        if (!auth_chain) {
-            yyerror("Out of memory");
-            free(name);
-            return -1;
-        }
-
-        if (!asAddAuthority(name, auth_chain)) {
-            char message[100];
-            sprintf(message, "AUTHORITY: %s=%s", name, auth_chain);
-            free(auth_chain);
-            free(name);
-            yyerror(message);
-            return -1;
-        }
-
-        free(auth_chain);
-        free(name);
-    }
-    return 0;
-}
-
-/**
- * Add the given Certificate Authority's Common Name to the end of the current Certificate Chain
- */
-static int _pushCertPath(const char *commonName) {
-    CertPathNode_t *node = malloc(sizeof(CertPathNode_t));
-    if (!node) return -1;
-
-    node->commonName = strdup(commonName);
-    if (!node->commonName) {
-        free(node);
+    if (!pauth) {
+        yyerror("");
         return -1;
     }
-
-    ellAdd(&yyCertPath, &node->node);
+    yyCurrentAuthority = pauth;
     return 0;
 }
 
 /**
- * Remove the last Common Name that was added to the Certificate Chain
+ * Ascend to the parent authority once an AUTHORITY block has been fully parsed.
  */
-static void popCertPath() {
-    CertPathNode_t *node = (CertPathNode_t *)ellLast(&yyCertPath);
-    if (node) {
-        ellDelete(&yyCertPath, &node->node);
-        free(node->commonName);
-        free(node);
-    }
-}
-
-/**
- * Gets the current Certificate Chain that has been parsed so far.
- */
-static char *getCurrentCertPath() {
-    size_t total_len = 1;  /* For null terminator */
-    CertPathNode_t *node;
-    char *result;
-
-    /* First pass: calculate required length */
-    for (node = (CertPathNode_t *)ellFirst(&yyCertPath); node;
-         node = (CertPathNode_t *)ellNext(&node->node)) {
-        total_len += strlen(node->commonName) + 1;  /* +1 for newline */
-    }
-
-    result = malloc(total_len);
-    if (!result) return NULL;
-    result[0] = '\0';
-
-    /* Second pass: build string */
-    for (node = (CertPathNode_t *)ellFirst(&yyCertPath); node;
-         node = (CertPathNode_t *)ellNext(&node->node)) {
-        if (result[0]) strcat(result, "\n");
-        strcat(result, node->commonName);
-    }
-
-    return result;
-}
-
-/**
- * Initialise the Certificate Chain when we start parsing
- */
-static void initCertPathStack() {
-    ellInit(&yyCertPath);
-}
-
-/**
- * Free up the Certificate Chain once we're done parsing
- */
-static void freeCertPathStack() {
-    while (ellFirst(&yyCertPath)) {
-        popCertPath();
-    }
+static void asAuthorityClose() {
+    if (yyCurrentAuthority)
+        yyCurrentAuthority = yyCurrentAuthority->parent;
 }
 
 static

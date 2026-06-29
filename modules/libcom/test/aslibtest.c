@@ -134,10 +134,12 @@ static const char *expected_method_auth_config =
     "UAG(foo) {testing}\n"
     "UAG(ops) {geek}\n"
 
-    "AUTHORITY(AUTH_EPICS_ROOT: EPICS Org Root CA)\n"
-    "AUTHORITY(AUTH_INTERMEDIATE_CA: EPICS Org Root CA -> Intermediate CA)\n"
-    "AUTHORITY(AUTH_ORNL_CA: EPICS Org Root CA -> Intermediate CA -> ORNL Org CA)\n"
-    "AUTHORITY(AUTH_UNRELATED_CA: EPICS Org Root CA -> Unrelated CA)\n"
+    "AUTHORITY(AUTH_EPICS_ROOT, \"EPICS Org Root CA\") {\n"
+    "	AUTHORITY(AUTH_INTERMEDIATE_CA, \"Intermediate CA\") {\n"
+    "		AUTHORITY(AUTH_ORNL_CA, \"ORNL Org CA\")\n"
+    "	}\n"
+    "	AUTHORITY(AUTH_UNRELATED_CA, \"Unrelated CA\")\n"
+    "}\n"
 
     "ASG(DEFAULT) {\n"
     "	RULE(0,NONE,NOTRAPWRITE)\n"
@@ -1770,13 +1772,80 @@ static void testRulesDumpOutput(void)
     runRestDumpRules("rwx", expected_rwx_rules_config);
 }
 
+/* Dump the active access security config to a newly-allocated string (caller frees). */
+static char *dumpToString(void)
+{
+    char temp_filename[] = "aslib_test_XXXXXX";
+#ifdef _WIN32
+    if (_mktemp(temp_filename) == NULL) return NULL;
+    FILE *fp = fopen(temp_filename, "wb+");
+#else
+    int fd = mkstemp(temp_filename);
+    if (fd == -1) return NULL;
+    FILE *fp = fdopen(fd, "wb+");
+#endif
+    if (!fp) return NULL;
+    asDumpFP(fp, NULL, NULL, 0);
+    fflush(fp);
+    char *buf = readFile(temp_filename);
+    fclose(fp);
+    unlink(temp_filename);
+    return buf;
+}
+
+/* Verify the dump is valid ACF: re-parsing the dump and dumping again yields
+ * identical output. This guards the AUTHORITY definition round-trip in particular. */
+static void testDumpRoundTrip(void)
+{
+    testDiag("testDumpRoundTrip()");
+    asCheckClientIP = 0;
+
+    /* roundtrip_auth_config isolates the AUTHORITY feature: a branching tree
+     * with unnamed intermediate levels, plus rules referencing leaf ids - the
+     * cases that cannot survive a flat representation. (method_auth_config is
+     * also covered by testDumpOutput's exact-match check.) */
+    static const char roundtrip_auth_config[] =
+        "UAG(users) {alice}\n"
+        "AUTHORITY(AUTH_ROOT, \"Root CA\") {\n"
+        "	AUTHORITY(\"Unnamed Intermediate CA\") {\n"
+        "		AUTHORITY(AUTH_LEAF_A, \"Leaf A CA\")\n"
+        "		AUTHORITY(AUTH_LEAF_B, \"Leaf B CA\")\n"
+        "	}\n"
+        "	AUTHORITY(AUTH_SIBLING, \"Sibling CA\")\n"
+        "}\n"
+        "ASG(g) {\n"
+        "	RULE(1,WRITE) {\n"
+        "		UAG(users)\n"
+        "		METHOD(\"x509\")\n"
+        "		AUTHORITY(AUTH_LEAF_A,AUTH_SIBLING)\n"
+        "		PROTOCOL(\"tls\")\n"
+        "	}\n"
+        "}\n";
+
+    testOk(asInitMem(roundtrip_auth_config, NULL)==0, "authority config parses");
+    char *first = dumpToString();
+    testOk(first != NULL, "first dump produced output");
+    if (!first) return;
+
+    testOk(asInitMem(first, NULL)==0, "dump re-parses as valid ACF\nDUMP:\n%s", first);
+    char *second = dumpToString();
+
+    testOk(second != NULL && strcmp(first, second) == 0,
+           "dump is stable across re-parse\nFirst:\n%s\nSecond:\n%s",
+           first, second ? second : "NULL");
+
+    free(first);
+    free(second);
+}
+
 MAIN(aslibtest)
 {
-    testPlan(168);
+    testPlan(172);
     testSyntaxErrors();
     testHostNames();
     testDumpOutput();
     testRulesDumpOutput();
+    testDumpRoundTrip();
     testUseIP();
     testFutureProofParser();
     testMethodAndAuth();

@@ -11,8 +11,6 @@
 
 SRC_DIRS += $(IOCDIR)/dbStatic
 
-USR_CFLAGS += -DUSE_TYPED_DRVET
-
 INC += dbBase.h
 INC += dbFldTypes.h
 INC += dbStaticLib.h

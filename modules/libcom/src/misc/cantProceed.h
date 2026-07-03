@@ -34,12 +34,14 @@
 extern "C" {
 #endif
 
-/** \brief Suspend this thread, the caller cannot continue or return.
+/** \brief Suspend this thread or call abort(), the caller cannot continue
+ *         or return.
  *
  * The effect of calling this is to print the error message followed by
- * the name of the thread that is being suspended. A stack trace will
+ * the name of the thread that can't proceed. A stack trace will
  * also be shown if supported by the OS, and the thread is suspended
- * inside an infinite loop.
+ * inside an infinite loop, or the process aborted, depending on
+ * EPICS_ABORT_ON_ASSERT.
  * \param errorMessage A printf-style error message describing the error.
  * \param ... Any parameters required for the error message.
  */

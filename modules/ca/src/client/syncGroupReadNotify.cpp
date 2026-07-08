@@ -40,6 +40,8 @@ void syncGroupReadNotify::begin (
     unsigned type, arrayElementCount count )
 {
     this->chan->eliminateExcessiveSendBacklog ( guard );
+    this->requestedType = type;
+    this->requestedCount = count;
     this->ioComplete = false;
     boolFlagManager mgr ( this->idIsValid );
     this->chan->read ( guard, type, count, *this, &this->id );
@@ -88,7 +90,8 @@ void syncGroupReadNotify::completion (
         return;
     }
 
-    if ( this->pValue ) {
+    if ( this->pValue && type == this->requestedType &&
+         count <= this->requestedCount ) {
         size_t size = dbr_size_n ( type, count );
         memcpy ( this->pValue, pData, size );
     }

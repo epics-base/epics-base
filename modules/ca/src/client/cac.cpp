@@ -896,6 +896,13 @@ bool cac::readNotifyRespAction ( callbackManager &, tcpiiu & iiu,
             // this does *not* assign a new resource id
             this->ioTable.add ( *pmiu );
         }
+        if ( INVALID_DB_REQ ( hdr.m_dataType ) ||
+             hdr.m_postsize < dbr_size_n ( hdr.m_dataType, hdr.m_count ) ) {
+            pmiu->exception ( guard, *this, ECA_BADTYPE,
+                "server response inconsistent with payload size",
+                hdr.m_dataType, hdr.m_count );
+            return true;
+        }
         if ( caStatus == ECA_NORMAL ) {
             /*
              * convert the data buffer from net
@@ -960,6 +967,13 @@ bool cac::eventRespAction ( callbackManager &, tcpiiu &iiu,
     //
     baseNMIU * pmiu = this->ioTable.lookup ( hdr.m_available );
     if ( pmiu ) {
+        if ( INVALID_DB_REQ ( hdr.m_dataType ) ||
+             hdr.m_postsize < dbr_size_n ( hdr.m_dataType, hdr.m_count ) ) {
+            pmiu->exception ( guard, *this, ECA_BADTYPE,
+                "server response inconsistent with payload size",
+                hdr.m_dataType, hdr.m_count );
+            return true;
+        }
         /*
          * convert the data buffer from net format to host format
          */
@@ -992,6 +1006,13 @@ bool cac::readRespAction ( callbackManager &, tcpiiu &,
     // it is in use here.
     //
     if ( pmiu ) {
+        if ( INVALID_DB_REQ ( hdr.m_dataType ) ||
+             hdr.m_postsize < dbr_size_n ( hdr.m_dataType, hdr.m_count ) ) {
+            pmiu->exception ( guard, *this, ECA_BADTYPE,
+                "server response inconsistent with payload size",
+                hdr.m_dataType, hdr.m_count );
+            return true;
+        }
         pmiu->completion ( guard, *this,
             hdr.m_dataType, hdr.m_count, pMsgBdy );
     }

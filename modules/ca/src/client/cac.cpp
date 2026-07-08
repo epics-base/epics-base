@@ -1109,7 +1109,7 @@ bool cac::exceptionRespAction ( callbackManager & cbMutexIn, tcpiiu & iiu,
 
     // execute the exception message
     pExcepProtoStubTCP pStub;
-    if ( hdr.m_cmmd >= NELEMENTS ( cac::tcpExcepJumpTableCAC ) ) {
+    if ( req.m_cmmd >= NELEMENTS ( cac::tcpExcepJumpTableCAC ) ) {
         pStub = &cac::defaultExcep;
     }
     else {

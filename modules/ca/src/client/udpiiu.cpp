@@ -811,15 +811,17 @@ bool udpiiu::exceptionRespAction (
     char date[64];
     currentTime.strftime ( date, sizeof ( date ), "%a %b %d %Y %H:%M:%S");
 
-    if ( msg.m_postsize > sizeof ( caHdr ) ){
-        errlogPrintf (
-            ERL_ERROR " condition \"%s\" detected by %s with context \"%s\" at %s\n",
-            ca_message ( msg.m_available ),
-            name, reinterpret_cast <const char *> ( &reqMsg + 1 ), date );
+    int len = msg.m_postsize - sizeof( caHdr );
+    if ( len > 0 ) {
+        const char *ctx = reinterpret_cast<const char *>( &reqMsg + 1 );
+        len = epicsStrnLen ( ctx, len );
+        errlogPrintf ( ERL_ERROR
+            " condition \"%s\" detected by %s with context \"%.*s\" at %s\n",
+            ca_message ( msg.m_available ), name, len, ctx, date );
     }
-    else{
-        errlogPrintf (
-            ERL_ERROR " condition \"%s\" detected by %s at %s\n",
+    else {
+        errlogPrintf ( ERL_ERROR
+            " condition \"%s\" detected by %s at %s\n",
             ca_message ( msg.m_available ), name, date );
     }
 

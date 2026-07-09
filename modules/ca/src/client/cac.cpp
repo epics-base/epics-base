@@ -1107,6 +1107,9 @@ bool cac::exceptionRespAction ( callbackManager & cbMutexIn, tcpiiu & iiu,
     if ( hdr.m_postsize < bytesSoFar ) {
         return false;
     }
+    // Ensure the context string is NULL-terminated
+    static_cast < char * > ( pMsgBdy ) [hdr.m_postsize - 1] = '\0';
+
     caHdrLargeArray req;
     req.m_cmmd = AlignedWireRef < const epicsUInt16 > ( pReq->m_cmmd );
     req.m_postsize = AlignedWireRef < const epicsUInt16 > ( pReq->m_postsize );

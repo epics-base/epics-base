@@ -3665,7 +3665,7 @@ void  dbReportDeviceConfig(dbBase *pdbbase, FILE *report)
     return;
 }
 
-#if defined(__GNUC__) && defined(__ELF__) && defined(__linux__)
+#if defined(__GNUC__) && (__GNUC__ * 100 + __GNUC_MINOR__ >= 407) && defined(__ELF__) && defined(__linux__)
 /* Loading of GDB python helper script.
  *
  * Need to include the following line in ~/.gdbinit

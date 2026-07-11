@@ -7,6 +7,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 #include <osiUnistd.h>
 
 #include <testMain.h>
@@ -14,10 +15,8 @@
 
 #include <errSymTbl.h>
 #include <epicsString.h>
-#include <epicsThread.h>
 #include <osiFileName.h>
 #include <errlog.h>
-#include <cantProceed.h>
 
 #include <asLib.h>
 
@@ -34,14 +33,6 @@ static char *asUser,
             *asAuthority;
 static enum AsProtocol protocol=AS_PROTOCOL_TCP;
 static int asAsl;
-
-/* Per-thread buffer for the formatted certificate authority chain. */
-static epicsThreadPrivateId certAuthChainPvtId;
-
-static void certAuthChainOnce(void *unused)
-{
-    certAuthChainPvtId = epicsThreadPrivateCreate();
-}
 
 /**
  * @brief Test data with Host Access Groups (HAG)
@@ -1037,14 +1028,15 @@ static void setProtocol(enum AsProtocol the_protocol)
  * This makes the chain easier to read from trust anchor down to the end-entity.
  *
  * - If `asAuthority` is empty or NULL, the output buffer is set to an empty string.
- * - The result is written into `parsedCertAuthChainBuf` and truncated to `MAX_AUTH_CHAIN_STRING` bytes.
+ * - The result is written into @p parsedCertAuthChainBuf and truncated to @p bufSize bytes.
  * - Up to MAX_CERT_AUTH_CHAIN_LENGTH authority entries are supported in the chain.
  *
  * @param[out] parsedCertAuthChainBuf Buffer to receive the formatted authority chain string.
+ * @param[in]  bufSize                Size of @p parsedCertAuthChainBuf in bytes.
  */
-static void parseCertAuthChain(char *parsedCertAuthChainBuf) {
+static void parseCertAuthChain(char *parsedCertAuthChainBuf, size_t bufSize) {
+    parsedCertAuthChainBuf[0] = '\0';
     if (asAuthority) {
-        parsedCertAuthChainBuf[0] = '\0';
         char *p = parsedCertAuthChainBuf;
 
         char unParsedAuthority[MAX_AUTH_CHAIN_STRING];
@@ -1053,9 +1045,8 @@ static void parseCertAuthChain(char *parsedCertAuthChainBuf) {
 
         const char *token = strtok(unParsedAuthority, "\n");
         if (token) {
-            size_t len = 0;
-            size_t remainingSpace = MAX_AUTH_CHAIN_STRING;
-            len = strlen(token);
+            size_t len = strlen(token);
+            size_t remainingSpace = bufSize;
             if (len < remainingSpace) {
                 strcpy(p, token);
                 p += len;
@@ -1089,17 +1080,10 @@ static void testAccess(const char *asg, unsigned mask)
     ASMEMBERPVT asp = 0; /* aka dbCommon::asp */
     ASCLIENTPVT client = 0;
 
-    static epicsThreadOnceId certAuthChainOnceId = EPICS_THREAD_ONCE_INIT;
-    epicsThreadOnce(&certAuthChainOnceId, certAuthChainOnce, NULL);
-
-    char *formattedCertAuthChain = epicsThreadPrivateGet(certAuthChainPvtId);
-    if (!formattedCertAuthChain) {
-        formattedCertAuthChain = calloc(1, MAX_AUTH_CHAIN_STRING);
-        if (!formattedCertAuthChain)
-            cantProceed("aslibtest: out of memory for formattedCertAuthChain\n");
-        epicsThreadPrivateSet(certAuthChainPvtId, formattedCertAuthChain);
-    }
-    parseCertAuthChain(formattedCertAuthChain);
+    /* Formatted only for the diagnostic messages below; a plain local buffer is
+     * sufficient (testAccess runs on a single thread). */
+    char formattedCertAuthChain[MAX_AUTH_CHAIN_STRING];
+    parseCertAuthChain(formattedCertAuthChain, sizeof(formattedCertAuthChain));
 
     long ret = asAddMember(&asp, asg);
     if(ret) {
@@ -1776,22 +1760,25 @@ static void testRulesDumpOutput(void)
     runRestDumpRules("rwx", expected_rwx_rules_config);
 }
 
-/* Dump the active access security config to a newly-allocated string (caller frees). */
+/* Dump the active access security config to a newly-allocated string (caller
+ * frees). Uses a fixed filename unique to aslibtest: the test is single-process
+ * so there is no race, and unlike mkstemp()/_mktemp() this does not depend on a
+ * writable $PWD-independent /tmp (which RTEMS may lack). */
 static char *dumpToString(void)
 {
-    char temp_filename[] = "aslib_test_XXXXXX";
-#ifdef _WIN32
-    if (_mktemp(temp_filename) == NULL) return NULL;
+    static const char temp_filename[] = "aslib_test_dump.tmp";
+    char *buf = NULL;
     FILE *fp = fopen(temp_filename, "wb+");
-#else
-    int fd = mkstemp(temp_filename);
-    if (fd == -1) return NULL;
-    FILE *fp = fdopen(fd, "wb+");
-#endif
-    if (!fp) return NULL;
+    if (!fp) {
+        testDiag("dumpToString: could not open '%s': %s",
+                 temp_filename, strerror(errno));
+        return NULL;
+    }
     asDumpFP(fp, NULL, NULL, 0);
-    fflush(fp);
-    char *buf = readFile(temp_filename);
+    if (fflush(fp) != 0)
+        testDiag("dumpToString: fflush failed: %s", strerror(errno));
+    else
+        buf = readFile(temp_filename);
     fclose(fp);
     unlink(temp_filename);
     return buf;

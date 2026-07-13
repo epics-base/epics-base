@@ -20,12 +20,6 @@
 
 #include <asLib.h>
 
-// The maximum number of links in a chain of authority we will provide in test data.  Increase as needed
-#define MAX_CERT_AUTH_CHAIN_LENGTH 10
-
-// The maximum length of the formatted authority chain string used by test helpers
-#define MAX_AUTH_CHAIN_STRING 2048
-
 // For tests these are the values of the client that are being tested against the given Access Security Group
 static char *asUser,
             *asHost,
@@ -1015,61 +1009,6 @@ static void setProtocol(enum AsProtocol the_protocol)
 }
 
 /**
- * @brief Converts a newline-delimited certificate authority chain into a printable string.
- *
- * @details
- * This function takes the global variable `asAuthority`, which contains a newline-delimited
- * list of certificate authorities ordered from signer to signee (i.e., root CA first,
- * issuer CA last), and converts it into a single-line, human-readable string
- *
- * The resulting format resembles:
- *   "Root Certificate Authority -> Intermediate CA -> Issuer CA"
- *
- * This makes the chain easier to read from trust anchor down to the end-entity.
- *
- * - If `asAuthority` is empty or NULL, the output buffer is set to an empty string.
- * - The result is written into @p parsedCertAuthChainBuf and truncated to @p bufSize bytes.
- * - Up to MAX_CERT_AUTH_CHAIN_LENGTH authority entries are supported in the chain.
- *
- * @param[out] parsedCertAuthChainBuf Buffer to receive the formatted authority chain string.
- * @param[in]  bufSize                Size of @p parsedCertAuthChainBuf in bytes.
- */
-static void parseCertAuthChain(char *parsedCertAuthChainBuf, size_t bufSize) {
-    parsedCertAuthChainBuf[0] = '\0';
-    if (asAuthority) {
-        char *p = parsedCertAuthChainBuf;
-
-        char unParsedAuthority[MAX_AUTH_CHAIN_STRING];
-        strncpy(unParsedAuthority, asAuthority, sizeof(unParsedAuthority));
-        unParsedAuthority[sizeof(unParsedAuthority) - 1] = '\0';
-
-        const char *token = strtok(unParsedAuthority, "\n");
-        if (token) {
-            size_t len = strlen(token);
-            size_t remainingSpace = bufSize;
-            if (len < remainingSpace) {
-                strcpy(p, token);
-                p += len;
-                remainingSpace -= len;
-
-                while (((token = strtok(NULL, "\n"))) && remainingSpace > 4) {
-                    len = strlen(token);
-                    if (len + 4 < remainingSpace) {
-                        strcpy(p, " -> ");
-                        p += 4;
-                        strcpy(p, token);
-                        p += len;
-                        remainingSpace -= (len + 4);
-                    } else {
-                        break;
-                    }
-                }
-            }
-        }
-    }
-}
-
-/**
  * Test the access control system with the given ASG, user, and hostname
  * This will test that the expected access given by mask is granted
  * when the Access Security Group (ASG) is interpreted in the
@@ -1080,15 +1019,10 @@ static void testAccess(const char *asg, unsigned mask)
     ASMEMBERPVT asp = 0; /* aka dbCommon::asp */
     ASCLIENTPVT client = 0;
 
-    /* Formatted only for the diagnostic messages below; a plain local buffer is
-     * sufficient (testAccess runs on a single thread). */
-    char formattedCertAuthChain[MAX_AUTH_CHAIN_STRING];
-    parseCertAuthChain(formattedCertAuthChain, sizeof(formattedCertAuthChain));
-
     long ret = asAddMember(&asp, asg);
     if(ret) {
         testFail("testAccess(ASG:%s, ID:%s, METHOD:%s, AUTHORITY:%s, HOST:%s, PROTOCOL:%s, ASL:%d) -> asAddMember error: %s",
-                 asg, asUser, asMethod?asMethod:"", asAuthority?formattedCertAuthChain:"", asHost, protocol ? "true":"false", asAsl, errSymMsg(ret));
+                 asg, asUser, asMethod?asMethod:"", asAuthority?asAuthority:"", asHost, protocol ? "true":"false", asAsl, errSymMsg(ret));
     } else {
         ASIDENTITY id;
         id.user = asUser;
@@ -1100,14 +1034,14 @@ static void testAccess(const char *asg, unsigned mask)
     }
     if(ret) {
         testFail("testAccess(ASG:%s, ID:%s, METHOD:%s, AUTHORITY:%s, HOST:%s, PROTOCOL:%s, ASL:%d) -> asAddClient error: %s",
-                 asg, asUser, asMethod?asMethod:"", asAuthority?formattedCertAuthChain:"", asHost, protocol ? "true":"false", asAsl, errSymMsg(ret));
+                 asg, asUser, asMethod?asMethod:"", asAuthority?asAuthority:"", asHost, protocol ? "true":"false", asAsl, errSymMsg(ret));
     } else {
         unsigned actual = 0;
         actual |= asCheckGet(client) ? 1 : 0;
         actual |= asCheckPut(client) ? 2 : 0;
         actual |= asCheckRPC(client) ? 4 : 0;
         testOk(actual==mask, "testAccess(ASG:%s, ID:%s, METHOD:%s, AUTHORITY:%s, HOST:%s, PROTOCOL:%s, ASL:%d) -> %x == %x",
-               asg, asUser, asMethod?asMethod:"", asAuthority?formattedCertAuthChain:"", asHost, protocol ? "true":"false", asAsl, actual, mask);
+               asg, asUser, asMethod?asMethod:"", asAuthority?asAuthority:"", asHost, protocol ? "true":"false", asAsl, actual, mask);
     }
     if(client) asRemoveClient(&client);
     if(asp) asRemoveMember(&asp);
@@ -1685,24 +1619,12 @@ static void testDumpOutput(void)
     testOk1(asInitMem(method_auth_config, NULL)==0);
 
     // Create temporary file in current directory
-    char temp_filename[] = "aslib_test_XXXXXX";
-#ifdef _WIN32
-    char *tmpres = _mktemp(temp_filename);
-    testOk(tmpres != NULL, "Created temporary file");
-    if (tmpres == NULL) return;
+    static const char temp_filename[] = "aslib_test_dump.tmp";
     FILE *fp = fopen(temp_filename, "wb+");
-#else
-    int fd = mkstemp(temp_filename);
-    testOk(fd != -1, "Created temporary file");
-    if (fd == -1) return;
-    FILE *fp = fdopen(fd, "wb+");
-#endif
     testOk(fp != NULL, "Opened temporary file stream");
     if (!fp) {
-#ifndef _WIN32
-        close(fd);
-#endif
-        unlink(temp_filename);
+        testDiag("testDumpOutput: could not open '%s': %s",
+                 temp_filename, strerror(errno));
         return;
     }
 
@@ -1726,16 +1648,14 @@ static void testDumpOutput(void)
 
 static void runRestDumpRules(const char *rule, const char *expected_config)
 {
-    static char temp_filename[] = "aslib_test_XXXXXX";
-#ifdef _WIN32
-    _mktemp(temp_filename);
+    static const char temp_filename[] = "aslib_test_dump.tmp";
     FILE *fp = fopen(temp_filename, "wb+");
-#else
-    int fd = mkstemp(temp_filename);
-    FILE *fp = fdopen(fd, "wb+");
-#endif
     testOk(fp != NULL, "Opened temporary file for rule %s", rule);
-    if (!fp) return;
+    if (!fp) {
+        testDiag("runRestDumpRules: could not open '%s': %s",
+                 temp_filename, strerror(errno));
+        return;
+    }
     asDumpRulesFP(fp, rule);
     fclose(fp);
     char *buf = readFile(temp_filename);
@@ -1744,7 +1664,6 @@ static void runRestDumpRules(const char *rule, const char *expected_config)
            "asDumpFP %s output matches expected\nExpected:\n%s\nGot:\n%s",
            rule, expected_config, buf);
     free(buf);
-    strcpy(temp_filename, "aslib_test_XXXXXX");
 }
 
 static void testRulesDumpOutput(void)
@@ -1831,7 +1750,7 @@ static void testDumpRoundTrip(void)
 
 MAIN(aslibtest)
 {
-    testPlan(172);
+    testPlan(171);
     testSyntaxErrors();
     testHostNames();
     testDumpOutput();

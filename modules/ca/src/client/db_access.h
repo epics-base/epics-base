@@ -19,6 +19,7 @@
 
 #include "epicsTypes.h"
 #include "epicsTime.h"
+#include "epicsAssert.h"
 
 #include "libCaAPI.h"
 
@@ -516,23 +517,6 @@ struct dbr_ctrl_double{
         dbr_double_t    value;                  /* current value */
 };
 
-/** \brief Returns the size in bytes for a `DBR_XXXX` type with `COUNT` elements.
- *
- * If the DBR type is a structure then the value field is the last field in the
- * structure. If `COUNT` is greater than one then `COUNT-1` elements are
- * appended to the end of the structure so that they can be addressed as an
- * array through a pointer to the value field.
- *
- * \sa dbr_size, dbr_value_size
- *
- * \param[in] TYPE The data type.
- * \param[in] COUNT The element count.
- * \returns The size in bytes of the specified type
- * with the specified number of elements.
- */
-#define dbr_size_n(TYPE,COUNT)\
-((unsigned)((COUNT)<0?dbr_size[TYPE]:dbr_size[TYPE]+((COUNT)-1)*dbr_value_size[TYPE]))
-
 /** \brief Size in bytes for each `DBR_XXXX` type.
  *
  * Array indexed by the `DBR_XXXX` type code.
@@ -553,6 +537,28 @@ LIBCA_API extern const unsigned short dbr_size[];
 LIBCA_API extern const unsigned short dbr_value_size[];
 
 #ifndef db_accessHFORdb_accessC
+/** \brief Returns the size in bytes for a `DBR_XXXX` type with `count` elements.
+ *
+ * If the DBR type is a structure then the value field is the last field in the
+ * structure. If `count` is greater than one then `count-1` elements are
+ * appended to the end of the structure so that they can be addressed as an
+ * array through a pointer to the value field.
+ *
+ * \sa dbr_size, dbr_value_size
+ *
+ * \param[in] dbr_type The data type.
+ * \param[in] count The element count.
+ * \returns The size in bytes of the specified type
+ * with the specified number of elements.
+ */
+
+static EPICS_ALWAYS_INLINE size_t dbr_size_n(unsigned dbr_type, long count)
+{
+    assert(VALID_DB_REQ(dbr_type));
+    assert(count < 0 || (((size_t)~0UL)-dbr_size[dbr_type])/dbr_value_size[dbr_type] > (unsigned long)count);
+    return count < 0 ? dbr_size[dbr_type] : dbr_size[dbr_type]+((size_t)(count)-1)*dbr_value_size[dbr_type];
+}
+
 /* class for each type's value */
 enum dbr_value_class_e {
                 dbr_class_int,

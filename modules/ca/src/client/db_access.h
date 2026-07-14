@@ -63,8 +63,8 @@ typedef epicsOldString dbr_class_name_t;
 #define DBF_DOUBLE      6
 #define DBF_NO_ACCESS   7
 #define LAST_TYPE       DBF_DOUBLE
-#define VALID_DB_FIELD(x)       ((x >= 0) && (x <= LAST_TYPE))
-#define INVALID_DB_FIELD(x)     ((x < 0) || (x > LAST_TYPE))
+#define VALID_DB_FIELD(x)       ((unsigned)(x) <= LAST_TYPE)
+#define INVALID_DB_FIELD(x)     !VALID_DB_FIELD(x)
 
 /* data request buffer types */
 #define DBR_STRING      DBF_STRING
@@ -112,8 +112,8 @@ typedef epicsOldString dbr_class_name_t;
 #define DBR_STSACK_STRING DBR_PUT_ACKS + 1
 #define DBR_CLASS_NAME DBR_STSACK_STRING + 1
 #define LAST_BUFFER_TYPE        DBR_CLASS_NAME
-#define VALID_DB_REQ(x) ((x >= 0) && (x <= LAST_BUFFER_TYPE))
-#define INVALID_DB_REQ(x)       ((x < 0) || (x > LAST_BUFFER_TYPE))
+#define VALID_DB_REQ(x)     ((unsigned)(x) <= LAST_BUFFER_TYPE)
+#define INVALID_DB_REQ(x)   !VALID_DB_REQ(x)
 
 /*
  * The enumeration "epicsType" is an index to this array
@@ -668,8 +668,8 @@ union db_access_val{
 #define db_state_dim            MAX_ENUM_STATES
 #define db_state_text_dim       MAX_ENUM_STRING_SIZE
 
-#define dbf_type_is_valid(type)   ((type) >= 0 && (type) <= LAST_TYPE)
-#define dbr_type_is_valid(type)   ((type) >= 0 && (type) <= LAST_BUFFER_TYPE)
+#define dbf_type_is_valid(type)   VALID_DB_FIELD(type)
+#define dbr_type_is_valid(type)   VALID_DB_REQ(type)
 #define dbr_type_is_plain(type)   \
                 ((type) >= DBR_STRING && (type) <= DBR_DOUBLE)
 #define dbr_type_is_STS(type)   \
@@ -681,26 +681,19 @@ union db_access_val{
 #define dbr_type_is_CTRL(type)   \
                 ((type) >= DBR_CTRL_STRING && (type) <= DBR_CTRL_DOUBLE)
 #define dbr_type_is_STRING(type)   \
-                ((type) >= 0 && (type) <= LAST_BUFFER_TYPE && \
-                 (type)%(LAST_TYPE+1) == DBR_STRING)
+                (dbr_type_is_valid(type) && (type)%(LAST_TYPE+1) == DBR_STRING)
 #define dbr_type_is_SHORT(type)   \
-                ((type) >= 0 && (type) <= LAST_BUFFER_TYPE && \
-                 (type)%(LAST_TYPE+1) == DBR_SHORT)
+                (dbr_type_is_valid(type) && (type)%(LAST_TYPE+1) == DBR_SHORT)
 #define dbr_type_is_FLOAT(type)   \
-                ((type) >= 0 && (type) <= LAST_BUFFER_TYPE && \
-                 (type)%(LAST_TYPE+1) == DBR_FLOAT)
+                (dbr_type_is_valid(type) && (type)%(LAST_TYPE+1) == DBR_FLOAT)
 #define dbr_type_is_ENUM(type)   \
-                ((type) >= 0 && (type) <= LAST_BUFFER_TYPE && \
-                 (type)%(LAST_TYPE+1) == DBR_ENUM)
+                (dbr_type_is_valid(type) && (type)%(LAST_TYPE+1) == DBR_ENUM)
 #define dbr_type_is_CHAR(type)   \
-                ((type) >= 0 && (type) <= LAST_BUFFER_TYPE && \
-                 (type)%(LAST_TYPE+1) == DBR_CHAR)
+                (dbr_type_is_valid(type) && (type)%(LAST_TYPE+1) == DBR_CHAR)
 #define dbr_type_is_LONG(type)   \
-                ((type) >= 0 && (type) <= LAST_BUFFER_TYPE && \
-                 (type)%(LAST_TYPE+1) == DBR_LONG)
+                (dbr_type_is_valid(type) && (type)%(LAST_TYPE+1) == DBR_LONG)
 #define dbr_type_is_DOUBLE(type)   \
-                ((type) >= 0 && (type) <= LAST_BUFFER_TYPE && \
-                 (type)%(LAST_TYPE+1) == DBR_DOUBLE)
+                (dbr_type_is_valid(type) && (type)%(LAST_TYPE+1) == DBR_DOUBLE)
 
 #define dbf_type_to_text(type)   \
     (  ((type+1) >= 0 && (type) < dbf_text_dim-2) ? \

@@ -2118,9 +2118,9 @@ char *dbGetStringNum(DBENTRY *pdbentry)
         break;
     case DBF_UINT64:
         if (cvttype==CT_DECIMAL)
-            cvtUInt64ToString(*(epicsUInt32 *) pfield, message);
+            cvtUInt64ToString(*(epicsUInt64 *) pfield, message);
         else
-            cvtUInt64ToHexString(*(epicsUInt32 *) pfield, message);
+            cvtUInt64ToHexString(*(epicsUInt64 *) pfield, message);
         break;
     case DBF_FLOAT:
         floatToString(*(epicsFloat32 *) pfield, message);

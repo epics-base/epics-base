@@ -244,7 +244,7 @@ LIBCOM_API void epicsStdCall epicsRingBytesResetHighWaterMark(epicsRingBytesId i
     ringPvt *pring = (ringPvt *)id;
     int used;
     if (pring->lock) epicsSpinLock(pring->lock);
-    used = pring->nextGet - pring->nextPut;
+    used = pring->nextPut - pring->nextGet;
     if (used < 0) used += pring->size;
     pring->highWaterMark = used;
     if (pring->lock) epicsSpinUnlock(pring->lock);

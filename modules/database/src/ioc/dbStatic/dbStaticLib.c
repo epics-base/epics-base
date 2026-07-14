@@ -3594,8 +3594,12 @@ void  dbReportDeviceConfig(dbBase *pdbbase, FILE *report)
 
             for (ilink=0; ilink<nlinks; ilink++) {
                 char linkValue[messagesize];
-                char dtypValue[50];
-                char cvtValue[40];
+                /* dbGetString() returns up to messagesize-1 characters, and
+                   cvtValue holds "cvt(" + two such strings + ",)" ; the old
+                   50/40-byte buffers could be overrun by a long DTYP choice
+                   or high-precision EGUL/EGUF values */
+                char dtypValue[messagesize];
+                char cvtValue[2*messagesize + 8];
                 struct link *plink;
                 int linkType;
 

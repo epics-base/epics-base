@@ -437,8 +437,17 @@ void epicsStdCall epicsTimeAddSeconds (epicsTimeStamp *pDest, double seconds)
     nsec *= nSecPerSec;
     nsec += epicsInt64(pDest->nsec);
     nsec += epicsInt64(seconds*1e9 + (seconds>=0.0 ? 0.5 : -0.5));
-    pDest->secPastEpoch = nsec/nSecPerSec;
-    pDest->nsec         = (nsec>=0 ? nsec : -nsec)%nSecPerSec;
+    /* normalise with a floored division so the fractional part stays in
+       [0, nSecPerSec); truncating toward zero and taking |nsec|%nSecPerSec
+       gives an inconsistent (seconds, nsec) pair when the total is negative */
+    epicsInt64 sec  = nsec / nSecPerSec;
+    epicsInt64 frac = nsec % nSecPerSec;
+    if (frac < 0) {
+        frac += nSecPerSec;
+        sec  -= 1;
+    }
+    pDest->secPastEpoch = epicsUInt32(sec);
+    pDest->nsec         = epicsUInt32(frac);
 }
 
 int epicsStdCall epicsTimeEqual (const epicsTimeStamp *pLeft, const epicsTimeStamp *pRight)

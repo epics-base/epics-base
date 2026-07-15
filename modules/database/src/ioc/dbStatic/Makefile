@@ -30,4 +30,6 @@ dbCore_SRCS += dbStaticRun.c
 dbCore_SRCS += dbStaticIocRegister.c
 dbCore_SRCS += dbCompleteRecord.cpp
 
+dbStaticLib_CFLAGS_Linux = -Wa,-I,..
+
 CLEANS += dbLex.c dbYacc.c

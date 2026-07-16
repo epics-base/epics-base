@@ -76,7 +76,7 @@ void dbPutNotifyBlocker::cancel (
 }
 
 void dbPutNotifyBlocker::expandValueBuf (
-    epicsGuard < epicsMutex > & guard, unsigned long newSize )
+    epicsGuard < epicsMutex > & guard, size_t newSize )
 {
     guard.assertIdenticalMutex ( this->mutex );
     if ( this->maxValueSize < newSize ) {
@@ -176,7 +176,7 @@ void dbPutNotifyBlocker::initiatePutNotify (
     this->pn.doneCallback = putNotifyCompletion;
     this->pn.usrPvt = this;
 
-    unsigned long size = dbr_size_n ( type, count );
+    size_t size = dbr_size_n ( type, count );
     this->expandValueBuf ( guard, size );
     memcpy ( this->pbuffer, pValue, size );
 

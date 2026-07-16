@@ -156,8 +156,8 @@ static long get_precision(const DBADDR *paddr, long *precision)
     pvalue = &prec->a;
     plvalue = &prec->la;
     for(i=0; i<SEL_MAX; i++, pvalue++, plvalue++) {
-        if(paddr->pfield==&pvalue
-        || paddr->pfield==&plvalue){
+        if(paddr->pfield==pvalue
+        || paddr->pfield==plvalue){
             return(0);
         }
     }

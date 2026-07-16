@@ -147,7 +147,7 @@ void dbContext::callStateNotify ( struct dbChannel * dbch,
         cacStateNotify & notifyIn )
 {
     long realcount = (count==0)?dbChannelElements(dbch):count;
-    unsigned long size = dbr_size_n ( type, realcount );
+    size_t size = dbr_size_n ( type, realcount );
 
     if ( type > INT_MAX ) {
         epicsGuard < epicsMutex > guard ( this->mutex );
@@ -378,8 +378,9 @@ void dbContext::show (
     printf ( "dbContext at %p\n",
         static_cast <const void *> ( this ) );
     if ( level > 0u ) {
-        printf ( "\tevent call back cache location %p, and its size %lu\n",
-            static_cast <void *> ( this->pStateNotifyCache ), this->stateNotifyCacheSize );
+        printf ( "\tevent call back cache location %p, and its size %llu\n",
+            static_cast <void *> ( this->pStateNotifyCache ),
+            static_cast <unsigned long long>(this->stateNotifyCacheSize) );
         this->readNotifyCache.show ( guard, level - 1 );
     }
     if ( level > 1u ) {

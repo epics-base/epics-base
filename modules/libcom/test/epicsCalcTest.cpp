@@ -312,7 +312,7 @@ MAIN(epicsCalcTest)
                  m=13.0, n=14.0, o=15.0, p=16.0, q=17.0, r=18.0,
                  s=19.0, t=20.0, u=21.0;
 
-    testPlan(687);
+    testPlan(693);
 
     /* LITERAL_OPERAND elements */
     testExpr(0);
@@ -604,6 +604,17 @@ MAIN(epicsCalcTest)
     testExpr(-7 % 4);
     testExpr(63 % 16 % 6)
     testCalc("1 % 0", NaN);
+
+    /* A divisor of -1 divides every dividend exactly, so the remainder is
+     * zero.  These can't be written as C expressions: the most negative
+     * dividend makes C's % undefined, which is what we're avoiding here.
+     */
+    testCalc("7 % -1", 0);
+    testCalc("-7 % -1", 0);
+    testCalc("-2147483647 % -1", 0);
+    testCalc("-2147483648 % -1", 0);
+    testCalc("3e9 % -1", 0);
+    testCalc("NaN % -1", 0);
 
     testExpr(7 & 4);
 

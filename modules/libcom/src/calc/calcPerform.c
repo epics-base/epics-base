@@ -161,10 +161,17 @@ LIBCOM_API long
 
         case MODULO:
             itop = (epicsInt32) *ptop--;
-            if (itop)
-                *ptop = (epicsInt32) *ptop % itop;
-            else
+            if (itop == 0)
                 *ptop = epicsNAN;
+            else if (itop == -1)
+                /* Every integer is an exact multiple of -1, so the remainder
+                 * is always zero.  C's % operator is undefined for this
+                 * divisor when the dividend is the most negative integer,
+                 * since the quotient it is defined in terms of overflows.
+                 */
+                *ptop = 0;
+            else
+                *ptop = (epicsInt32) *ptop % itop;
             break;
 
         case POWER:

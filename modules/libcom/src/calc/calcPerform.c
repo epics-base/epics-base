@@ -34,6 +34,20 @@ static int cond_search(const char **ppinst, int match);
 #define PI 3.14159265358979323
 #endif
 
+/* Be VERY careful converting double to int in case bit 31 is set!
+ * Out-of-range errors give very different results on different systems.
+ * Convert negative doubles to signed and positive doubles to unsigned
+ * first to avoid overflows if bit 32 is set.
+ * The result is always signed, values with bit 31 set are negative
+ * to avoid problems when writing the value to signed integer fields
+ * like longout.VAL or ao.RVAL. However unsigned fields may give
+ * problems on some architectures. (Fewer than giving problems with
+ * signed integer. Maybe the conversion functions should handle
+ * overflows better.)
+ */
+#define d2i(x) ((x)<0?(epicsInt32)(x):(epicsInt32)(epicsUInt32)(x))
+#define d2ui(x) ((x)<0?(epicsUInt32)(epicsInt32)(x):(epicsUInt32)(x))
+
 /* Turn off global optimization for 64-bit MSVC builds */
 #if defined(_WIN32) && defined(_M_X64) && !defined(_MINGW)
 #  pragma optimize("g", off)
@@ -160,7 +174,8 @@ LIBCOM_API long
             break;
 
         case MODULO:
-            itop = (epicsInt32) *ptop--;
+            top = *ptop--;
+            itop = d2i(top);
             if (itop == 0)
                 *ptop = epicsNAN;
             else if (itop == -1)
@@ -171,7 +186,7 @@ LIBCOM_API long
                  */
                 *ptop = 0;
             else
-                *ptop = (epicsInt32) *ptop % itop;
+                *ptop = d2i(*ptop) % itop;
             break;
 
         case POWER:
@@ -297,7 +312,8 @@ LIBCOM_API long
 
         case NINT:
             top = *ptop;
-            *ptop = (epicsInt32) (top >= 0 ? top + 0.5 : top - 0.5);
+            top = top >= 0 ? top + 0.5 : top - 0.5;
+            *ptop = d2i(top);
             break;
 
         case RANDOM:
@@ -317,20 +333,6 @@ LIBCOM_API long
         case REL_NOT:
             *ptop = ! *ptop;
             break;
-
-        /* Be VERY careful converting double to int in case bit 31 is set!
-         * Out-of-range errors give very different results on different systems.
-         * Convert negative doubles to signed and positive doubles to unsigned
-         * first to avoid overflows if bit 32 is set.
-         * The result is always signed, values with bit 31 set are negative
-         * to avoid problems when writing the value to signed integer fields
-         * like longout.VAL or ao.RVAL. However unsigned fields may give
-         * problems on some architectures. (Fewer than giving problems with
-         * signed integer. Maybe the conversion functions should handle
-         * overflows better.)
-         */
-        #define d2i(x) ((x)<0?(epicsInt32)(x):(epicsInt32)(epicsUInt32)(x))
-        #define d2ui(x) ((x)<0?(epicsUInt32)(epicsInt32)(x):(epicsUInt32)(x))
 
         case BIT_OR:
             top = *ptop--;

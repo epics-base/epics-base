@@ -312,7 +312,7 @@ MAIN(epicsCalcTest)
                  m=13.0, n=14.0, o=15.0, p=16.0, q=17.0, r=18.0,
                  s=19.0, t=20.0, u=21.0;
 
-    testPlan(693);
+    testPlan(698);
 
     /* LITERAL_OPERAND elements */
     testExpr(0);
@@ -565,6 +565,15 @@ MAIN(epicsCalcTest)
     testExpr(NINT(0.6));
     testExpr(NINT(-0.4));
     testExpr(NINT(-0.6));
+
+    /* NINT narrows through d2i(), so a result with bit 31 set comes back
+     * negative, the same answer the bitwise operators give for it.  The
+     * NINT() macro above converts through a 64-bit long, so these cases
+     * have to spell the expected value out.
+     */
+    testCalc("NINT(3e9)", -1294967296.0);
+    testCalc("NINT(2.5e9)", -1794967296.0);
+    testCalc("3e9 & 0xffffffff", -1294967296.0);
     testExpr(sin(0.5));
     testExpr(sinh(0.5));
     testExpr(SQR(10.));
@@ -615,6 +624,12 @@ MAIN(epicsCalcTest)
     testCalc("-2147483648 % -1", 0);
     testCalc("3e9 % -1", 0);
     testCalc("NaN % -1", 0);
+
+    /* Both operands narrow through d2i(), so an out-of-range dividend
+     * wraps into the signed range instead of pinning to one end of it.
+     */
+    testCalc("3e9 % 7", 0);
+    testCalc("3e9 % 10", -6);
 
     testExpr(7 & 4);
 

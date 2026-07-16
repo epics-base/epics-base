@@ -37,20 +37,20 @@ extern "C" {
  *
  * (so far this is sufficient for all archs we have ported to)
  */
-typedef epicsOldString dbr_string_t;
-typedef epicsUInt8 dbr_char_t;
-typedef epicsInt16 dbr_short_t;
+typedef epicsOldString  dbr_string_t;
+typedef epicsUInt8      dbr_char_t;
+typedef epicsInt16      dbr_short_t;
 typedef epicsUInt16     dbr_ushort_t;
-typedef epicsInt16 dbr_int_t;
-typedef epicsUInt16 dbr_enum_t;
-typedef epicsInt32 dbr_long_t;
-typedef epicsUInt32 dbr_ulong_t;
-typedef epicsFloat32 dbr_float_t;
-typedef epicsFloat64 dbr_double_t;
+typedef epicsInt16      dbr_int_t;
+typedef epicsUInt16     dbr_enum_t;
+typedef epicsInt32      dbr_long_t;
+typedef epicsUInt32     dbr_ulong_t;
+typedef epicsFloat32    dbr_float_t;
+typedef epicsFloat64    dbr_double_t;
 typedef epicsUInt16     dbr_put_ackt_t;
 typedef epicsUInt16     dbr_put_acks_t;
-typedef epicsOldString dbr_stsack_string_t;
-typedef epicsOldString dbr_class_name_t;
+typedef epicsOldString  dbr_stsack_string_t;
+typedef epicsOldString  dbr_class_name_t;
 
 #ifndef db_accessHFORdb_accessC
 /* database field types */
@@ -64,8 +64,8 @@ typedef epicsOldString dbr_class_name_t;
 #define DBF_DOUBLE      6
 #define DBF_NO_ACCESS   7
 #define LAST_TYPE       DBF_DOUBLE
-#define VALID_DB_FIELD(x)       ((unsigned)(x) <= LAST_TYPE)
-#define INVALID_DB_FIELD(x)     !VALID_DB_FIELD(x)
+#define VALID_DB_FIELD(x)   ((unsigned)(x) <= LAST_TYPE)
+#define INVALID_DB_FIELD(x) !VALID_DB_FIELD(x)
 
 /* data request buffer types */
 #define DBR_STRING      DBF_STRING
@@ -108,11 +108,11 @@ typedef epicsOldString dbr_class_name_t;
 #define DBR_CTRL_CHAR   32
 #define DBR_CTRL_LONG   33
 #define DBR_CTRL_DOUBLE 34
-#define DBR_PUT_ACKT    DBR_CTRL_DOUBLE + 1
-#define DBR_PUT_ACKS    DBR_PUT_ACKT + 1
-#define DBR_STSACK_STRING DBR_PUT_ACKS + 1
-#define DBR_CLASS_NAME DBR_STSACK_STRING + 1
-#define LAST_BUFFER_TYPE        DBR_CLASS_NAME
+#define DBR_PUT_ACKT        DBR_CTRL_DOUBLE + 1
+#define DBR_PUT_ACKS        DBR_PUT_ACKT + 1
+#define DBR_STSACK_STRING   DBR_PUT_ACKS + 1
+#define DBR_CLASS_NAME      DBR_STSACK_STRING + 1
+#define LAST_BUFFER_TYPE    DBR_CLASS_NAME
 #define VALID_DB_REQ(x)     ((unsigned)(x) <= LAST_BUFFER_TYPE)
 #define INVALID_DB_REQ(x)   !VALID_DB_REQ(x)
 

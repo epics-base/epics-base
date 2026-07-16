@@ -14,6 +14,27 @@
 void recTestIoc_registerRecordDeviceDriver(struct dbBase *);
 
 /*
+ * The DLYn fields advertise a display range of 0 to 10 seconds
+ * */
+static
+void testSeqDlyLimits(void){
+    DBADDR addr;
+    struct {
+        DBRgrDouble
+        epicsFloat64 value;
+    } buf;
+    long options = DBR_GR_DOUBLE;
+    long nRequest = 1;
+
+    testOk1(!dbNameToAddr("seq0.DLY0", &addr));
+    testOk1(!dbGetField(&addr, DBR_DOUBLE, &buf, &options, &nRequest, NULL));
+    testOk(buf.lower_disp_limit == 0.0,
+        "DLY0 lower_disp_limit (%g) == 0", buf.lower_disp_limit);
+    testOk(buf.upper_disp_limit == 10.0,
+        "DLY0 upper_disp_limit (%g) == 10", buf.upper_disp_limit);
+}
+
+/*
  * This test verifies the behavior of seq using Specified for SELM
  * The behavior should be the same for all the DOLx
  * */
@@ -34,7 +55,7 @@ void testSeqSpecified(void){
 
 
 MAIN(eventTest) {
-    testPlan(4*16);
+    testPlan(4*16 + 4);
 
     testdbPrepare();
 
@@ -47,6 +68,7 @@ MAIN(eventTest) {
     testIocInitOk();
     eltc(1);
 
+    testSeqDlyLimits();
     testSeqSpecified();
 
     testIocShutdownOk();

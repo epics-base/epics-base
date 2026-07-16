@@ -327,7 +327,7 @@ static long get_graphic_double(DBADDR *paddr, struct dbr_grDouble *pgd)
         switch (fieldOffset & 3) {
         case 0: /* DLYn */
             pgd->lower_disp_limit = 0.0;
-            pgd->lower_disp_limit = 10.0;
+            pgd->upper_disp_limit = 10.0;
             return 0;
         case 2: /* DOn */
             dbGetGraphicLimits(get_dol(prec, fieldOffset),

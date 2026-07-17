@@ -864,6 +864,22 @@ bool cac::writeNotifyRespAction (
     return true;
 }
 
+// Reject a data response whose header is inconsistent with its payload.
+// Returns an exception to the server and returns true on error.
+bool cac::badResponsePayload (
+    epicsGuard < epicsMutex > & guard, baseNMIU & miu,
+    const caHdrLargeArray & hdr )
+{
+    if ( INVALID_DB_REQ ( hdr.m_dataType ) ||
+         hdr.m_postsize < dbr_size_chk ( hdr.m_dataType, hdr.m_count ) ) {
+        miu.exception ( guard, *this, ECA_BADTYPE,
+            "server response inconsistent with payload size",
+            hdr.m_dataType, hdr.m_count );
+        return true;
+    }
+    return false;
+}
+
 bool cac::readNotifyRespAction ( callbackManager &, tcpiiu & iiu,
     const epicsTime &, const caHdrLargeArray & hdr, void * pMsgBdy )
 {
@@ -896,11 +912,7 @@ bool cac::readNotifyRespAction ( callbackManager &, tcpiiu & iiu,
             // this does *not* assign a new resource id
             this->ioTable.add ( *pmiu );
         }
-        if ( INVALID_DB_REQ ( hdr.m_dataType ) ||
-             hdr.m_postsize < dbr_size_n ( hdr.m_dataType, hdr.m_count ) ) {
-            pmiu->exception ( guard, *this, ECA_BADTYPE,
-                "server response inconsistent with payload size",
-                hdr.m_dataType, hdr.m_count );
+        if ( this->badResponsePayload ( guard, *pmiu, hdr ) ) {
             return true;
         }
         if ( caStatus == ECA_NORMAL ) {
@@ -967,11 +979,7 @@ bool cac::eventRespAction ( callbackManager &, tcpiiu &iiu,
     //
     baseNMIU * pmiu = this->ioTable.lookup ( hdr.m_available );
     if ( pmiu ) {
-        if ( INVALID_DB_REQ ( hdr.m_dataType ) ||
-             hdr.m_postsize < dbr_size_n ( hdr.m_dataType, hdr.m_count ) ) {
-            pmiu->exception ( guard, *this, ECA_BADTYPE,
-                "server response inconsistent with payload size",
-                hdr.m_dataType, hdr.m_count );
+        if ( this->badResponsePayload ( guard, *pmiu, hdr ) ) {
             return true;
         }
         /*
@@ -1006,11 +1014,7 @@ bool cac::readRespAction ( callbackManager &, tcpiiu &,
     // it is in use here.
     //
     if ( pmiu ) {
-        if ( INVALID_DB_REQ ( hdr.m_dataType ) ||
-             hdr.m_postsize < dbr_size_n ( hdr.m_dataType, hdr.m_count ) ) {
-            pmiu->exception ( guard, *this, ECA_BADTYPE,
-                "server response inconsistent with payload size",
-                hdr.m_dataType, hdr.m_count );
+        if ( this->badResponsePayload ( guard, *pmiu, hdr ) ) {
             return true;
         }
         pmiu->completion ( guard, *this,

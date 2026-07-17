@@ -22,6 +22,7 @@
 #include "dbDefs.h"
 #include "dbmf.h"
 #include "ellLib.h"
+#include "epicsMath.h"
 #include "epicsPrint.h"
 #include "epicsStdio.h"
 #include "epicsStdlib.h"
@@ -3591,11 +3592,12 @@ void  dbReportDeviceConfig(dbBase *pdbbase, FILE *report)
         status = dbFirstRecord(pdbentry);
         while (!status) {
             int ilink;
+            int titlesPrinted = 0;
 
             for (ilink=0; ilink<nlinks; ilink++) {
                 char linkValue[messagesize];
-                char dtypValue[50];
-                char cvtValue[40];
+                char dtypValue[31];
+                char cvtValue[40] = "";
                 struct link *plink;
                 int linkType;
 
@@ -3629,28 +3631,34 @@ void  dbReportDeviceConfig(dbBase *pdbbase, FILE *report)
                 if (status)
                     break;  /* Next record type */
 
-                strcpy(dtypValue, dbGetString(pdbentry));
-                status = dbFindField(pdbentry, "LINR");
-                if (status) {
-                    cvtValue[0] = 0;
+                {
+                    const char *dtyp = dbGetString(pdbentry);
+                    const size_t maxlen = sizeof(dtypValue) - 1;
+                    size_t srclen = strlen(dtyp);
+
+                    if (srclen > maxlen)                /* elide the middle */
+                        epicsSnprintf(dtypValue, sizeof(dtypValue), "%.*s...%s",
+                            (int) (maxlen - 3) / 2, dtyp,
+                            dtyp + srclen - (maxlen - 2) / 2);
+                    else
+                        strcpy(dtypValue, dtyp);
                 }
-                else {
-                    if (strcmp(dbGetString(pdbentry), "LINEAR") != 0) {
-                        cvtValue[0] = 0;
-                    }
-                    else {
-                        strcpy(cvtValue,"cvt(");
-                        status = dbFindField(pdbentry, "EGUL");
-                        if (!status)
-                            strcat(cvtValue, dbGetString(pdbentry));
-                        status = dbFindField(pdbentry, "EGUF");
-                        if (!status) {
-                            strcat(cvtValue, ",");
-                            strcat(cvtValue, dbGetString(pdbentry));
-                        }
-                        strcat(cvtValue, ")");
-                    }
+                if (!dbFindField(pdbentry, "LINR") &&
+                    strcmp(dbGetString(pdbentry), "LINEAR") == 0) {
+                    epicsFloat64 egul = epicsNAN, eguf = epicsNAN;
+
+                    if (!dbFindField(pdbentry, "EGUL") &&
+                        pdbentry->pflddes->field_type == DBF_DOUBLE)
+                        egul = *(epicsFloat64 *) pdbentry->pfield;
+                    if (!dbFindField(pdbentry, "EGUF") &&
+                        pdbentry->pflddes->field_type == DBF_DOUBLE)
+                        eguf = *(epicsFloat64 *) pdbentry->pfield;
+                    epicsSnprintf(cvtValue, sizeof(cvtValue),
+                        "cvt(%.8g, %.8g)", egul, eguf);
                 }
+                if (!titlesPrinted++)
+                    fprintf(stream, ANSI_BOLD("%-8s %-20s %-20s %-20s") "\n",
+                        "Type", "INP/OUT", "DTYP", "Record");
                 fprintf(stream,"%-8s %-20s %-20s %-20s %-s\n",
                         bus[linkType], linkValue, dtypValue,
                         dbGetRecordName(pdbentry), cvtValue);

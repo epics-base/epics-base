@@ -210,11 +210,11 @@ jobs:
             configuration: default
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       with:
         submodules: true
     - name: Automatic core dumper analysis
-      uses: mdavidsaver/ci-core-dumper@master
+      uses: mdavidsaver/ci-core-dumper@cda67d63a56db36aca1126d8d00aa5f7ff1ee1db # master
     - name: "apt-get install"
       run: |
         sudo apt-get update
@@ -228,7 +228,7 @@ jobs:
       run: python .ci/cue.py -T 60M test
     - name: Upload tapfiles Artifact
       if: ${{ always() }}
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
       with:
         name: tapfiles ${{ matrix.name }}
         path: '**/O.*/*.tap'
@@ -286,11 +286,11 @@ jobs:
         dnf -y install python3 gdb make perl gcc-c++ glibc-devel readline-devel ncurses-devel perl-devel perl-Test-Simple
         git --version || dnf -y install git
         python3 --version
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       with:
         submodules: true
     - name: Automatic core dumper analysis
-      uses: mdavidsaver/ci-core-dumper@master
+      uses: mdavidsaver/ci-core-dumper@cda67d63a56db36aca1126d8d00aa5f7ff1ee1db # master
     - name: Prepare and compile dependencies
       run: python3 .ci/cue.py prepare
     - name: Build main module
@@ -299,7 +299,7 @@ jobs:
       run: python3 .ci/cue.py -T 20M test
     - name: Upload tapfiles Artifact
       if: ${{ always() }}
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
       with:
         name: tapfiles ${{ matrix.name }}
         path: '**/O.*/*.tap'
@@ -316,7 +316,7 @@ jobs:
       BCFG: default
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       with:
         submodules: true
 

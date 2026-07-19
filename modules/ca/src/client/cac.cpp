@@ -33,6 +33,7 @@
 #include "epicsSignal.h"
 #include "envDefs.h"
 #include "locationException.h"
+#include "epicsMath.h"
 #include "errlog.h"
 #include "epicsExport.h"
 
@@ -186,10 +187,10 @@ cac::cac (
                                         static_cast <unsigned short> (CA_SERVER_PORT) );
 
         status = envGetDoubleConfigParam ( &EPICS_CA_CONN_TMO, &this->connTMO );
-        if ( status ) {
+        if ( status || ! finite ( this->connTMO ) || this->connTMO <= 0.0 ) {
             this->connTMO = CA_CONN_VERIFY_PERIOD;
             epicsGuard < epicsMutex > cbGuard ( this->cbMutex );
-            errlogPrintf ( "EPICS \"%s\" double fetch failed\n", EPICS_CA_CONN_TMO.name );
+            errlogPrintf ( "EPICS \"%s\" was not a positive real number\n", EPICS_CA_CONN_TMO.name );
             errlogPrintf ( "Defaulting \"%s\" = %f\n", EPICS_CA_CONN_TMO.name, this->connTMO );
         }
 

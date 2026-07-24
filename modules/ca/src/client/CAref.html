@@ -3927,6 +3927,39 @@ pointer to the value field.</p>
       elements</dd>
 </dl>
 
+<h3><code><a name="dbr_size_chk">dbr_size_chk()</a></code></h3>
+<pre>#include &lt;db_access.h&gt;
+epicsUInt64 dbr_size_chk ( unsigned TYPE, epicsInt64 COUNT );</pre>
+
+<h4>Description</h4>
+
+<p>A range-checked, overflow-safe equivalent of the <code>dbr_size_n()</code>
+macro. Returns the size in bytes for a DBR_XXXX type with COUNT elements. If the
+DBR type is a structure then the value field is the last field in the
+structure. If COUNT is greater than one then COUNT-1 elements are appended to
+the end of the structure so that they can be addressed as an array through a
+pointer to the value field. A negative COUNT is treated as a single element.</p>
+
+<p>The size is computed and returned using 64-bit arithmetic so that a large
+element count cannot overflow the calculation. An invalid TYPE returns 0.</p>
+
+<h4>Arguments</h4>
+<dl>
+  <dt><code>TYPE</code></dt>
+    <dd>The data type</dd>
+</dl>
+<dl>
+  <dt><code>COUNT</code></dt>
+    <dd>The element count</dd>
+</dl>
+
+<h4>Returns</h4>
+<dl>
+  <dt><code>SIZE</code></dt>
+    <dd>the size in bytes of the specified type with the specified number of
+      elements</dd>
+</dl>
+
 <h3><code><a name="dbr_value_size">dbr_value_size[]</a></code></h3>
 <pre>#include &lt;db_access.h&gt;
 extern unsigned dbr_value_size[/* TYPE */];</pre>

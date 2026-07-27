@@ -1064,11 +1064,12 @@ POSIX_Init ( void *argument __attribute__((unused)))
     epicsEventWaitStatus stat;
     printf("\n ---- Waiting for DHCP ...\n");
     stat = epicsEventWaitWithTimeout(dhcpDone, 600);
-    if (stat == epicsEventOK)
-        epicsEventDestroy(dhcpDone);
-    else if (stat == epicsEventWaitTimeout)
+    /* dhcpcd_hook_handler() stays registered and signals dhcpDone on every
+     * later BOUND, so the event has to outlive this wait.
+     */
+    if (stat == epicsEventWaitTimeout)
         printf("\n ---- DHCP timed out!\n");
-    else
+    else if (stat != epicsEventOK)
         printf("\n ---- dhcpDone Event Unknown state %d\n", stat);
 
     const char* ifconfg_args[] = {

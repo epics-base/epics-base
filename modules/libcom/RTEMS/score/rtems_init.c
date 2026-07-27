@@ -681,11 +681,16 @@ Init (rtems_task_argument ignored)
      */
     printf ("***** Preparing EPICS application *****\n");
     iocshRegisterRTEMS ();
-    set_directory (argv[1]);
-    epicsEnvSet ("IOC_STARTUP_SCRIPT", argv[1]);
+    /* No startup script when the application declares that it needs no
+     * filesystem (epicsRtemsFSImage == NULL).
+     */
+    if (argv[1] != NULL) {
+        set_directory (argv[1]);
+        epicsEnvSet ("IOC_STARTUP_SCRIPT", argv[1]);
+    }
     atexit(exitHandler);
     printf ("***** Starting EPICS application *****\n");
-    result = main ((sizeof argv / sizeof argv[0]) - 1, argv);
+    result = main (argv[1] != NULL ? 2 : 1, argv);
     printf ("***** IOC application terminating *****\n");
     epicsThreadSleep(1.0);
     epicsExit(result);

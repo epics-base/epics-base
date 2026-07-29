@@ -1528,12 +1528,12 @@ static long putUInt64String(dbAddr *paddr,
 
 
     if (nRequest==1 && offset==0) {
-        cvtUlongToString(*psrc, pdst);
+        cvtUInt64ToString(*psrc, pdst);
         return 0;
     }
     pdst += (size*offset);
     while (nRequest--) {
-        cvtUlongToString(*psrc, pdst);
+        cvtUInt64ToString(*psrc, pdst);
         psrc++;
         if (++offset == no_elements)
             pdst = (char *) paddr->pfield;

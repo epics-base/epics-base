@@ -33,11 +33,7 @@ LIBCOM_API int epicsStdCall osiSufficentSpaceInPool ( size_t contiguousBlockSize
  */
 LIBCOM_API int epicsStdCall osiSufficentSpaceInPool ( size_t contiguousBlockSize )
 {
-    unsigned long n;
-    Heap_Information_block info;
-
-    malloc_info( &info );
-    n = info.Stats.size - (unsigned long)(info.Stats.lifetime_allocated - info.Stats.lifetime_freed);
+    size_t n = malloc_free_space();
     return (n > (50000 + contiguousBlockSize));
 }
 #endif

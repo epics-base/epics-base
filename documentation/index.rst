@@ -14,6 +14,7 @@ EPICS Base Documentation
    README
    RELEASE_NOTES
    ACF-Language
+   gdb
 
 .. toctree::
    :maxdepth: 2

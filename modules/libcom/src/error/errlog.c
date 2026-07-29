@@ -638,7 +638,7 @@ void errlogBufResize(struct initArgs config)
     memcpy(logbuf, pvt.log->base, pvt.bufSize);
     pvt.log->base = logbuf;
 
-    memcpy(printbuf, &pvt.print->base, pvt.bufSize);
+    memcpy(printbuf, pvt.print->base, pvt.bufSize);
     pvt.print->base = printbuf;
 
     pvt.bufSize = config.bufsize;

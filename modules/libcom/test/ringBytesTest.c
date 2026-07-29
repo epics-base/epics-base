@@ -60,7 +60,7 @@ MAIN(ringBytesTest)
     char get[RINGSIZE+1];
     epicsRingBytesId ring;
 
-    testPlan(292);
+    testPlan(314);
 
     pinfo = calloc(1,sizeof(info));
     if (!pinfo) {
@@ -99,6 +99,8 @@ MAIN(ringBytesTest)
     n = epicsRingBytesPut(ring, put+RINGSIZE, 1);
     testOk(n==0, "put to full ring");
     check(ring, 0, RINGSIZE);
+    epicsRingBytesResetHighWaterMark(ring);
+    check(ring, 0, RINGSIZE);
     for(i = 0 ; i < RINGSIZE ; i++) {
         n = epicsRingBytesGet(ring, get+i, 1);
         testOk(n==1, "ring get 1, %d", i);
@@ -123,6 +125,20 @@ MAIN(ringBytesTest)
     n = epicsRingBytesGet(ring, get, 1);
     testOk(n==1, "ring get %d", 1);
     check(ring, RINGSIZE, 1);
+
+    /* Reset must lower a grown mark to the current non-zero usage.
+     * Fill the ring (mark -> RINGSIZE), drain half so usage < mark,
+     * then reset and confirm the mark drops to the half that remains.
+     */
+    epicsRingBytesResetHighWaterMark(ring);
+    n = epicsRingBytesPut(ring, put, RINGSIZE);
+    testOk(n==RINGSIZE, "ring put %d", RINGSIZE);
+    check(ring, 0, RINGSIZE);
+    n = epicsRingBytesGet(ring, get, RINGSIZE/2);
+    testOk(n==RINGSIZE/2, "ring get %d", RINGSIZE/2);
+    check(ring, RINGSIZE/2, RINGSIZE);
+    epicsRingBytesResetHighWaterMark(ring);
+    check(ring, RINGSIZE/2, RINGSIZE/2);
 
     epicsRingBytesDelete(ring);
     epicsEventDestroy(consumerEvent);

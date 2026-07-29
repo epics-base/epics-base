@@ -1559,13 +1559,14 @@ static void onCallFunc(const iocshArgBuf *args)
                 USAGE();
             } else if (epicsParseDouble(args->aval.av[3],
                           &context->scope->timeout, NULL)) {
-                context->scope->timeout = 5.0;
-            } else {
+                /* epicsParseDouble returns non-zero on failure */
                 USAGE();
                 fprintf(epicsGetStderr(),
                     ANSI_RED("Invalid 'on error wait' delay '%s'.") "\n",
                     args->aval.av[3]);
+                context->scope->timeout = 5.0;
             }
+            /* else parse succeeded and timeout has been set */
 
         } else {
             USAGE();

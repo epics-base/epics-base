@@ -645,6 +645,7 @@ extern "C" void caRepeaterThread ( void * /* pDummy */ )
 {
     taskwdInsert ( epicsThreadGetIdSelf(), NULL, NULL );
     ca_repeater ();
+    taskwdRemove ( 0 );
 }
 
 

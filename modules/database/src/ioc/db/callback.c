@@ -83,14 +83,14 @@ static int cbState; // holdscbState_t, use atomic ops
 static epicsEventId startStopEvent;
 
 /* Static data */
-static char *threadNamePrefix[NUM_CALLBACK_PRIORITIES] = {
+static const char *threadNamePrefix[NUM_CALLBACK_PRIORITIES] = {
     "cbLow", "cbMedium", "cbHigh"
 };
 #define FULL_MSG(name) "callbackRequest: " ERL_ERROR " " name " ring buffer full\n"
-static char *fullMessage[NUM_CALLBACK_PRIORITIES] = {
+static const char *fullMessage[NUM_CALLBACK_PRIORITIES] = {
     FULL_MSG("cbLow"), FULL_MSG("cbMedium"), FULL_MSG("cbHigh")
 };
-static unsigned int threadPriority[NUM_CALLBACK_PRIORITIES] = {
+static const unsigned int threadPriority[NUM_CALLBACK_PRIORITIES] = {
     epicsThreadPriorityScanLow - 1,
     epicsThreadPriorityScanLow + 4,
     epicsThreadPriorityScanHigh + 1

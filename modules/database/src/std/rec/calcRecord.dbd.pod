@@ -636,55 +636,46 @@ manner for the VAL field.
 	}
 	field(INPM,DBF_INLINK) {
 		prompt("Input M")
-		special(SPC_MOD)
 		promptgroup("43 - Input M-R")
 		interest(1)
 	}
 	field(INPN,DBF_INLINK) {
 		prompt("Input N")
-		special(SPC_MOD)
 		promptgroup("43 - Input M-R")
 		interest(1)
 	}
 	field(INPO,DBF_INLINK) {
 		prompt("Input O")
-		special(SPC_MOD)
 		promptgroup("43 - Input M-R")
 		interest(1)
 	}
 	field(INPP,DBF_INLINK) {
 		prompt("Input P")
-		special(SPC_MOD)
 		promptgroup("43 - Input M-R")
 		interest(1)
 	}
 	field(INPQ,DBF_INLINK) {
 		prompt("Input Q")
-		special(SPC_MOD)
 		promptgroup("43 - Input M-R")
 		interest(1)
 	}
 	field(INPR,DBF_INLINK) {
 		prompt("Input R")
-		special(SPC_MOD)
 		promptgroup("43 - Input M-R")
 		interest(1)
 	}
 	field(INPS,DBF_INLINK) {
 		prompt("Input S")
-		special(SPC_MOD)
 		promptgroup("44 - Input S-U")
 		interest(1)
 	}
 	field(INPT,DBF_INLINK) {
 		prompt("Input T")
-		special(SPC_MOD)
 		promptgroup("44 - Input S-U")
 		interest(1)
 	}
 	field(INPU,DBF_INLINK) {
 		prompt("Input U")
-		special(SPC_MOD)
 		promptgroup("44 - Input S-U")
 		interest(1)
 	}

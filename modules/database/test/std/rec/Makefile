@@ -93,6 +93,13 @@ testHarness_SRCS += seqTest.c
 TESTFILES += ../seqTest.db
 TESTS += seqTest
 
+TESTPROD_HOST += selTest
+selTest_SRCS += selTest.c
+selTest_SRCS += recTestIoc_registerRecordDeviceDriver.cpp
+testHarness_SRCS += selTest.c
+TESTFILES += ../selTest.db
+TESTS += selTest
+
 TESTPROD_HOST += longoutTest
 longoutTest_SRCS += longoutTest.c
 longoutTest_SRCS += recTestIoc_registerRecordDeviceDriver.cpp

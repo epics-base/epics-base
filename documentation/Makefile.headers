@@ -75,6 +75,7 @@ database_HEADERS += dbEvent
 database_HEADERS += dbExtractArray
 database_HEADERS += dbLink
 database_HEADERS += dbLock
+database_HEADERS += dbScan
 database_HEADERS += dbServer
 database_HEADERS += dbState
 database_HEADERS += dbStaticLib

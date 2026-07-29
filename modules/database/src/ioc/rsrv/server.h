@@ -55,10 +55,19 @@ typedef struct caHdrLargeArray {
 enum messageBufferType { mbtUDP, mbtSmallTCP, mbtLargeTCP };
 struct message_buffer {
   char                      *buf;
-  /*! points to first filled byte in buffer */
+  /* Invariants: stk <= cnt <= maxstk
+   *
+   * buf : |-*****-----|
+   *         ^    ^    ^
+   *         |    |    \- maxstk
+   *         |    \------ cnt
+   *         \----------- stk
+   */
+  /* points to first filled byte in buffer */
   unsigned                  stk;
+  /* allocated capacity of buffer */
   unsigned                  maxstk;
-  /*! points to first unused byte in buffer (after filled bytes) */
+  /* points to first unused byte in buffer (after filled bytes) */
   unsigned                  cnt;
   enum messageBufferType    type;
 };
@@ -141,7 +150,7 @@ struct event_ext {
     ELLNODE                 node;
     caHdrLargeArray         msg;
     struct channel_in_use   *pciu;
-    struct event_block      *pdbev;     /* ptr to db event block */
+    struct evSubscrip       *pdbev;     /* ptr to db event block */
     unsigned                size;       /* for speed */
     unsigned                mask;
     char                    modified;   /* mod & ev flw ctrl enbl */

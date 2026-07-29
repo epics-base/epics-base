@@ -56,8 +56,26 @@ DBCORE_API void scanPause(void);
 DBCORE_API void scanStop(void);
 DBCORE_API void scanCleanup(void);
 
+/** @brief Lookup, or create, named Event record list
+ * @param event Name
+ * @return Record list handle, or NULL on allocation failure.
+ *
+ * @since 3.15.0.1
+ */
 DBCORE_API EVENTPVT eventNameToHandle(const char* event);
+/** @brief Request scan of Event record list
+ * @param epvt Event list handle
+ *
+ * Queue request for callback worker thread(s) to scan records.
+ * Lookup named event list with eventNameToHandle() .
+ *
+ * @since 3.15.0.1
+ */
 DBCORE_API void postEvent(EVENTPVT epvt);
+/** @brief Process numbered Event record list
+ * @param event Event number in the range 1 through `NUM_TIME_EVENTS-1` (255) inclusive.
+ * @deprecated In favor of postEvent()
+ */
 DBCORE_API void post_event(int event);
 DBCORE_API void scanAdd(struct dbCommon *);
 DBCORE_API void scanDelete(struct dbCommon *);
@@ -75,6 +93,8 @@ DBCORE_API int scanOnce(struct dbCommon *prec);
  *           Does not wait for async record completion.
  * @param usr Argumentfor cb
  * @return Zero on success.  Non-zero if the request could not be queued.
+ *
+ * @since 3.16.0.1 Added
  */
 DBCORE_API int scanOnceCallback(struct dbCommon *prec, once_complete cb, void *usr);
 /** @brief Set Once queue size
@@ -135,5 +155,62 @@ DBCORE_API void scanIoSetComplete(IOSCANPVT, io_scan_complete, void *usr);
 #ifdef __cplusplus
 }
 #endif
+
+/** @file dbScan.h
+ *
+ * Mechanics for interacting with Process Database record scanning
+ * utilities.
+ *
+ * @section dbscanoverflow Scan Queue Overflow
+ *
+ * Several of the thread backed scanning mechanisms have work
+ * queues which may overflow.
+ * Well written EPICS drivers should avoid this as described below.
+ *
+ * @section dbscaniointr I/O Intr scanning
+ *
+ * An EPICS driver may use scanIoInit() to allocate a scan list.
+ * This scan list is associated with a record through dset::get_ioint_info ,
+ * and triggered with scanIoRequest() (asynchronous)
+ * or scanIoImmediate() (synchronous).
+ *
+ * scanIoSetComplete() may be used to request notification after
+ * any records on the list have begun processing.
+ * This may be used to defer future scanIoRequest() until
+ * past requests have been satisfied,
+ * which avoids possible overflowing of the underlying queue
+ * of the worker thread.
+ *
+ * @section dbscanname Named Event scanning
+ *
+ * Event names may appear in the `EVNT` field of any record.
+ * When SCAN is also set to `Event`, the that record will process
+ * each time this Event occurs.
+ *
+ * An eventRecord provides one way to trigger scanning.
+ *
+ * eventNameToHandle() may be used by an EPICS driver to lookup/create
+ * a process-wide named scan list.
+ * Then call postEvent() to trigger scanning.
+ *
+ * Legacy applications may use post_event() for the special numbered
+ * Events (1 through 255).
+ * `post_event(1)` is equivalent to `eventNameToHandle("1")`
+ * followed by a postEvent().
+ *
+ * There is no way for a caller of postEvent() to avoid scan
+ * queue overflow.
+ *
+ * @section dbscanonce Once Queue
+ *
+ * The "once" queue is meant for special cases of one-time
+ * processing.  eg. the initial PINI scanning.
+ * EPICS drivers may call scanOnceCallback() explicitly,
+ * but are encouraged where practical to call dbProcess() from
+ * a driver managed worker thread.
+ *
+ * The process-wide "once" queue has a fixed size, which may be
+ * modified by scanOnceSetQueueSize() .
+ */
 
 #endif

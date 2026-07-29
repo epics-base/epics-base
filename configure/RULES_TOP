@@ -77,42 +77,43 @@ rm-failure-file:
 	$(RM) $(TESTS_FAILED_PATH)
 
 help:
-	@echo "Usage: gnumake [options] [target] ..."
-	@echo "Targets supported by all Makefiles:"
-	@echo "     all            - Same as install (default rule)"
-	@echo "     inc            - Installs header, dbd and html files"
-	@echo "     build          - Builds and installs all targets"
-	@echo "     install        - Builds and installs all targets"
-	@echo "     clean          - Removes the O.<arch> dirs created by running make"
-	@echo "                      In O.<arch> dir, clean removes build created files"
-	@echo "     realclean      - Removes ALL O.<arch> dirs"
-	@echo "                      Cannot be used within an O.<arch> dir"
-	@echo "     rebuild        - Same as clean install"
-	@echo "     archclean      - Removes O.<arch> dirs but not O.Common dir"
-	@echo "     depclean       - Removes .d files from all O.<arch> dirs."
-	@echo "     cvsclean       - Removes backup files etc. from all dirs below"
-	@echo "     runtests       - Run self-tests, summarize results immediately"
-	@echo "     tapfiles       - Run self-tests, save to O.<arch>/*.tap files"
-	@echo "     test-results   - Summarize all O.<arch>/*.tap files"
-	@echo "     clean-tests    - Removes all O.<arch>/*.tap files"
-	@echo "\"Partial\" build targets supported by Makefiles:"
-	@echo "     host           - Builds and installs $(EPICS_HOST_ARCH) only."
-	@echo "     inc$(DIVIDER)<arch>     - Installs <arch> only header files."
-	@echo "     build$(DIVIDER)<arch>   - Builds and installs <arch> only."
-	@echo "     install$(DIVIDER)<arch> - Builds and installs <arch> only."
-	@echo "     clean$(DIVIDER)<arch>   - Cleans <arch> binaries in O.<arch> dirs only."
-	@echo "Targets supported by top level Makefile:"
+	$(info $()Usage: gnumake [options] [target] ...)
+	$(info $()Targets supported by all Makefiles:)
+	$(info $()     all              - Same as install (default rule))
+	$(info $()     inc              - Installs header, dbd and html files)
+	$(info $()     build            - Builds and installs all targets)
+	$(info $()     install          - Builds and installs all targets)
+	$(info $()     clean            - Removes the O.<arch> dirs created by running make)
+	$(info $()                        In O.<arch> dir, clean removes build created files)
+	$(info $()     realclean        - Removes ALL O.<arch> dirs)
+	$(info $()                        Cannot be used within an O.<arch> dir)
+	$(info $()     rebuild          - Same as clean install)
+	$(info $()     archclean        - Removes O.<arch> dirs but not O.Common dir)
+	$(info $()     depclean         - Removes .d files from all O.<arch> dirs.)
+	$(info $()     cvsclean         - Removes backup files etc. from all dirs below)
+	$(info $()     runtests         - Run self-tests, summarize results immediately)
+	$(info $()     tapfiles         - Run self-tests, save to O.<arch>/*.tap files)
+	$(info $()     test-results     - Summarize all O.<arch>/*.tap files)
+	$(info $()     clean-tests      - Removes all O.<arch>/*.tap files)
+	$(info $()"Partial" build targets supported by Makefiles:)
+	$(info $()     host             - Builds and installs $(EPICS_HOST_ARCH) only.)
+	$(info $()     inc$(DIVIDER)<arch>       - Installs <arch> only header files.)
+	$(info $()     build$(DIVIDER)<arch>     - Builds and installs <arch> only.)
+	$(info $()     install$(DIVIDER)<arch>   - Builds and installs <arch> only.)
+	$(info $()     clean$(DIVIDER)<arch>     - Cleans <arch> binaries in O.<arch> dirs only.)
+	$(info $()Targets supported by top level Makefile:)
 ifndef DISABLE_TOP_RULES
-	@echo "     archuninstall  - Remove bin & lib directories created by this hostarch."
-	@echo "     uninstall$(DIVIDER)<arch> - Remove bin & lib directories for <arch> only."
-	@echo "     uninstall      - Remove install directories created by this hostarch."
-	@echo "     realuninstall  - Removes ALL install dirs"
-	@echo "     distclean      - Does realclean cvsclean realuninstall and deletes any"
-	@echo "                      generated modules/RELEASE.<host>.local files"
+	$(info $()     archuninstall    - Remove bin & lib directories created by this hostarch.)
+	$(info $()     uninstall$(DIVIDER)<arch> - Remove bin & lib directories for <arch> only.)
+	$(info $()     uninstall        - Remove install directories created by this hostarch.)
+	$(info $()     realuninstall    - Removes ALL install dirs)
+	$(info $()     distclean        - Does realclean cvsclean realuninstall and deletes any)
+	$(info $()                        generated modules/RELEASE.<host>.local files)
 endif
-	@echo "     help           - Prints this list of valid make targets "
-	@echo "Object targets are supported by the O.<arch> level Makefile .e.g"
-	@echo "     xxxRecord.o"
+	$(info $()     help             - Prints this list of valid make targets )
+	$(info $()Object targets are supported by the O.<arch> level Makefile .e.g)
+	$(info $()     xxxRecord.o)
+	@:
 
 .PHONY: distclean uninstall rm-failure-file help
 .PHONY: realuninstall archuninstall uninstallDirs

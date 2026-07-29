@@ -338,7 +338,8 @@ static long add_count(histogramRecord *prec)
         return 0;
 
     temp = prec->sgnl - prec->llim;
-    for (i = 1; i <= prec->nelm; i++){
+    /* stop at nelm-1 so a rounded wdth can't push i past the last bin */
+    for (i = 1; i < prec->nelm; i++){
         if (temp <= (double) i * prec->wdth)
             break;
     }

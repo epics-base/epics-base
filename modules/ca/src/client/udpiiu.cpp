@@ -30,6 +30,7 @@
 #include "osiProcess.h"
 #include "osiWireFormat.h"
 #include "epicsAlgorithm.h"
+#include "epicsMath.h"
 #include "errlog.h"
 #include "locationException.h"
 
@@ -73,7 +74,7 @@ double getMaxPeriod()
     if ( envGetConfigParamPtr ( & EPICS_CA_MAX_SEARCH_PERIOD ) ) {
         long longStatus = envGetDoubleConfigParam (
             & EPICS_CA_MAX_SEARCH_PERIOD, & maxPeriod );
-        if ( ! longStatus ) {
+        if ( ! longStatus && finite ( maxPeriod ) && maxPeriod > 0.0 ) {
             if ( maxPeriod < maxSearchPeriodLowerLimit ) {
                 epicsPrintf ( "\"%s\" out of range (low)\n",
                                 EPICS_CA_MAX_SEARCH_PERIOD.name );
@@ -83,7 +84,9 @@ double getMaxPeriod()
             }
         }
         else {
-            epicsPrintf ( "EPICS \"%s\" wasn't a real number\n",
+            /* Reset to default on parse error or out of range value */
+            maxPeriod = maxSearchPeriodDefault;
+            epicsPrintf ( "EPICS \"%s\" was not a positive real number\n",
                             EPICS_CA_MAX_SEARCH_PERIOD.name );
             epicsPrintf ( "Setting \"%s\" = %f seconds\n",
                 EPICS_CA_MAX_SEARCH_PERIOD.name, maxPeriod );

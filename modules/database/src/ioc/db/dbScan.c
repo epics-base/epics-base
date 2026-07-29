@@ -115,6 +115,9 @@ typedef struct event_list {
     struct event_list   *next;
     char                eventname[1]; /* actually arbitrary size */
 } event_list;
+/* All event_list are singly linked from pevent_list[0] via next.
+ * Numbered events are also stored in pevent_list[1..255].
+ */
 static event_list * volatile pevent_list[NUM_TIME_EVENTS];
 static epicsMutexId event_lock;
 
@@ -488,7 +491,7 @@ event_list *eventNameToHandle(const char *eventname)
     */
     if (epicsParseDouble(eventname, &eventnumber, NULL) == 0)
     {
-        if (eventnumber >= 0 && eventnumber < 256)
+        if (eventnumber >= 0 && eventnumber < NUM_TIME_EVENTS)
         {
             if (eventnumber < 1)
                 return NULL; /* 0 is no event */

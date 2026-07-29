@@ -60,7 +60,9 @@ GNU = NO
 #
 # Darwin shared libraries
 #
-SHRLIB_LDFLAGS = -dynamiclib -flat_namespace \
+FLAT_NAMESPACE = $(shell \
+    test $(or $(CLANG_MAJOR),99) -lt 15 && echo -flat_namespace)
+SHRLIB_LDFLAGS = -dynamiclib $(FLAT_NAMESPACE) \
     -install_name $(abspath $(INSTALL_LIB))/$@ \
     $(addprefix -compatibility_version , $(SHRLIB_VERSION)) \
     $(addprefix -current_version , $(SHRLIB_VERSION))

@@ -551,7 +551,7 @@ long dbJLinkMapAll(char *recname, jlink_map_fn rtn, void *ctx)
     DBENTRY * const pdbentry = &dbentry;
     long status;
 
-    if (recname && (recname[0] = '\0' || !strcmp(recname, "*")))
+    if (recname && (recname[0] == '\0' || !strcmp(recname, "*")))
         recname = NULL;
 
     dbInitEntry(pdbbase, pdbentry);

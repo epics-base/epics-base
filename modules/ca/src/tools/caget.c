@@ -126,10 +126,15 @@ static void event_handler (evargs args)
     ppv->status = args.status;
     if (args.status == ECA_NORMAL)
     {
+        epicsUInt32 nBytes = dbr_size_n(args.type, args.count);
         ppv->dbrType = args.type;
-        ppv->value   = calloc(1, dbr_size_n(args.type, args.count));
-        memcpy(ppv->value, args.dbr, dbr_size_n(args.type, args.count));
-        ppv->nElems = args.count;
+        ppv->value   = calloc(1, nBytes);
+        if (ppv->value) {
+            memcpy(ppv->value, args.dbr, nBytes);
+            ppv->nElems = args.count;
+        } else {
+            ppv->status = ECA_ALLOCMEM;
+        }
         nRead++;
     }
 }

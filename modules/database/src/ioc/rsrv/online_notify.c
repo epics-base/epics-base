@@ -27,6 +27,7 @@
 #include "addrList.h"
 #include "dbDefs.h"
 #include "envDefs.h"
+#include "epicsMath.h"
 #include "errlog.h"
 #include "osiSock.h"
 #include "taskwd.h"
@@ -55,9 +56,9 @@ void rsrv_online_notify_task(void *pParm)
     else {
         longStatus = envGetDoubleConfigParam ( & EPICS_CA_BEACON_PERIOD, & maxPeriod );
     }
-    if (longStatus || maxPeriod<=0.0) {
+    if (longStatus || !finite(maxPeriod) || maxPeriod<=0.0) {
         maxPeriod = 15.0;
-        epicsPrintf ("EPICS \"%s\" float fetch failed\n",
+        epicsPrintf ("EPICS \"%s\" was not a positive real number\n",
                         EPICS_CAS_BEACON_PERIOD.name);
         epicsPrintf ("Setting \"%s\" = %f\n",
             EPICS_CAS_BEACON_PERIOD.name, maxPeriod);

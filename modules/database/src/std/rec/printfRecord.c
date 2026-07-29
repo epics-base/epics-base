@@ -250,6 +250,8 @@ static void doPrintf(printfRecord *prec)
                             int padding;
 
                             /* Terminate string and measure its length */
+                            if (n > vspace)
+                                n = vspace;
                             pval[n] = 0;
                             added = strlen(pval);
                             padding = width - added;

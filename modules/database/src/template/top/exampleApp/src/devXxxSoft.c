@@ -1,50 +1,67 @@
-/* SPDX-FileCopyrightText: 1998 Argonne National Laboratory */
-
+/* SPDX-FileCopyrightText: 2026 UChicago Argonne LLC */
 /* SPDX-License-Identifier: EPICS */
 
 /* devXxxSoft.c */
-/* Example device support module */
 
-#include <stddef.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
+/* Sample device & driver support interfaces */
 
-#include "alarm.h"
-#include "cvtTable.h"
-#include "dbDefs.h"
-#include "dbAccess.h"
-#include "recGbl.h"
-#include "recSup.h"
-#include "devSup.h"
-#include "link.h"
+#include <dbAccess.h>
+#include <dbDefs.h>
+#include <devSup.h>
+#include <drvSup.h>
+#include <epicsStdio.h>
+#include <link.h>
+#include <recGbl.h>
 #include "xxxRecord.h"
-#include "epicsExport.h"
+#include <epicsExport.h>
 
-static long init_record(dbCommon *prec)
+/* Device Support Routines */
+
+static long init_record(dbCommon *pcommon)
 {
-    struct xxxRecord *pxxx = (struct xxxRecord *) prec;
+    struct xxxRecord *prec = (struct xxxRecord *) pcommon;
 
-    if (recGblInitConstantLink(&pxxx->inp, DBF_DOUBLE, &pxxx->val))
-         pxxx->udf = FALSE;
+    if (recGblInitConstantLink(&prec->inp, DBF_DOUBLE, &prec->val))
+         prec->udf = FALSE;
 
     return 0;
 }
-
-static long read_xxx(struct xxxRecord *pxxx)
-{
-    long status = dbGetLink(&(pxxx->inp), DBF_DOUBLE, &(pxxx->val), 0, 0);
 
-     /* If get was successful VAL is now defined */
+static long read_xxx(struct xxxRecord *prec)
+{
+    long status = dbGetLink(&prec->inp, DBF_DOUBLE, &prec->val, 0, 0);
+
+    /* If get was successful VAL is now defined */
     if (!status)
-        pxxx->udf = FALSE;
+        prec->udf = FALSE;
 
     return 0;
 }
 
-/*Create the dset for devXxxSoft */
+/* devXxxSoft Device Entry Table */
 xxxdset devXxxSoft = {
-    { 5, NULL, NULL, init_record, NULL },
+    { 5, NULL /* report */, NULL /* init */,
+        init_record, NULL /* get_ioint_info */ },
     read_xxx,
 };
 epicsExportAddress(dset, devXxxSoft);
+
+
+/* Driver Routines */
+
+/* The report method is called by the iocsh command 'dbior'.
+ * Use level to show more or different information about
+ * the state of the driver software, connections etc.
+ */
+static long xxxReport(int level) {
+    printf("xxxDriver: Report called, level %d\n", level);
+    return 0;
+}
+
+/* xxxDriver Entry Table */
+drvet xxxDriver = {
+    2,
+    xxxReport,
+    NULL /* init, rarely used */
+};
+epicsExportAddress(drvet, xxxDriver);

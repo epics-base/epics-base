@@ -21,6 +21,7 @@
 #include "epicsString.h"
 #include "dbDefs.h"
 #include "epicsThread.h"
+#include "epicsString.h"
 #include "cantProceed.h"
 #include "epicsMutex.h"
 #include "errlog.h"
@@ -793,6 +794,14 @@ next_rule:
     }
     return(0);
 }
+
+static
+void asDumpQuoted(FILE *fp, const char *s)
+{
+    fprintf(fp, "\"");
+    (void)epicsStrPrintEscaped(fp, s, strlen(s));
+    fprintf(fp, "\"");
+}
 
 int epicsStdCall asDumpUag(const char *uagname)
 {
@@ -816,7 +825,7 @@ int epicsStdCall asDumpUagFP(FILE *fp,const char *uagname)
         puagname = (UAGNAME *)ellFirst(&puag->list);
         if(puagname) fprintf(fp," {"); else fprintf(fp,"\n");
         while(puagname) {
-            fprintf(fp,"%s",puagname->user);
+            asDumpQuoted(fp, puagname->user);
             puagname = (UAGNAME *)ellNext(&puagname->node);
             if(puagname) fprintf(fp,","); else fprintf(fp,"}\n");
         }
@@ -846,7 +855,7 @@ int epicsStdCall asDumpHagFP(FILE *fp,const char *hagname)
         phagname = (HAGNAME *)ellFirst(&phag->list);
         if(phagname) fprintf(fp," {"); else fprintf(fp,"\n");
         while(phagname) {
-            fprintf(fp,"%s",phagname->host);
+            asDumpQuoted(fp, phagname->host);
             phagname = (HAGNAME *)ellNext(&phagname->node);
             if(phagname) fprintf(fp,","); else fprintf(fp,"}\n");
         }

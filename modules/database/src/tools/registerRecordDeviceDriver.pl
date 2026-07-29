@@ -164,7 +164,7 @@ if (%drivers) {
     print $out "};\n\n";
 
     # List of pointers to each drvet
-    print $out "static struct drvet *drvsl[] = {\n";
+    print $out "static drvet *drvsl[] = {\n";
     print $out join(",\n", map {"    pvar_drvet_$_"} @drivers);
     print $out "};\n\n";
 }

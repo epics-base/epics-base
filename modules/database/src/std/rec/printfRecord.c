@@ -101,6 +101,10 @@ static void doPrintf(printfRecord *prec)
 
             *pformat++ = ch; /* '%' */
             while (cont && (ch = *pfmt++)) {
+                if (pformat >= format + sizeof(format) - 1) {
+                    flags |= F_BADFMT;
+                    break;
+                }
                 *pformat++ = ch;
                 switch (ch) {
                 case '+': case ' ': case '#':
@@ -128,8 +132,15 @@ static void doPrintf(printfRecord *prec)
                         else
                             ok = ! dbGetLink(plink++, DBR_SHORT, &i, 0, 0);
                         if (ok) {
+                            /* '%d' of an epicsInt16 needs up to 7 bytes */
+                            --pformat;
+                            if (pformat + 7 > format + sizeof(format)) {
+                                flags |= F_BADFMT;
+                                cont = 0;
+                                break;
+                            }
                             *pnum = i;
-                            added = epicsSnprintf(--pformat, 6, "%d", i);
+                            added = epicsSnprintf(pformat, 7, "%d", i);
                             pformat += added;
                         }
                         else /* No more LNKn fields */
@@ -161,13 +172,13 @@ static void doPrintf(printfRecord *prec)
                     break;
                 }
             }
+            *pformat = 0;   /* Terminate our format string */
+
             if (!ch)        /* End of format string */
                 break;
 
             if (flags & F_BAD)
                 goto bad_format;
-
-            *pformat = 0;   /* Terminate our format string */
 
             if (width < 0) {
                 width = -width;

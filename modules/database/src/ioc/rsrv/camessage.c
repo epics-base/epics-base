@@ -759,9 +759,18 @@ static int write_action ( caHdrLargeArray *mp,
         mp->m_count = dbChannelFinalElements(pciu->dbch);
     }
 
-    size = dbr_size_n (mp->m_dataType, mp->m_count);
-    if (size > mp->m_postsize) {
-        return RSRV_ERROR;
+    if (mp->m_dataType == DBR_STRING && mp->m_count == 1) {
+        /* Accept short scalar string payloads that are
+         * null-terminated within the message received. */
+        if (epicsStrnLen(pPayload, mp->m_postsize) >= mp->m_postsize) {
+            return RSRV_ERROR;
+        }
+    }
+    else {
+        size = dbr_size_n (mp->m_dataType, mp->m_count);
+        if (size > mp->m_postsize) {
+            return RSRV_ERROR;
+        }
     }
 
     if(!rsrvCheckPut(pciu)){
@@ -1685,7 +1694,14 @@ static int write_notify_action ( caHdrLargeArray *mp, void *pPayload,
     }
 
     size = dbr_size_n (mp->m_dataType, mp->m_count);
-    if (size > mp->m_postsize) {
+    if (mp->m_dataType == DBR_STRING && mp->m_count == 1) {
+        /* Accept short scalar string payloads that are
+         * null-terminated within the message received. */
+        if (epicsStrnLen(pPayload, mp->m_postsize) >= mp->m_postsize) {
+            return RSRV_ERROR;
+        }
+    }
+    else if (size > mp->m_postsize) {
         return RSRV_ERROR;
     }
 

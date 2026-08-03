@@ -21,6 +21,7 @@
 #include "dbDefs.h"
 #include "epicsThread.h"
 #include "epicsString.h"
+#include "epicsTime.h"
 #include "cantProceed.h"
 #include "epicsMutex.h"
 #include "errlog.h"
@@ -29,12 +30,14 @@
 #include "macLib.h"
 #include "postfix.h"
 #include "asLib.h"
+#include "as/asLibPvt.h"
 
 #undef ECHO /* from termios.h */
 
 int asCheckClientIP;
 
 static epicsMutexId asLock;
+static epicsMutexId asHagRefreshLock;
 #define LOCK epicsMutexMustLock(asLock)
 #define UNLOCK epicsMutexUnlock(asLock)
 
@@ -47,6 +50,49 @@ static void         *freeListPvt = NULL;
 
 
 #define DEFAULT "DEFAULT"
+#define AS_HAG_SUCCESS_INTERVAL 300u
+#define AS_HAG_FAILURE_INTERVAL 60u
+#define AS_HAG_NSEC_PER_SEC 1000000000uLL
+#define AS_HAG_IP_BUFSIZE 24u
+#define AS_HAG_SOURCE_MAX 512u
+#define AS_HAG_UNRESOLVED "unresolved:"
+
+typedef struct asHagEntryState {
+    ELLNODE node;
+    HAG *group;
+    HAGNAME *name;
+    char *source;
+    size_t capacity;
+    epicsUInt64 due;
+    unsigned index;
+    unsigned resolved;
+} ASHAGENTRYSTATE;
+
+typedef struct asHagBaseState {
+    ELLNODE node;
+    ASBASE *base;
+    ELLLIST entries;
+    epicsUInt64 generation;
+    epicsUInt64 nextDue;
+} ASHAGBASESTATE;
+
+typedef struct asHagUpdate {
+    unsigned index;
+    char *source;
+    char address[AS_HAG_IP_BUFSIZE];
+    unsigned resolved;
+} ASHAGUPDATE;
+
+typedef struct asHagMapEntry {
+    HAG *group;
+    char address[AS_HAG_IP_BUFSIZE];
+} ASHAGMAPENTRY;
+
+static ELLLIST asHagStates;
+static epicsUInt64 asHagGeneration;
+static asHagResolver asHagResolve = aToIPAddr;
+static asHagClock asHagNow = epicsMonotonicGet;
+static epicsThreadOnceId asInitializeOnceFlag = EPICS_THREAD_ONCE_INIT;
 
 /* Defined in asLib.y */
 static int myParse(ASINPUTFUNCPTR inputfunction);
@@ -60,6 +106,9 @@ static UAG *asUagAdd(const char *uagName);
 static long asUagAddUser(UAG *puag,const char *user);
 static HAG *asHagAdd(const char *hagName);
 static long asHagAddHost(HAG *phag,const char *host);
+static ASHAGBASESTATE *asHagStateFind(ASBASE *base);
+static void asHagStateDestroy(ASBASE *base);
+static void asHashRebuild(ASBASE *base);
 static ASG *asAsgAdd(const char *asgName);
 static long asAsgAddInp(ASG *pasg,const char *inp,int inpIndex);
 static ASGRULE *asAsgAddRule(ASG *pasg,asAccessRights access,int level);
@@ -85,22 +134,302 @@ static void asInitializeOnce(void *arg)
 {
     osiSockAttach();
     asLock  = epicsMutexMustCreate();
+    asHagRefreshLock = epicsMutexMustCreate();
+    ellInit(&asHagStates);
 }
+
+static void asEnsureInitialized(void)
+{
+    epicsThreadOnce(&asInitializeOnceFlag,asInitializeOnce,NULL);
+}
+
+void asTestSetHagResolver(asHagResolver resolver)
+{
+    asEnsureInitialized();
+    epicsMutexMustLock(asHagRefreshLock);
+    asHagResolve = resolver ? resolver : aToIPAddr;
+    epicsMutexUnlock(asHagRefreshLock);
+}
+
+void asTestSetHagClock(asHagClock clock)
+{
+    asEnsureInitialized();
+    epicsMutexMustLock(asHagRefreshLock);
+    asHagNow = clock ? clock : epicsMonotonicGet;
+    epicsMutexUnlock(asHagRefreshLock);
+}
+
+void asTestResetHagHooks(void)
+{
+    asEnsureInitialized();
+    epicsMutexMustLock(asHagRefreshLock);
+    asHagResolve = aToIPAddr;
+    asHagNow = epicsMonotonicGet;
+    epicsMutexUnlock(asHagRefreshLock);
+}
+
+static ASHAGBASESTATE *asHagStateFind(ASBASE *base)
+{
+    ASHAGBASESTATE *state = (ASHAGBASESTATE *)ellFirst(&asHagStates);
+
+    while(state) {
+        if(state->base == base)
+            return state;
+        state = (ASHAGBASESTATE *)ellNext(&state->node);
+    }
+    return NULL;
+}
+
+static ASHAGBASESTATE *asHagStateCreate(ASBASE *base)
+{
+    ASHAGBASESTATE *state = asCalloc(1, sizeof(*state));
+
+    state->base = base;
+    ellInit(&state->entries);
+    ellAdd(&asHagStates, &state->node);
+    return state;
+}
+
+static void asHagStateDestroy(ASBASE *base)
+{
+    ASHAGBASESTATE *state = asHagStateFind(base);
+
+    if(state) {
+        ASHAGENTRYSTATE *entry = (ASHAGENTRYSTATE *)ellFirst(&state->entries);
+
+        while(entry) {
+            ASHAGENTRYSTATE *next = (ASHAGENTRYSTATE *)ellNext(&entry->node);
+
+            ellDelete(&state->entries, &entry->node);
+            free(entry->source);
+            free(entry);
+            entry = next;
+        }
+        ellDelete(&asHagStates, &state->node);
+        free(state);
+    }
+}
+
+static ASHAGENTRYSTATE *asHagEntryFind(ASHAGBASESTATE *state, HAGNAME *name)
+{
+    ASHAGENTRYSTATE *entry;
+
+    if(!state)
+        return NULL;
+    entry = (ASHAGENTRYSTATE *)ellFirst(&state->entries);
+    while(entry) {
+        if(entry->name == name)
+            return entry;
+        entry = (ASHAGENTRYSTATE *)ellNext(&entry->node);
+    }
+    return NULL;
+}
+
+static epicsUInt64 asHagAfter(epicsUInt64 now, unsigned seconds)
+{
+    epicsUInt64 delta = (epicsUInt64)seconds * AS_HAG_NSEC_PER_SEC;
+
+    return now > ~(epicsUInt64)0 - delta ? ~(epicsUInt64)0 : now + delta;
+}
+
+static void asHagScheduleNext(ASHAGBASESTATE *state)
+{
+    ASHAGENTRYSTATE *entry;
+    epicsUInt64 next = 0;
+
+    if(!state)
+        return;
+    entry = (ASHAGENTRYSTATE *)ellFirst(&state->entries);
+    while(entry) {
+        if(!next || entry->due < next)
+            next = entry->due;
+        entry = (ASHAGENTRYSTATE *)ellNext(&entry->node);
+    }
+    state->nextDue = next;
+}
+
+static int asHagSetIPAddr(epicsUInt32 rawAddr, struct sockaddr_in *address)
+{
+    static const struct sockaddr_in emptyAddress = {0};
+
+    *address = emptyAddress;
+    address->sin_family = AF_INET;
+    address->sin_addr.s_addr = htonl(rawAddr);
+    return 0;
+}
+
+static int asHagParseNumeric(const char *host, struct sockaddr_in *address)
+{
+    unsigned octet[4];
+    unsigned long raw;
+    unsigned port;
+    char extra[8];
+    int status;
+
+    status = sscanf(host, " %u . %u . %u . %u %7s ",
+        octet, octet+1, octet+2, octet+3, extra);
+    if(status == 4) {
+        if(octet[0] <= 0xff && octet[1] <= 0xff &&
+           octet[2] <= 0xff && octet[3] <= 0xff)
+            return asHagSetIPAddr(((epicsUInt32)octet[0] << 24) |
+                                  ((epicsUInt32)octet[1] << 16) |
+                                  ((epicsUInt32)octet[2] << 8) |
+                                  (epicsUInt32)octet[3], address);
+        return -1;
+    }
+    status = sscanf(host, " %u . %u . %u . %u : %u %7s ",
+        octet, octet+1, octet+2, octet+3, &port, extra);
+    if(status == 5 && port <= 0xffff &&
+       octet[0] <= 0xff && octet[1] <= 0xff &&
+       octet[2] <= 0xff && octet[3] <= 0xff)
+        return asHagSetIPAddr(((epicsUInt32)octet[0] << 24) |
+                              ((epicsUInt32)octet[1] << 16) |
+                              ((epicsUInt32)octet[2] << 8) |
+                              (epicsUInt32)octet[3], address);
+
+    status = sscanf(host, " %lu %7s ", &raw, extra);
+    if(status == 1 && raw <= 0xfffffffful)
+        return asHagSetIPAddr((epicsUInt32)raw, address);
+    status = sscanf(host, " %lu : %u %7s ", &raw, &port, extra);
+    if(status == 2 && raw <= 0xfffffffful && port <= 0xffff)
+        return asHagSetIPAddr((epicsUInt32)raw, address);
+    return -1;
+}
+
+static void asHagFormatAddress(const struct sockaddr_in *address,
+    char *buffer, size_t size)
+{
+    epicsUInt32 ip = ntohl(address->sin_addr.s_addr);
+
+    epicsSnprintf(buffer, size, "%u.%u.%u.%u",
+                  (ip>>24)&0xff, (ip>>16)&0xff,
+                  (ip>>8)&0xff, ip&0xff);
+}
+
+static void asHagSetEntry(ASHAGENTRYSTATE *entry, int resolved,
+    const char *address)
+{
+    if(resolved) {
+        epicsSnprintf(entry->name->host, entry->capacity, "%s", address);
+    } else {
+        epicsSnprintf(entry->name->host, entry->capacity, "%s%s",
+            AS_HAG_UNRESOLVED, entry->source);
+    }
+    entry->resolved = !!resolved;
+}
+
+static int asHagMapContains(const ASHAGMAPENTRY *map, size_t count,
+    HAG *group, const char *address)
+{
+    size_t i;
+
+    for(i = 0; i < count; i++) {
+        if(map[i].group == group && strcmp(map[i].address, address) == 0)
+            return 1;
+    }
+    return 0;
+}
+
+static ASHAGMAPENTRY *asHagCollectMap(ASBASE *base, size_t *count)
+{
+    ASHAGBASESTATE *state = asHagStateFind(base);
+    HAG *group;
+    ASHAGMAPENTRY *map;
+    size_t capacity = 0;
+
+    group = (HAG *)ellFirst(&base->hagList);
+    while(group) {
+        capacity += (size_t)ellCount(&group->list);
+        group = (HAG *)ellNext(&group->node);
+    }
+    map = capacity ? asCalloc(capacity, sizeof(*map)) : NULL;
+    *count = 0;
+    group = (HAG *)ellFirst(&base->hagList);
+    while(group) {
+        HAGNAME *name = (HAGNAME *)ellFirst(&group->list);
+
+        while(name) {
+            ASHAGENTRYSTATE *entry = asHagEntryFind(state, name);
+
+            if((!entry || entry->resolved) &&
+               !asHagMapContains(map, *count, group, name->host)) {
+                map[*count].group = group;
+                epicsSnprintf(map[*count].address,
+                    sizeof(map[*count].address), "%s", name->host);
+                (*count)++;
+            }
+            name = (HAGNAME *)ellNext(&name->node);
+        }
+        group = (HAG *)ellNext(&group->node);
+    }
+    return map;
+}
+
+static int asHagMapsEqual(const ASHAGMAPENTRY *left, size_t leftCount,
+    const ASHAGMAPENTRY *right, size_t rightCount)
+{
+    size_t i;
+
+    if(leftCount != rightCount)
+        return 0;
+    for(i = 0; i < leftCount; i++) {
+        if(!asHagMapContains(right, rightCount,
+                            left[i].group, left[i].address))
+            return 0;
+    }
+    return 1;
+}
+
+static void asHashRebuild(ASBASE *base)
+{
+    struct gphPvt *oldhash = base->phash;
+    ASHAGBASESTATE *state = asHagStateFind(base);
+    UAG *puag;
+    HAG *phag;
+
+    gphInitPvt(&base->phash, 256);
+    puag = (UAG *)ellFirst(&base->uagList);
+    while(puag) {
+        UAGNAME *name = (UAGNAME *)ellFirst(&puag->list);
+
+        while(name) {
+            if(!gphAdd(base->phash, name->user, puag))
+                errlogPrintf("Duplicated user '%s' in UAG '%s'\n",
+                    name->user, puag->name);
+            name = (UAGNAME *)ellNext(&name->node);
+        }
+        puag = (UAG *)ellNext(&puag->node);
+    }
+    phag = (HAG *)ellFirst(&base->hagList);
+    while(phag) {
+        HAGNAME *name = (HAGNAME *)ellFirst(&phag->list);
+
+        while(name) {
+            ASHAGENTRYSTATE *entry = asHagEntryFind(state, name);
+
+            if((!entry || entry->resolved) &&
+               !gphAdd(base->phash, name->host, phag))
+                errlogPrintf("Duplicated host '%s' in HAG '%s'\n",
+                    name->host, phag->name);
+            name = (HAGNAME *)ellNext(&name->node);
+        }
+        phag = (HAG *)ellNext(&phag->node);
+    }
+    if(oldhash)
+        gphFreeMem(oldhash);
+}
+
 long epicsStdCall asInitialize(ASINPUTFUNCPTR inputfunction)
 {
     ASG         *pasg;
     long        status;
     ASBASE      *pasbaseold;
-    GPHENTRY    *pgphentry;
-    UAG         *puag;
-    UAGNAME     *puagname;
-    HAG         *phag;
-    HAGNAME     *phagname;
-    static epicsThreadOnceId asInitializeOnceFlag = EPICS_THREAD_ONCE_INIT;
+    ASHAGBASESTATE *hagstate;
 
-    epicsThreadOnce(&asInitializeOnceFlag,asInitializeOnce,NULL);
+    asEnsureInitialized();
     LOCK;
     pasbasenew = asCalloc(1,sizeof(ASBASE));
+    hagstate = asHagStateCreate(pasbasenew);
     if(!freeListPvt) freeListInitPvt(&freeListPvt,sizeof(ASGCLIENT),20);
     ellInit(&pasbasenew->uagList);
     ellInit(&pasbasenew->hagList);
@@ -109,6 +438,7 @@ long epicsStdCall asInitialize(ASINPUTFUNCPTR inputfunction)
     status = myParse(inputfunction);
     if(status) {
         status = S_asLib_badConfig;
+        asHagStateDestroy(pasbasenew);
         /*Not safe to call asFreeAll */
         UNLOCK;
         return(status);
@@ -118,34 +448,8 @@ long epicsStdCall asInitialize(ASINPUTFUNCPTR inputfunction)
         pasg->pavalue = asCalloc(CALCPERFORM_NARGS, sizeof(double));
         pasg = (ASG *)ellNext(&pasg->node);
     }
-    gphInitPvt(&pasbasenew->phash, 256);
-    /*Hash each uagname and each hagname*/
-    puag = (UAG *)ellFirst(&pasbasenew->uagList);
-    while(puag) {
-        puagname = (UAGNAME *)ellFirst(&puag->list);
-        while(puagname) {
-            pgphentry = gphAdd(pasbasenew->phash,puagname->user,puag);
-            if(!pgphentry) {
-                errlogPrintf("Duplicated user '%s' in UAG '%s'\n",
-                    puagname->user, puag->name);
-            }
-            puagname = (UAGNAME *)ellNext(&puagname->node);
-        }
-        puag = (UAG *)ellNext(&puag->node);
-    }
-    phag = (HAG *)ellFirst(&pasbasenew->hagList);
-    while(phag) {
-        phagname = (HAGNAME *)ellFirst(&phag->list);
-        while(phagname) {
-            pgphentry = gphAdd(pasbasenew->phash,phagname->host,phag);
-            if(!pgphentry) {
-                errlogPrintf("Duplicated host '%s' in HAG '%s'\n",
-                    phagname->host, phag->name);
-            }
-            phagname = (HAGNAME *)ellNext(&phagname->node);
-        }
-        phag = (HAG *)ellNext(&phag->node);
-    }
+    asHashRebuild(pasbasenew);
+    hagstate->generation = ++asHagGeneration;
     pasbaseold = (ASBASE *)pasbase;
     pasbase = (ASBASE volatile *)pasbasenew;
     if(pasbaseold) {
@@ -498,6 +802,135 @@ long epicsStdCall asCompute(ASCLIENTPVT asClientPvt)
     status = asComputePvt(asClientPvt);
     UNLOCK;
     return(status);
+}
+
+long epicsStdCall asRefreshHag(unsigned *changed)
+{
+    ASHAGBASESTATE *state;
+    ASHAGENTRYSTATE *entry;
+    ASHAGUPDATE *updates = NULL;
+    ASHAGMAPENTRY *before = NULL;
+    ASHAGMAPENTRY *after = NULL;
+    epicsUInt64 generation = 0;
+    epicsUInt64 now;
+    size_t updateCount = 0;
+    size_t beforeCount = 0;
+    size_t afterCount = 0;
+    size_t i;
+    int entryChanged = 0;
+    int effectiveChanged = 0;
+    long status = 0;
+
+    if(changed)
+        *changed = 0;
+    asEnsureInitialized();
+    if(!asActive)
+        return S_asLib_asNotActive;
+
+    epicsMutexMustLock(asHagRefreshLock);
+    now = asHagNow();
+    LOCK;
+    if(!asActive) {
+        status = S_asLib_asNotActive;
+        UNLOCK;
+        goto done;
+    }
+    state = asHagStateFind((ASBASE *)pasbase);
+    if(!asCheckClientIP || !state || !state->nextDue || now < state->nextDue) {
+        UNLOCK;
+        goto done;
+    }
+    entry = (ASHAGENTRYSTATE *)ellFirst(&state->entries);
+    while(entry) {
+        if(now >= entry->due)
+            updateCount++;
+        entry = (ASHAGENTRYSTATE *)ellNext(&entry->node);
+    }
+    if(!updateCount) {
+        asHagScheduleNext(state);
+        UNLOCK;
+        goto done;
+    }
+    generation = state->generation;
+    updates = asCalloc(updateCount, sizeof(*updates));
+    entry = (ASHAGENTRYSTATE *)ellFirst(&state->entries);
+    i = 0;
+    while(entry) {
+        if(now >= entry->due) {
+            updates[i].index = entry->index;
+            updates[i].source = epicsStrDup(entry->source);
+            i++;
+        }
+        entry = (ASHAGENTRYSTATE *)ellNext(&entry->node);
+    }
+    UNLOCK;
+
+    for(i = 0; i < updateCount; i++) {
+        struct sockaddr_in address;
+
+        if(asHagResolve(updates[i].source, 0, &address) == 0) {
+            asHagFormatAddress(&address, updates[i].address,
+                               sizeof(updates[i].address));
+            updates[i].resolved = 1;
+        } else {
+            errlogPrintf("ACF: Unable to refresh host '%s'\n",
+                         updates[i].source);
+        }
+    }
+
+    now = asHagNow();
+    LOCK;
+    state = asHagStateFind((ASBASE *)pasbase);
+    if(!asActive || !state || state->generation != generation) {
+        UNLOCK;
+        goto done;
+    }
+    before = asHagCollectMap((ASBASE *)pasbase, &beforeCount);
+    entry = (ASHAGENTRYSTATE *)ellFirst(&state->entries);
+    while(entry) {
+        for(i = 0; i < updateCount; i++) {
+            int different;
+
+            if(updates[i].index != entry->index)
+                continue;
+            different = entry->resolved != updates[i].resolved ||
+                (entry->resolved &&
+                 strcmp(entry->name->host, updates[i].address) != 0);
+            if(different) {
+                asHagSetEntry(entry, updates[i].resolved,
+                              updates[i].address);
+                entryChanged = 1;
+            }
+            entry->due = asHagAfter(now,
+                updates[i].resolved ? AS_HAG_SUCCESS_INTERVAL
+                                    : AS_HAG_FAILURE_INTERVAL);
+            break;
+        }
+        entry = (ASHAGENTRYSTATE *)ellNext(&entry->node);
+    }
+    asHagScheduleNext(state);
+    if(entryChanged) {
+        after = asHagCollectMap((ASBASE *)pasbase, &afterCount);
+        effectiveChanged = !asHagMapsEqual(before, beforeCount,
+                                            after, afterCount);
+        asHashRebuild((ASBASE *)pasbase);
+        if(effectiveChanged)
+            status = asComputeAllAsgPvt();
+    }
+    UNLOCK;
+    if(changed)
+        *changed = !!effectiveChanged;
+
+done:
+    if(updates) {
+        for(i = 0; i < updateCount; i++)
+            free(updates[i].source);
+    }
+    free(updates);
+    free(before);
+    free(after);
+    epicsMutexUnlock(asHagRefreshLock);
+    return status;
 }
 
 /*The dump routines do not lock. Thus they may get inconsistent data.*/
@@ -1077,6 +1510,8 @@ void asFreeAll(ASBASE *pasbase)
     if(!pasbase)
         return;
 
+    asHagStateDestroy(pasbase);
+
     puag = (UAG *)ellFirst(&pasbase->uagList);
     while(puag) {
         puagname = (UAGNAME *)ellFirst(&puag->list);
@@ -1238,26 +1673,49 @@ static long asHagAddHost(HAG *phag,const char *host)
 
     } else {
         struct sockaddr_in addr;
-        epicsUInt32 ip;
+        char address[AS_HAG_IP_BUFSIZE];
 
-        if(aToIPAddr(host, 0, &addr)) {
-            static const char unresolved[] = "unresolved:";
-
-            errlogPrintf("ACF: Unable to resolve host '%s'\n", host);
-
-            phagname = asCalloc(1, sizeof(*phagname) + sizeof(unresolved)-1+strlen(host));
-            strcpy(phagname->host, unresolved);
-            strcat(phagname->host, host);
-
+        if(asHagParseNumeric(host, &addr) == 0) {
+            asHagFormatAddress(&addr, address, sizeof(address));
+            phagname = asCalloc(1, sizeof(*phagname) + sizeof(address) - 1u);
+            epicsSnprintf(phagname->host, sizeof(address), "%s", address);
         } else {
-            ip = ntohl(addr.sin_addr.s_addr);
-            phagname = asCalloc(1, sizeof(*phagname) + 24);
-            epicsSnprintf(phagname->host, 24,
-                          "%u.%u.%u.%u",
-                          (ip>>24)&0xff,
-                          (ip>>16)&0xff,
-                          (ip>>8)&0xff,
-                          (ip>>0)&0xff);
+            ASHAGBASESTATE *state = asHagStateFind(pasbasenew);
+            ASHAGENTRYSTATE *entry;
+            size_t hostLength = epicsStrnLen(host, AS_HAG_SOURCE_MAX);
+            size_t unresolvedSize;
+            size_t capacity;
+            epicsUInt64 now = asHagNow();
+            int resolved = asHagResolve(host, 0, &addr) == 0;
+
+            if(hostLength == AS_HAG_SOURCE_MAX) {
+                errlogPrintf("ACF: HAG host name exceeds %u bytes\n",
+                    AS_HAG_SOURCE_MAX - 1u);
+                return -1;
+            }
+            unresolvedSize = sizeof(AS_HAG_UNRESOLVED) + hostLength;
+            capacity = unresolvedSize > AS_HAG_IP_BUFSIZE
+                     ? unresolvedSize : AS_HAG_IP_BUFSIZE;
+
+            phagname = asCalloc(1, sizeof(*phagname) + capacity - 1u);
+            entry = asCalloc(1, sizeof(*entry));
+            entry->group = phag;
+            entry->name = phagname;
+            entry->source = epicsStrDup(host);
+            entry->capacity = capacity;
+            entry->index = state ? (unsigned)ellCount(&state->entries) : 0u;
+            entry->due = asHagAfter(now, resolved ? AS_HAG_SUCCESS_INTERVAL
+                                                  : AS_HAG_FAILURE_INTERVAL);
+            if(state)
+                ellAdd(&state->entries, &entry->node);
+            if(resolved) {
+                asHagFormatAddress(&addr, address, sizeof(address));
+                asHagSetEntry(entry, 1, address);
+            } else {
+                errlogPrintf("ACF: Unable to resolve host '%s'\n", host);
+                asHagSetEntry(entry, 0, NULL);
+            }
+            asHagScheduleNext(state);
         }
     }
     ellAdd(&phag->list, &phagname->node);

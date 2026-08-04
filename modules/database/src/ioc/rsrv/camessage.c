@@ -743,7 +743,6 @@ static int write_action ( caHdrLargeArray *mp,
     int                     status;
     long                    dbStatus;
     void                    *asWritePvt;
-    unsigned                size;
 
     pciu = MPTOPCIU(mp, client);
     if(!pciu){
@@ -766,11 +765,8 @@ static int write_action ( caHdrLargeArray *mp,
             return RSRV_ERROR;
         }
     }
-    else {
-        size = dbr_size_n (mp->m_dataType, mp->m_count);
-        if (size > mp->m_postsize) {
-            return RSRV_ERROR;
-        }
+    else if (dbr_size_n (mp->m_dataType, mp->m_count) > mp->m_postsize) {
+        return RSRV_ERROR;
     }
 
     if(!rsrvCheckPut(pciu)){

@@ -1064,11 +1064,12 @@ POSIX_Init ( void *argument __attribute__((unused)))
     epicsEventWaitStatus stat;
     printf("\n ---- Waiting for DHCP ...\n");
     stat = epicsEventWaitWithTimeout(dhcpDone, 600);
-    if (stat == epicsEventOK)
-        epicsEventDestroy(dhcpDone);
-    else if (stat == epicsEventWaitTimeout)
+    /* dhcpcd_hook_handler() stays registered and signals dhcpDone on every
+     * later BOUND, so the event has to outlive this wait.
+     */
+    if (stat == epicsEventWaitTimeout)
         printf("\n ---- DHCP timed out!\n");
-    else
+    else if (stat != epicsEventOK)
         printf("\n ---- dhcpDone Event Unknown state %d\n", stat);
 
     const char* ifconfg_args[] = {
@@ -1161,8 +1162,13 @@ POSIX_Init ( void *argument __attribute__((unused)))
 
     printf ("***** Preparing EPICS application *****\n");
     iocshRegisterRTEMS ();
-    set_directory (argv[1]);
-    epicsEnvSet ("IOC_STARTUP_SCRIPT", argv[1]);
+    /* No startup script when the application declares that it needs no
+     * filesystem (epicsRtemsFSImage == NULL).
+     */
+    if (argv[1] != NULL) {
+        set_directory (argv[1]);
+        epicsEnvSet ("IOC_STARTUP_SCRIPT", argv[1]);
+    }
     atexit(exitHandler);
     printf ("***** Starting EPICS application *****\n");
 
@@ -1180,7 +1186,7 @@ POSIX_Init ( void *argument __attribute__((unused)))
                      NULL);
 #endif
 
-    result = main ((sizeof argv / sizeof argv[0]) - 1, argv);
+    result = main (argv[1] != NULL ? 2 : 1, argv);
     printf ("***** IOC application terminating *****\n");
     epicsThreadSleep(1.0);
     epicsExit(result);

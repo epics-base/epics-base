@@ -877,7 +877,7 @@ int dbChannel_put(struct dbChannel *chan, int src_type,
         break;
 
     case(oldDBR_TIME_STRING):
-        status = dbChannelPutField(chan, DBR_TIME,
+        status = dbChannelPutField(chan, DBR_STRING,
             ((const struct dbr_time_string *)psrc)->value, no_elements);
         break;
 /*  case(oldDBR_TIME_INT): */

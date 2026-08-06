@@ -1775,13 +1775,19 @@ static int write_notify_action ( caHdrLargeArray *mp, void *pPayload,
     pciu->pPutNotify->msg = *mp;
     pciu->pPutNotify->nRequest = mp->m_count;
 
-    status = caNetConvert (
-        mp->m_dataType, pPayload, pciu->pPutNotify->pbuffer,
-        FALSE /* net -> host format */, mp->m_count );
-    if ( status != ECA_NORMAL ) {
-        log_header ("invalid data type", client, mp, pPayload, 0);
-        putNotifyErrorReply ( client, mp, status );
-        return RSRV_ERROR;
+    if (mp->m_dataType == DBR_STRING && mp->m_count == 1) {
+        /* Scalar string, copy up to the NUL terminator and 0-pad */
+        strncpy(pciu->pPutNotify->pbuffer, pPayload, size);
+    }
+    else {
+        status = caNetConvert (
+            mp->m_dataType, pPayload, pciu->pPutNotify->pbuffer,
+            FALSE /* net -> host format */, mp->m_count );
+        if ( status != ECA_NORMAL ) {
+            log_header ("invalid data type", client, mp, pPayload, 0);
+            putNotifyErrorReply ( client, mp, status );
+            return RSRV_ERROR;
+        }
     }
 
     pciu->pPutNotify->dbrType = mp->m_dataType;

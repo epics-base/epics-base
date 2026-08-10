@@ -1,6 +1,12 @@
+# CONFIG.Common.RTEMS-mvme2700
+#
+# Definitions for the RTEMS-mvme2700 target
+# Site-specific overrides go in CONFIG_SITE.Common.RTEMS-mvme2700
 #
 # Author: Matt Rippa
 #
+#-------------------------------------------------------
+
 RTEMS_TARGET_CPU = powerpc
 ARCH_DEP_CFLAGS += -DMY_DO_BOOTP=NULL
 ARCH_DEP_CFLAGS += -DHAVE_PPCBUG
@@ -23,8 +29,10 @@ endef
 
 include $(CONFIG)/os/CONFIG.Common.RTEMS
 
-ifeq ($(shell test $(RTEMS_VERSION) -ge 5; echo $$?),0)
-RTEMS_BSP = mvme2700
+ifeq ($(sort $(RTEMS_VERSION) 5),$(RTEMS_VERSION) 5)
+  # RTEMS 4.x used this BSP name
+  RTEMS_BSP = mvme2307
 else
-RTEMS_BSP = mvme2307
+  # RTEMS 5+ support our name
+  RTEMS_BSP = mvme2700
 endif

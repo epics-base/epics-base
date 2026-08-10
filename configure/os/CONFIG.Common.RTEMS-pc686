@@ -31,7 +31,7 @@ OP_SYS_LDFLAGS += -Wl,-Ttext,0x100000 -Wl,--gc-sections
 
 
 # This check must appear after the above include
-ifeq ($(shell test $(RTEMS_VERSION) -lt 5; echo $$?),0)
+ifeq ($(sort $(RTEMS_VERSION) 5),$(RTEMS_VERSION) 5)
   $(info *** This target is not compatible with the configured RTEMS version.)
   $(info *** Build the RTEMS-pc386 (-qemu) target for RTEMS 4.x)
   $(error Can't continue)

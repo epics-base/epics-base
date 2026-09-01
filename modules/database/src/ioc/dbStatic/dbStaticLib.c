@@ -3597,7 +3597,7 @@ void  dbReportDeviceConfig(dbBase *pdbbase, FILE *report)
             for (ilink=0; ilink<nlinks; ilink++) {
                 char linkValue[messagesize];
                 char dtypValue[31];
-                char cvtValue[40] = "";
+                char cvtValue[60] = "";
                 struct link *plink;
                 int linkType;
 
@@ -3654,12 +3654,12 @@ void  dbReportDeviceConfig(dbBase *pdbbase, FILE *report)
                         pdbentry->pflddes->field_type == DBF_DOUBLE)
                         eguf = *(epicsFloat64 *) pdbentry->pfield;
                     epicsSnprintf(cvtValue, sizeof(cvtValue),
-                        "cvt(%.8g, %.8g)", egul, eguf);
+                        "\n             cvt(%.8g, %.8g)", egul, eguf);
                 }
                 if (!titlesPrinted++)
-                    fprintf(stream, ANSI_BOLD("%-8s %-20s %-20s %-20s") "\n",
+                    fprintf(stream, ANSI_BOLD("%-8s %-20s %-30s %-20s") "\n",
                         "Type", "INP/OUT", "DTYP", "Record");
-                fprintf(stream,"%-8s %-20s %-20s %-20s %-s\n",
+                fprintf(stream,"%-8s %-20s %-30s %s %s\n",
                         bus[linkType], linkValue, dtypValue,
                         dbGetRecordName(pdbentry), cvtValue);
                 break;

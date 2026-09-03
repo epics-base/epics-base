@@ -56,6 +56,10 @@ FULLPATHNAME     = $(PERL) $(TOOLS)/fullPathName.pl
 GENVERSIONHEADER = $(PERL) $(TOOLS)/genVersionHeader.pl $(QUIET_FLAG) $(QUESTION_FLAG)
 
 MAKERPATH = $(PYTHON) $(TOOLS)/makeRPath.py
+REGISTERMODULE_py = $(TOOLS)/generate_module_version.py
+REGISTERMODULE = $(PYTHON) $(REGISTERMODULE_py)
+REGISTEANCHORSYMBOLS_py = $(TOOLS)/generate_anchor_symbols.py
+REGISTERANCHORSYMBOLS = $(PYTHON) $(REGISTERANCHORSYMBOLS_py)
 
 #---------------------------------------------------------------
 # tools for installing libraries and products

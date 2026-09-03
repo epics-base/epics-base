@@ -204,6 +204,31 @@ ifneq ($(DELAY_INSTALL_LIBS),YES)
 $(TESTPRODNAME) $(PRODNAME): | $(INSTALL_LIBS) $(INSTALL_DLLSTUB_LIBS)
 endif
 
+# Module register facility
+# Creates the registerModule.cpp targets for each LIBRARY and a _weakAnchor
+# for each PROD. The anchor is necessary for static builds otherwise the
+# linker will garbage collect the symbols.
+ifeq ($(REGISTER_LINKED_MODULES),YES)
+define MODULE_REGISTER_TEMPLATE
+$$(if $$(strip $$($(strip $(1))_VERSION)),,$$(error "$(strip $(1))_VERSION is not defined."))
+LIBRARY_OBJS += $$(strip $(1))_registerModule$(OBJ)
+$(1)_registerModule.cpp: $(REGISTERMODULE_py)
+	$(REGISTERMODULE) -n $$(strip $(1)) -v $$(strip $$($$(strip $(1))_VERSION))
+.PRECIOUS: $(1)_registerModule.cpp
+endef
+$(foreach library, $(LIBRARY), $(eval $(call MODULE_REGISTER_TEMPLATE,$(strip $(library)))))
+
+ifeq ($(strip $(STATIC_BUILD)), YES)
+define ANCHOR_TEMPLATE
+PRODUCT_OBJS += $(1)_weakAnchor.o
+$(1)_weakAnchor.cpp: $(REGISTERANCHORSYMBOLS_py)
+	$(REGISTERANCHORSYMBOLS) -p $(1) $$($(1)_LIBS)
+.PRECIOUS: $(1)_weakAnchor.cpp
+endef
+$(foreach prod, $(PROD_IOC), $(if $(eq $(strip $(prod)_LIBS),),,$(eval $(call ANCHOR_TEMPLATE,$(strip $(prod))))))
+endif
+endif
+
 # RELEASE file consistency checking
 checkRelease:
 	+$(CONVERTRELEASE) checkRelease

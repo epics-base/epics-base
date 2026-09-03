@@ -88,6 +88,7 @@ API_HEADER = libCaAPI.h
 ca_API = libCa
 
 LIBRARY=ca
+ca_VERSION=7.0.10
 
 ca_RCS = ca.rc
 

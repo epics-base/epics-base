@@ -26,4 +26,3 @@ dbCore_SRCS += registryJLinks.c
 dbCore_SRCS += registryFunction.c
 dbCore_SRCS += registryCommon.c
 dbCore_SRCS += registryIocRegister.c
-

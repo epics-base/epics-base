@@ -210,10 +210,10 @@ endif
 # linker will garbage collect the symbols.
 ifeq ($(REGISTER_LINKED_MODULES),YES)
 define MODULE_REGISTER_TEMPLATE
-$$(if $$(strip $$($(strip $(1))_VERSION)),,$$(error "$(strip $(1))_VERSION is not defined."))
-LIBRARY_OBJS += $$(strip $(1))_registerModule$(OBJ)
-$(1)_registerModule.cpp: $(REGISTERMODULE_py)
-	$(REGISTERMODULE) -n $$(strip $(1)) -v $$(strip $$($$(strip $(1))_VERSION))
+LIBRARY_OBJS += $(1)_registerModule$(OBJ)
+$(1)_registerModule.cpp: $(REGISTERMODULE_py) $(GENVERSIONHEADER_pl)
+	$$(if $$(strip $$($(1)_VERSION)),,$$(eval $(1)_VERSION=$$(shell $$(GENVERSIONHEADER_pl) -t$(TOP) -p)))
+	$(REGISTERMODULE) -n $(1) -v $$(strip $$($(1)_VERSION))
 .PRECIOUS: $(1)_registerModule.cpp
 endef
 $(foreach library, $(LIBRARY), $(eval $(call MODULE_REGISTER_TEMPLATE,$(strip $(library)))))

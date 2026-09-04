@@ -53,7 +53,8 @@ PODTOHTML        = $(PERL) $(PODTOHTML_pl)
 CONVERTRELEASE   = $(PERL) $(call FIND_TOOL,convertRelease.pl)
 FILTERMAKEFLAGS  = $(PERL) $(call FIND_TOOL,filterMakeflags.pl)
 FULLPATHNAME     = $(PERL) $(TOOLS)/fullPathName.pl
-GENVERSIONHEADER = $(PERL) $(TOOLS)/genVersionHeader.pl $(QUIET_FLAG) $(QUESTION_FLAG)
+GENVERSIONHEADER_pl = $(TOOLS)/genVersionHeader.pl
+GENVERSIONHEADER = $(PERL) $(GENVERSIONHEADER_pl) $(QUIET_FLAG) $(QUESTION_FLAG)
 
 MAKERPATH = $(PYTHON) $(TOOLS)/makeRPath.py
 REGISTERMODULE_py = $(TOOLS)/generate_module_version.py

@@ -70,7 +70,7 @@ $(EXPANDED_COMMON): $(COMMON_DIR)/%: %@
 clean: expand_clean
 
 expand_clean:
-	@$(RM) $(EXPANDED) $(EXPANDED_COMMON)
+	$(RM) $(EXPANDED) $(EXPANDED_COMMON)
 
 .PRECIOUS: $(EXPANDED) $(EXPANDED_COMMON)
 .PHONY: expand_clean
@@ -87,9 +87,9 @@ $1_SNIPPETS += $$(foreach dir, .. $$(SRC_DIRS), \
 endif
 $(COMMON_DIR)/$1: $$($1_SNIPPETS)
 	$(ECHO) "Assembling common file $$@ from snippets"
-	@$(RM) $1
+	$(RM) $1
 	$(ASSEMBLE_TOOL) -o $1 $$^
-	@$(MV) $1 $$@
+	$(MV) $1 $$@
 endef
 $(foreach asy, $(COMMON_ASSEMBLIES), \
     $(eval $(call COMMON_ASSEMBLY_template,$(strip $(asy)))))
@@ -101,7 +101,7 @@ $1_SNIPPETS += $$(foreach dir, .. $$(SRC_DIRS), \
 endif
 $1: $$($1_SNIPPETS)
 	$(ECHO) "Assembling file $$@ from snippets"
-	@$(RM) $$@
+	$(RM) $$@
 	$(ASSEMBLE_TOOL) -o $$@ $$^
 endef
 $(foreach asy, $(ASSEMBLIES), \
@@ -109,7 +109,7 @@ $(foreach asy, $(ASSEMBLIES), \
 
 define ASSEMBLY_DEP_template
 $1$(DEP):
-	@echo $1: > $$@
+	echo $1: > $$@
 endef
 $(foreach asy, $(sort $(COMMON_ASSEMBLIES) $(ASSEMBLIES)), \
     $(eval $(call ASSEMBLY_DEP_template,$(strip $(asy)))))

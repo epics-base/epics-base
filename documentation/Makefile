@@ -85,7 +85,7 @@ else
 
   ifneq ($(NOTES_PATH),)
     $(NOTES_PATH): $(NEW_NOTES) $(MAKENOTES)
-	@$(RM) $@
+	$(RM) $@
 	$(PERL) $(MAKENOTES) -o $@ -V $(EPICS_SHORT_VERSION) \
 	    -d $(abspath $(NEW_DIR)) $(OLD_NOTES)
     release-git: $(NOTES_PATH)
@@ -112,13 +112,13 @@ else
   ifeq ($(wildcard ../$(NOTES_FILE)),)
     # No RELEASE-<ver>.md file, add new-notes to RELEASE_NOTES.md
     $(COMMON_DIR)/RELEASE_NOTES.md: $(REL_DEPS) $(NEW_NOTES) $(MAKENOTES)
-	@$(RM) $@
+	$(RM) $@
 	$(PERL) $(MAKENOTES) -o $@ -V $(EPICS_SHORT_VERSION) $(DEV_FLAG) \
 	    -d $(abspath $(NEW_DIR)) $(OLD_NOTES) $(NOTES_PATH)
   else
     # RELEASE-<ver>.md exists, we're building a tagged version
     $(COMMON_DIR)/RELEASE_NOTES.md: ../$(NOTES_FILE)
-	@$(RM) $@
+	$(RM) $@
 	$(PERL) $(MAKENOTES) -o $@ -V $(EPICS_SHORT_VERSION) $(OLD_NOTES)
   endif
 
@@ -126,15 +126,15 @@ else
 	$(EXPAND_TOOL) -t $(INSTALL_LOCATION) -DHEADER=$* $< $@
 
   $(API_RST_FILES): %-api.rst: ../%-API.rst
-	@$(RM) $@
 	@$(ECHO) Creating $@
-	@$(CP) $< $@
-	@$(foreach h, $($*_HEADERS), \
+	$(RM) $@
+	$(CP) $< $@
+	$(foreach h, $($*_HEADERS), \
 	    echo "   $h_h.rst" >> $@;)
 
   DOX = doxygen
   doxygen: Doxyfile
-	@$(MKDIR) $(RTD_SRC)
+	$(MKDIR) $(RTD_SRC)
 	$(DOXYGEN)
 
   # Use "make sphinx DOX=" to skip running doxygen

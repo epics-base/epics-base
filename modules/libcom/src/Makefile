@@ -59,7 +59,6 @@ API_HEADER += dbCoreAPI.h
 
 # Library to build:
 LIBRARY=Com
-Com_VERSION=7.0.10
 
 Com_SYS_LIBS_WIN32 = ws2_32 advapi32 user32 dbghelp
 

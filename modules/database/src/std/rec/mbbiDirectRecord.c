@@ -100,7 +100,7 @@ static long init_record(struct dbCommon *pcommon, int pass)
         return S_dev_noDSET;
     }
 
-    if ((pdset->common.number < 5) || (pdset->read_mbbi == NULL)) {
+    if ((pdset->common.number < 5) || (pdset->read_mbbiDirect == NULL)) {
         recGblRecordError(S_dev_missingSup, prec, "mbbiDirect: init_record");
         return S_dev_missingSup;
     }
@@ -137,9 +137,9 @@ static long process(struct dbCommon *pcommon)
     long status;
     int pact = prec->pact;
 
-    if ((pdset == NULL) || (pdset->read_mbbi == NULL)) {
+    if ((pdset == NULL) || (pdset->read_mbbiDirect == NULL)) {
         prec->pact = TRUE;
-        recGblRecordError(S_dev_missingSup, prec, "read_mbbi");
+        recGblRecordError(S_dev_missingSup, prec, "read_mbbiDirect");
         return S_dev_missingSup;
     }
 
@@ -250,7 +250,7 @@ static long readValue(mbbiDirectRecord *prec)
 
     switch (prec->simm) {
     case menuSimmNO:
-        status = pdset->read_mbbi(prec);
+        status = pdset->read_mbbiDirect(prec);
         break;
 
     case menuSimmYES:

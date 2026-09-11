@@ -11,9 +11,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <string.h>
 
 #include "envDefs.h"
+#include "epicsAssert.h"
 #include "epicsReadlinePvt.h"
+
+#ifndef SA_RESTART
+// request BSD compatible EINTR handling from Linux
+#  define SA_RESTART (0)
+#endif
 
 static void osdReadlineBegin(struct readlineContext *);
 static char * osdReadline(const char *prompt, struct readlineContext *);
@@ -34,6 +41,62 @@ static void osdReadlineEnd(struct readlineContext *rc) {}
 #  include "osdReadline.c"
 #endif
 
+#define CHECK(EXPECT, EXPR) do { \
+    int actual = EXPR; \
+    if(actual!=(EXPECT)) { \
+        int err = errno; \
+        fprintf(stderr, "%s:%d %s %d==%d (errno %d)\n", __FILE__, __LINE__, #EXPR, EXPECT, actual, err); \
+        assert(0); \
+    } \
+} while(0)
+
+#ifdef SA_RESETHAND
+static
+struct readlineContext *activeContext;
+
+static
+void close_stdin(int signo)
+{
+    // SA_RESETHAND ensures this handler will only be called once.
+    (void)signo;
+    // replace stdin with /dev/null
+    // replacement process will interrupt or restart concurrent syscall on stdin
+    // attenpt to retry read of /dev/null will yield EoF
+    CHECK(STDIN_FILENO, dup2(activeContext->devnull, STDIN_FILENO));
+}
+
+static
+void erlInstallHandler(struct readlineContext *rc)
+{
+    assert(activeContext==NULL);
+    activeContext = rc;
+
+    struct sigaction act;
+    memset(&act, 0, sizeof(act));
+    act.sa_flags = SA_RESETHAND | SA_RESTART;
+    act.sa_handler = &close_stdin;
+    CHECK(0, sigaction(SIGINT, &act, &rc->sigint));
+
+    assert(rc->sigint.sa_handler != &close_stdin); // refuse to recurse after restore
+}
+
+static
+void erlRestoreHandler(struct readlineContext *rc)
+{
+    assert(activeContext==rc);
+    CHECK(0, sigaction(SIGINT, &rc->sigint, NULL));
+    activeContext=NULL;
+
+    // restore original stdin (even if no substitution was made
+    CHECK(0, dup2(rc->clone_stdin, STDIN_FILENO));
+}
+
+#else
+#  define erlInstallHandler(RC) do {(void)(RC);}while(0)
+#  define erlRestoreHandler(RC) do {(void)(RC);}while(0)
+
+#endif /* SA_RESETHAND */
+
 /*
  * Create a command-line context
  */
@@ -47,6 +110,12 @@ epicsReadlineBegin(FILE *in)
         rc->line = NULL;
         if (!envGetConfigParamPtr(&IOCSH_HISTEDIT_DISABLE))
             osdReadlineBegin(rc);
+
+#ifdef SA_RESETHAND
+        rc->devnull = open("/dev/null", O_RDONLY);
+        rc->clone_stdin = dup(STDIN_FILENO);
+        assert(rc->devnull>=0 && rc->clone_stdin>=0);
+#endif
     }
     return rc;
 }
@@ -59,14 +128,18 @@ epicsReadline (const char *prompt, void *context)
 {
     struct readlineContext *rc = context;
     FILE *in;
-    char *line;
+    char *line = NULL;
     int c;      /* char is unsigned on some archs, EOF is -ve */
     int linelen = 0;
     int linesize = 50;
     int backslash_seen = 0;
 
-    if (rc->osd)
-        return osdReadline(prompt, rc);
+    erlInstallHandler(rc);
+
+    if (rc->osd) {
+        line = osdReadline(prompt, rc);
+        goto done;
+    }
 
     free(rc->line);
     rc->line = NULL;
@@ -77,10 +150,9 @@ epicsReadline (const char *prompt, void *context)
             fflush(stdout);
         }
     }
-    line = (char *)malloc(linesize);
+    rc->line = line = (char *)malloc(linesize);
     if (line == NULL) {
-        printf("Out of memory!\n");
-        return NULL;
+        goto done;
     }
     do {
         c = getc(in);
@@ -91,8 +163,7 @@ epicsReadline (const char *prompt, void *context)
                     continue;
                 }
             }
-            free (line);
-            return NULL;
+            goto error;
         }
         if ((linelen + 1) >= linesize) {
             char *cp;
@@ -101,10 +172,9 @@ epicsReadline (const char *prompt, void *context)
             cp = (char *)realloc(line, linesize);
             if (cp == NULL) {
                 printf("Out of memory!\n");
-                free(line);
-                return NULL;
+                goto error;
             }
-            line = cp;
+            rc->line = line = cp;
         }
         if (backslash_seen) {
             /* try to handle multi-line string */
@@ -113,9 +183,7 @@ epicsReadline (const char *prompt, void *context)
                 linelen--;      /* overwrite the '\' */
                 c = getc(in);   /* skip current '\n' and get the next char */
                 if (c == EOF) {
-                    free(line);
-                    line = NULL;
-                    break;
+                    goto error; // actually normal EOF
                 }
             }
         }
@@ -127,8 +195,14 @@ epicsReadline (const char *prompt, void *context)
         }
     } while (c != '\n');
     line[linelen] = '\0';
-    rc->line = line;
+done:
+    erlRestoreHandler(rc);
     return line;
+error:
+    free(line);
+    line = NULL;
+    rc->line = line = NULL;
+    goto done;
 }
 
 /*
@@ -139,6 +213,12 @@ epicsReadlineEnd (void *context)
 {
     if (context) {
         struct readlineContext *rc = context;
+
+#ifdef SA_RESETHAND
+        CHECK(0, close(rc->devnull));
+        CHECK(0, close(rc->clone_stdin));
+        rc->clone_stdin = rc->devnull = -1;
+#endif
 
         if (rc->osd)
             osdReadlineEnd(rc);

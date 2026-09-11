@@ -29,6 +29,7 @@
 #include "freeList.h"
 #include "libComRegister.h"
 #include "afterIocRunning.h"
+#include "registerModules.h"
 
 /* Register the PWD environment variable when the cd IOC shell function is
  * registered. This variable contains the current directory path.
@@ -488,6 +489,13 @@ static void installLastResortEventProviderCallFunc(const iocshArgBuf *args)
     iocshSetError(installLastResortEventProvider());
 }
 
+static const iocshFuncDef epicsModulesVersionFuncDef = {"epicsShowModulesVersion", 0, NULL,
+                                                        "Shows all the modules loaded on the ioc"};
+static void epicsModulesVersionCallFunc(const iocshArgBuf *args)
+{
+    registerPrintModules();
+}
+
 static iocshVarDef comDefs[] = {
     { "asCheckClientIP", iocshArgInt, 0 },
     { "freeListBypass", iocshArgInt, 0 },
@@ -529,6 +537,7 @@ void epicsStdCall libComRegister(void)
 
     iocshRegister(&generalTimeReportFuncDef,generalTimeReportCallFunc);
     iocshRegister(&installLastResortEventProviderFuncDef, installLastResortEventProviderCallFunc);
+    iocshRegister(&epicsModulesVersionFuncDef, epicsModulesVersionCallFunc);
 
     afterIocRunningRegister();
 

@@ -20,6 +20,7 @@ API_HEADER = dbRecStdAPI.h
 dbRecStd_API = dbRecStd
 
 LIBRARY_IOC += dbRecStd
+dbRecStd_VERSION = 7.0.10
 dbRecStd_LIBS = dbCore ca Com
 
 dbRecStd_RCS += dbRecStd.rc

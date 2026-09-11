@@ -51,7 +51,7 @@ static epicsThreadOnceId onceId = EPICS_THREAD_ONCE_INIT;
 
 int osdTimeGetCurrent(epicsTimeStamp *pDest);
 
-#if defined(vxWorks) || defined(__rtems__)
+#if defined(vxWorks) || (defined(__rtems__) && __RTEMS_MAJOR__ < 6)
 static void ClockTimeSync(void *dummy);
 
 /* ClockTime_Init iocsh command */
@@ -82,7 +82,7 @@ static const iocshArg * const ReportArgs[1] = { &ReportArg0 };
 static const iocshFuncDef ReportFuncDef = {
     "ClockTime_Report", 1, ReportArgs,
     "Reports the IOC's OS clock synchronization status:\n"
-    "  - On VxWorks and RTEMS when synchronized:\n"
+    "  - On VxWorks and RTEMS 5 when synchronized:\n"
     "      * Synchronization time provider priority\n"
     "      * Initial and last synchronization times\n"
     "      * Synchronization interval\n"
@@ -106,7 +106,7 @@ static void ClockTime_InitOnce(void *pfirst)
     epicsAtExit(ClockTime_Shutdown, NULL);
 
     /* Register the iocsh commands */
-#if defined(vxWorks) || defined(__rtems__)
+#if defined(vxWorks) || (defined(__rtems__) && __RTEMS_MAJOR__ < 6)
     iocshRegister(&InitFuncDef, InitCallFunc);
     iocshRegister(&ShutdownFuncDef, ShutdownCallFunc);
 #endif
@@ -126,7 +126,7 @@ void ClockTime_Init(int synchronize)
     if (synchronize) {
         if (ClockTimePvt.synchronize == CLOCKTIME_NOSYNC) {
 
-#if defined(vxWorks) || defined(__rtems__)
+#if defined(vxWorks) || (defined(__rtems__) && __RTEMS_MAJOR__ < 6)
             /* Start synchronizing */
             ClockTimePvt.synchronize = CLOCKTIME_SYNC;
             ClockTimePvt.ClockTimeSyncInterval = ClockTimeSyncInterval_initial;
@@ -174,7 +174,7 @@ void ClockTime_GetProgramStart(epicsTimeStamp *pDest)
 
 /* Synchronization thread */
 
-#if defined(vxWorks) || defined(__rtems__)
+#if defined(vxWorks) || (defined(__rtems__) && __RTEMS_MAJOR__ < 6)
 CLOCKTIME_SYNCHOOK ClockTime_syncHook = NULL;
 
 static void ClockTimeSync(void *dummy)
@@ -241,7 +241,7 @@ int osdTimeGetCurrent(epicsTimeStamp *pDest)
         clockNow.tv_sec = POSIX_TIME_AT_EPICS_EPOCH + 86400;
         clockNow.tv_nsec = 0;
 
-#if defined(vxWorks) || defined(__rtems__)
+#if defined(vxWorks) || (defined(__rtems__) && __RTEMS_MAJOR__ < 6)
         clock_settime(CLOCK_REALTIME, &clockNow);
         errlogPrintf("WARNING: OS Clock time was read before being set.\n"
             "Using 1990-01-02 00:00:00.000000 UTC\n");
@@ -307,7 +307,7 @@ int ClockTime_Report(int level)
         epicsTimeToStrftime(timebuf, sizeof(timebuf),
             "%Y-%m-%d %H:%M:%S.%06f", &ClockTimePvt.startTime);
         printf("Program started at %s\n", timebuf);
-#if defined(vxWorks) || defined(__rtems__)
+#if defined(vxWorks) || (defined(__rtems__) && __RTEMS_MAJOR__ < 6)
         printf("IOC's OS Clock synchronization thread is not running.\n");
 #endif
     }

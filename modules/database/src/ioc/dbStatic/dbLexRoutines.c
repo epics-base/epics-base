@@ -752,14 +752,18 @@ static void dbRecordtypeBody(void)
         if(pdbFldDes->promptgroup) no_prompt++;
         field_type = pdbFldDes->field_type;
         if((field_type>=DBF_INLINK) && (field_type<=DBF_FWDLINK))no_links++;
-        if((field_type==DBF_STRING) && (pdbFldDes->size==0))
+        if((field_type==DBF_STRING) && (pdbFldDes->size<=1)) {
             fprintf(stderr, ERL_ERROR
-                ": recordtype(%s).%s size not specified\n",
-                pdbRecordType->name,pdbFldDes->name);
-        if((field_type==DBF_NOACCESS) && (pdbFldDes->extra==0))
+                ": recordtype(%s).%s size %d too small\n",
+                pdbRecordType->name,pdbFldDes->name,pdbFldDes->size);
+            yyerror("STRING field size too small");
+        }
+        if((field_type==DBF_NOACCESS) && (pdbFldDes->extra==0)) {
             fprintf(stderr, ERL_ERROR
                 ": recordtype(%s).%s extra not specified\n",
                 pdbRecordType->name,pdbFldDes->name);
+            yyerror("NOACCESS field missing extra()");
+        }
     }
     if (ellCount(&tempList))
         yyerrorAbort("dbRecordtypeBody: tempList not empty");

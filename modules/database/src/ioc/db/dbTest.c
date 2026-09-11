@@ -22,6 +22,7 @@
 #include "epicsStdlib.h"
 #include "epicsString.h"
 #include "errlog.h"
+#include "errSymTbl.h"
 
 #include "callback.h"
 #include "dbAccessDefs.h"
@@ -789,7 +790,7 @@ static long nameToAddr(const char *pname, DBADDR *paddr)
     long status = dbNameToAddr(pname, paddr);
 
     if (status) {
-        printf("PV '%s' not found\n", pname);
+        printf("PV '%s' %s (0x%lx)\n", pname, errSymMsg(status), status);
     }
     return status;
 }

@@ -309,6 +309,67 @@ jobs:
       if: ${{ always() }}
       run: python3 .ci/cue.py -T 5M test-results
 
+  docker-alpine:
+    name: Alpine ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    container:
+      image: alpine:3.23
+    # Set environment variables from matrix parameters
+    env:
+      CMP: ${{ matrix.cmp }}
+      BCFG: ${{ matrix.configuration }}
+      EXTRA: ${{ matrix.extra }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # Job names also name artifacts, character limitations apply
+        include:
+          - name: "default"
+            cmp: gcc
+            configuration: default
+
+          - name: "static"
+            cmp: gcc
+            configuration: static
+
+          - name: "fully-static"
+            cmp: gcc
+            configuration: static
+            extra: "STATIC_BUILD=YES
+                    FULL_STATIC_BUILD=YES
+                    SHARED_LIBRARIES=NO
+                    PROD_LDFLAGS=-static
+                    COMMANDLINE_LIBRARY=''
+                    PERL_BINDINGS=NO"
+
+    steps:
+    - name: "Alpine setup"
+      run: |
+        apk add --no-cache git python3 make perl gcc g++ readline-dev ncurses-dev perl-dev perl-test-simple
+        git --version
+        python3 --version
+    - uses: actions/checkout@v4
+      with:
+        submodules: true
+    - name: Automatic core dumper analysis
+      uses: mdavidsaver/ci-core-dumper@master
+    - name: Prepare and compile dependencies
+      run: python3 .ci/cue.py prepare
+    - name: Build main module
+      run: python3 .ci/cue.py build
+    - name: Run main module tests
+      run: python3 .ci/cue.py -T 20M test
+    - name: Upload tapfiles Artifact
+      if: ${{ always() }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: tapfiles ${{ matrix.name }}
+        path: '**/O.*/*.tap'
+        if-no-files-found: ignore
+    - name: Collect and show test results
+      if: ${{ always() }}
+      run: python3 .ci/cue.py -T 5M test-results
+
   build-docker:
     name: Docker CentOS-7
     runs-on: ubuntu-latest

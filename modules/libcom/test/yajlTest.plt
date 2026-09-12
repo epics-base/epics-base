@@ -20,7 +20,7 @@ plan tests => scalar @cases;
 # of what it got to stdout, with errors going to stderr. We merge the
 # two output streams for the purpose of checking the test results.
 my $prog = './yajl_test';
-$prog .= '.exe' if ($^O eq 'MSWin32') || ($^O eq 'cygwin');
+$prog .= '.exe' if ($^O eq 'MSWin32');
 
 foreach my $case (@cases) {
     my $name  = $case->{name};

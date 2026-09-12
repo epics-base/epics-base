@@ -145,7 +145,7 @@ print $o <<"__EOF__";
 #ifndef $guard
 #define $guard
 
-#if defined(_WIN32) || defined(__CYGWIN__)
+#if defined(_WIN32)
 
 #  if !defined(epicsStdCall)
 #    define epicsStdCall __stdcall

@@ -30,6 +30,8 @@
 
 use 5.10.1;   # This script uses the defined-or operator //
 use strict;
+use Config;
+use POSIX;
 
 use File::Basename;
 my $tool = basename($0);
@@ -47,8 +49,13 @@ if ($TA =~ /^win32-x86/ && $HA !~ /^win/) {
     $wine32 = "/usr/bin/wine" if ! -x $wine32;
     $error = $exec = "$wine32 $exe";
 }
-elsif ($TA =~ /^windows-x64/ && $HA !~ /^win/) {
-    # Use WINE to run windows-x64 executables on non-windows hosts.
+elsif ($TA =~ /^windows-x64/ && $HA !~ /^win/ && $Config{'archname'} =~ /x86_64/) {
+    # Use WINE to run windows-x64 executables on non-windows x64 hosts.
+    $error = $exec = "wine64 $exe";
+}
+elsif ($TA =~ /^windows-aarch64/ && $HA !~ /^win/ && $Config{'archname'} =~ /arm64|aarch64/ && sysconf(_SC_PAGESIZE) == 4096) {
+    # Use WINE to run windows-aarch64 executables on non-windows aarch64 hosts.
+    # Requires that the host uses 4k memory pages as expeted by Windows.
     $error = $exec = "wine64 $exe";
 }
 elsif ($TA =~ /^RTEMS-pc[36]86-qemu$/) {

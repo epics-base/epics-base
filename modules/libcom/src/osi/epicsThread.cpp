@@ -26,8 +26,8 @@
 #include "epicsAlgorithm.h"
 #include "epicsTime.h"
 #include "epicsThread.h"
-#include "epicsAssert.h"
 #include "epicsGuard.h"
+#include "cantProceed.h"
 #include "errlog.h"
 
 using namespace std;
@@ -345,7 +345,8 @@ extern "C" {
     {
         epicsThreadId id = epicsThreadCreate (
             name, priority, stackSize, funptr, parm );
-        assert ( id );
+        if ( !id )
+            cantProceed("epicsThreadMustCreate: epicsThreadCreate failed\n");
         return id;
     }
 } // extern "C"

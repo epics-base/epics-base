@@ -210,6 +210,14 @@ jobs:
             cmp: gcc
             configuration: default
 
+          # Cross builds for RISC-V
+          - os: ubuntu-latest
+            cmp: gcc
+            configuration: default
+            name: "Cross linux-riscv64"
+            cross: linux-riscv64@riscv64-linux-gnu
+
+
     steps:
     - uses: actions/checkout@v6
       with:

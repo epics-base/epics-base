@@ -29,6 +29,7 @@ extern "C" {
 #define SPC_ALARMACK    5       /*Special Alarm Acknowledgement*/
 #define SPC_AS          6       /* Access Security*/
 #define SPC_ATTRIBUTE   7       /* pseudo field, i.e. attribute field*/
+#define SPC_TOUT        8       /*process timeout*/
 /* useful when record support must be notified of a field changing value*/
 #define SPC_MOD         100
 /* used by all records that support a reset field*/
@@ -39,7 +40,7 @@ extern "C" {
 #define SPC_CALC        103     /*The CALC field is being changed*/
 
 
-#define SPC_NTYPES 9
+#define SPC_NTYPES 10
 typedef struct mapspcType{
     char    *strvalue;
     int     value;
@@ -54,6 +55,7 @@ mapspcType pamapspcType[SPC_NTYPES] = {
     {"SPC_SCAN",SPC_SCAN},
     {"SPC_ALARMACK",SPC_ALARMACK},
     {"SPC_AS",SPC_AS},
+    {"SPC_TOUT",SPC_TOUT},
     {"SPC_MOD",SPC_MOD},
     {"SPC_RESET",SPC_RESET},
     {"SPC_LINCONV",SPC_LINCONV},

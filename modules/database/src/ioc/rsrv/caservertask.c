@@ -280,10 +280,6 @@ void rsrv_build_addr_lists(void)
 {
     int autobeaconlist = 1;
 
-    /* the UDP ports are known at this point, but the TCP port is not */
-    assert(ca_beacon_port!=0);
-    assert(ca_udp_port!=0);
-
     envGetBoolConfigParam(&EPICS_CAS_AUTO_BEACON_ADDR_LIST, &autobeaconlist);
 
     ellInit ( &casIntfAddrList );

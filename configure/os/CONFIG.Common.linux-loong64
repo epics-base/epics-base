@@ -1,0 +1,13 @@
+# CONFIG.Common.linux-loong64
+#
+# Definitions for linux-loong64 target builds
+# Override these settings in CONFIG_SITE.Common.linux-loong64
+#-------------------------------------------------------
+
+# Include definitions common to all Linux targets
+include $(CONFIG)/os/CONFIG.Common.linuxCommon
+
+ARCH_CLASS = loongarch
+
+ARCH_DEP_CFLAGS = $(GNU_ARCH_CFLAGS) $(GNU_TUNE_CFLAGS)
+ARCH_DEP_CFLAGS += $(GNU_DEP_CFLAGS)

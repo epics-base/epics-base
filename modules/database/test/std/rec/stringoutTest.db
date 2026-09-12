@@ -1,0 +1,17 @@
+record(stringout, "test_stringout_rec") {
+}
+
+record(stringin, "test_link_rec") {
+}
+
+record(stringout, "test_dol_rec") {
+}
+
+record(stringin, "test_sim_rec") {
+}
+
+record(stringout, "test_stringout_invalid_rec") {
+}
+
+record(stringin, "test_link_invalid_rec") {
+}

@@ -219,7 +219,7 @@ int epicsTimeGetMonotonic ( epicsTimeStamp * pDest )
 {
     epicsUInt64 now = epicsMonotonicGet();
     pDest->nsec = now%1000000000ul;
-    pDest->secPastEpoch = now/1000000000ul;
+    pDest->secPastEpoch = (epicsUInt32)(now/1000000000ul);
     return 0;
 }
 

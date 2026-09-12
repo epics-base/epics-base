@@ -272,7 +272,7 @@ message is issued and processing is terminated.
 
 If DOL is a constant, then the type double constant, if non-zero, is converted
 to a string and stored into VAL and UDF is set to FALSE. If DOL type is a
-PV_LINK then dbCaAddInlink is called to create a channel access link.
+PV_LINK then C<dbCaAddInlink()> is called to create a channel access link.
 
 If device support includes C<init_record()>, it is called.
 
@@ -297,9 +297,9 @@ record. Thus error storms will not occur.
 
 =item 2.
 
-If PACT is FALSE and OMSL is CLOSED_LOOP, recGblGetLinkValue is called to read
+If PACT is FALSE and OMSL is CLOSED_LOOP, C<recGblGetLinkValue()> is called to read
 the current value of VAL. See L<Soft Output>.
-If the return status of recGblGetLinkValue is zero then UDF is set to FALSE.
+If the return status of C<recGblGetLinkValue()> is zero then UDF is set to FALSE.
 
 =item 3.
 
@@ -354,7 +354,7 @@ Scan forward link if necessary, set PACT FALSE, and return.
 
 Each stringout output record must have an associated set of device support
 routines. The primary responsibility of the device support routines is to write
-a new value whenever write_stringout is called. The device support routines are
+a new value whenever C<write_stringout()> is called. The device support routines are
 primarily interested in the following fields:
 
 =fields PACT, DPVT, NSEV, NSTA, VAL, OUT
@@ -415,13 +415,30 @@ This routine must output a new value. It returns the following values:
 
 =back
 
-=head3 Device Support for Soft Records
+=head3 Device Support For Soft Records
 
-The C<<< Soft Channel >>> device support module writes the current value of VAL.
+Three device support modules are provided for writing values from
+records that are not attached to actual hardware.
 
-Device support for DTYP C<stdio> is provided for writing values to the stdout,
-stderr, or errlog streams. C<INST_IO> addressing C<@stdout>, C<@stderr> or
-C<@errlog> is used on the OUT link field to select the desired stream.
+=head3 Soft Channel
+
+The C<Soft Channel> device support module writes the current value of
+VAL through the record's OUT link. The OUT link is a standard output
+link.
+
+=head3 Async Soft Channel
+
+This module is like the previous except that it writes the value
+using asynchronous processing that does not complete until the OUT
+target record's processing has completed.
+
+=head3 stdio
+
+This module writes the record's VAL field, followed by a newline, to
+the standard output, standard error, or IOC error log. C<INST_IO>
+addressing C<@stdout>, C<@stderr>, or C<@errlog> is used on the OUT
+link to select the destination. See L<Built-in Device Support|devSoft/stdio>
+for details.
 
 =cut
 

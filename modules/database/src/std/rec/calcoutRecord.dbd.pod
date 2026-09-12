@@ -1547,6 +1547,23 @@ If an output delay was implemented, process the forward link.
 
 =back
 
+=head3 Device Support For Soft Records
+
+Two soft device support modules are provided for writing the output
+of records not related to actual hardware devices. The OUT link must
+be a standard output link.
+
+=head3 Soft Channel
+
+The C<Soft Channel> module writes the current value of OVAL through
+the record's OUT link.
+
+=head3 Async Soft Channel
+
+This module is like the previous except that it writes the value
+using asynchronous processing that does not complete until the OUT
+target record's processing has completed.
+
 =cut
 }
 

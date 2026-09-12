@@ -332,11 +332,11 @@ This routine first initializes the simulation mode mechanism by setting SIMM
 if SIML is a constant, and setting SVAL if SIOL is a constant.
 
 It then checks if the device support and the device support's
-C<read_int64in> routine are defined.
+C<read_int64in()> routine are defined.
 If either one does not exist, an error message is issued
 and processing is terminated.
 
-If device support includes C<init_record>, it is called.
+If device support includes C<init_record()>, it is called.
 
 Finally, the deadband mechanisms for monitors and level alarms are
 initialized.
@@ -354,7 +354,7 @@ Routine C<process> implements the following algorithm:
 =item 1.
 
 Check to see that the appropriate device support module and its
-C<read_int64in> routine are defined.
+C<read_int64in()> routine are defined.
 If either one does not exist, an error message is issued and processing is
 terminated with the PACT field set to TRUE, effectively blocking the record
 to avoid error storms.
@@ -363,7 +363,7 @@ to avoid error storms.
 
 Determine the value:
 
-If PACT is TRUE, call the device support C<read_int64in> routine and return.
+If PACT is TRUE, call the device support C<read_int64in()> routine and return.
 
 If PACT is FALSE, read the value, honoring simulation mode:
 
@@ -372,7 +372,7 @@ If PACT is FALSE, read the value, honoring simulation mode:
 =item * Get SIMM by reading the SIML link.
 
 =item * If SIMM is C<NO>,
-call the device support C<read_int64in> routine and return.
+call the device support C<read_int64in()> routine and return.
 
 =item * If SIMM is C<YES>, then
 
@@ -403,7 +403,7 @@ callback processing with the delay specified in SDLY.
 =item 3.
 
 If PACT has been changed to TRUE, the device support signals asynchronous
-processing: its C<read_int64in> output routine has started, but not
+processing: its C<read_int64in()> output routine has started, but not
 completed reading the new value.
 In this case, the processing routine merely returns, leaving PACT TRUE.
 
@@ -549,19 +549,19 @@ error occurred.
 
 =cut
 
-=head2 Device Support For Soft Records
+=head3 Device Support For Soft Records
 
-Two soft device support modules, Soft Channel and Soft Callback Channel, are
+Two soft device support modules, Soft Channel and Async Soft Channel, are
 provided for input records not related to actual hardware devices. The
-INP link type must be either a CONSTANT, DB_LINK, or CA_LINK.
+INP link must be a standard input link.
 
 =head3 Soft Channel
 
 This module reads the value using the record's INP link.
 
-C<read_int64in> calls C<dbGetLink> to read the value.
+C<read_int64in()> calls C<dbGetLink()> to read the value.
 
-=head3 Soft Callback Channel
+=head3 Async Soft Channel
 
 This module is like the previous except that it reads the value
 using asynchronous processing that will not complete until an asynchronous

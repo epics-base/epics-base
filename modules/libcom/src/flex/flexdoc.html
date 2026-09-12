@@ -1018,14 +1018,14 @@
      supposed  to  return  the  type of the next token as well as
      putting any associated value in the global  yylval.  To  use
      <I>flex</I>  with  <I>yacc</I>,  one  specifies  the  -d option to <I>yacc</I> to
-     instruct it to generate the file y.tab.h containing  defini-
+     instruct it to generate the file y.h containing  defini-
      tions  of all the %tokens appearing in the <I>yacc</I> input.  This
      file is then included in the <I>flex</I> scanner.  For example,  if
      one of the tokens is "TOK_NUMBER", part of the scanner might
      look like:
 
          %{
-         #include "y.tab.h"
+         #include "y.h"
          %}
 
          %%

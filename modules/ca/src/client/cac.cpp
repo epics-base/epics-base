@@ -864,6 +864,22 @@ bool cac::writeNotifyRespAction (
     return true;
 }
 
+// Reject a data response whose header is inconsistent with its payload.
+// Returns an exception to the server and returns true on error.
+bool cac::badResponsePayload (
+    epicsGuard < epicsMutex > & guard, baseNMIU & miu,
+    const caHdrLargeArray & hdr )
+{
+    if ( INVALID_DB_REQ ( hdr.m_dataType ) ||
+         hdr.m_postsize < dbr_size_chk ( hdr.m_dataType, hdr.m_count ) ) {
+        miu.exception ( guard, *this, ECA_BADTYPE,
+            "server response inconsistent with payload size",
+            hdr.m_dataType, hdr.m_count );
+        return true;
+    }
+    return false;
+}
+
 bool cac::readNotifyRespAction ( callbackManager &, tcpiiu & iiu,
     const epicsTime &, const caHdrLargeArray & hdr, void * pMsgBdy )
 {
@@ -895,6 +911,9 @@ bool cac::readNotifyRespAction ( callbackManager &, tcpiiu & iiu,
         if ( pSubscr ) {
             // this does *not* assign a new resource id
             this->ioTable.add ( *pmiu );
+        }
+        if ( this->badResponsePayload ( guard, *pmiu, hdr ) ) {
+            return true;
         }
         if ( caStatus == ECA_NORMAL ) {
             /*
@@ -960,6 +979,9 @@ bool cac::eventRespAction ( callbackManager &, tcpiiu &iiu,
     //
     baseNMIU * pmiu = this->ioTable.lookup ( hdr.m_available );
     if ( pmiu ) {
+        if ( this->badResponsePayload ( guard, *pmiu, hdr ) ) {
+            return true;
+        }
         /*
          * convert the data buffer from net format to host format
          */
@@ -992,6 +1014,9 @@ bool cac::readRespAction ( callbackManager &, tcpiiu &,
     // it is in use here.
     //
     if ( pmiu ) {
+        if ( this->badResponsePayload ( guard, *pmiu, hdr ) ) {
+            return true;
+        }
         pmiu->completion ( guard, *this,
             hdr.m_dataType, hdr.m_count, pMsgBdy );
     }
@@ -1087,6 +1112,9 @@ bool cac::exceptionRespAction ( callbackManager & cbMutexIn, tcpiiu & iiu,
     if ( hdr.m_postsize < bytesSoFar ) {
         return false;
     }
+    // Ensure the context string is NULL-terminated
+    static_cast < char * > ( pMsgBdy ) [hdr.m_postsize - 1] = '\0';
+
     caHdrLargeArray req;
     req.m_cmmd = AlignedWireRef < const epicsUInt16 > ( pReq->m_cmmd );
     req.m_postsize = AlignedWireRef < const epicsUInt16 > ( pReq->m_postsize );
@@ -1109,7 +1137,7 @@ bool cac::exceptionRespAction ( callbackManager & cbMutexIn, tcpiiu & iiu,
 
     // execute the exception message
     pExcepProtoStubTCP pStub;
-    if ( hdr.m_cmmd >= NELEMENTS ( cac::tcpExcepJumpTableCAC ) ) {
+    if ( req.m_cmmd >= NELEMENTS ( cac::tcpExcepJumpTableCAC ) ) {
         pStub = &cac::defaultExcep;
     }
     else {

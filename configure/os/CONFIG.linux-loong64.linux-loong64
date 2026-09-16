@@ -1,0 +1,8 @@
+# CONFIG.linux-loong64.linux-loong64
+#
+# Definitions for native linux-loong64 builds
+# Override these definitions in CONFIG_SITE.linux-loong64.linux-loong64
+#-------------------------------------------------------
+
+# Include common gnu compiler definitions
+include $(CONFIG)/CONFIG.gnuCommon

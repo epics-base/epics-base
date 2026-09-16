@@ -349,6 +349,22 @@ static char *addr(char *cbuf, uint32_t addr)
     return (char *)inet_ntop(AF_INET, &a, cbuf, INET_ADDRSTRLEN);
 }
 
+#if defined(NVRAM_INDIRECT)
+# ifndef NVRAM_INDIRECT_ADDR_LO
+#  define NVRAM_INDIRECT_ADDR_LO 0x80000074
+# endif
+# ifndef NVRAM_INDIRECT_ADDR_HI
+#  define NVRAM_INDIRECT_ADDR_HI 0x80000075
+# endif
+# ifndef NVRAM_INDIRECT_DATA
+#  define NVRAM_INDIRECT_DATA 0x80000077
+# endif
+#endif
+
+#ifndef NVRAM_NIOT_OFFSET
+# define NVRAM_NIOT_OFFSET 0x1000
+#endif
+
 int
 setBootConfigFromNVRAM(char *ntp_server_ip, size_t ntp_server_ip_size)
 {
@@ -369,10 +385,10 @@ setBootConfigFromNVRAM(char *ntp_server_ip, size_t ntp_server_ip_size)
 
 #if defined(NVRAM_INDIRECT)
    {
-      volatile char *addrLo = (volatile char *)0x80000074;
-      volatile char *addrHi = (volatile char *)0x80000075;
-      volatile char *data = (volatile char *)0x80000077;
-      int addr =  0x1000;
+      volatile char *addrLo = (volatile char *)NVRAM_INDIRECT_ADDR_LO;
+      volatile char *addrHi = (volatile char *)NVRAM_INDIRECT_ADDR_HI;
+      volatile char *data = (volatile char *)NVRAM_INDIRECT_DATA;
+      int addr =  NVRAM_NIOT_OFFSET;
       char *d = (char *)&nvram;
 
       while (d < ((char *)&nvram + sizeof nvram)) {

@@ -98,9 +98,9 @@ buildInstall : $(INSTALL_JAR) $(INSTALL_JAVADOC)
 
 #This clean works only from O.* dirs.
 buildclean: 
-	@$(RMDIR) $(INSTALL_CLASSES) $(PACKAGEDIRS)
-	@$(RM) $(INSTALL_JAR) $(INSTALL_JAVADOC)
-	@$(RM) $(COMMON_TESTCLASSES) $(COMMON_JAVAINC)
+	$(RMDIR) $(INSTALL_CLASSES) $(PACKAGEDIRS)
+	$(RM) $(INSTALL_JAR) $(INSTALL_JAVADOC)
+	$(RM) $(COMMON_TESTCLASSES) $(COMMON_JAVAINC)
 
 ifdef JAVA_DIRECTORY_TARGETS
 $(JAVA_DIRECTORY_TARGETS):
@@ -109,40 +109,40 @@ endif
 
 $(COMMON_JAVAINC):$(JAVAINC_CLASSFILES)
 	$(ECHO) Creating header files $(COMMON_JAVAINC)
-	@$(RM) $@
+	$(RM) $@
 	$(JAVAHCMD) $(JAVAINC_CLASSNAMES)
 
 $(COMMON_TESTCLASSES): $(addprefix ../,$(DEPTESTJAVA))
 	$(ECHO) Creating test java class files $(COMMON_TESTCLASSES)
-	@$(RM) $@
+	$(RM) $@
 	$(JAVACCMD) -d $(COMMON_DIR) $^
 
 $(INSTALL_CLASSES): $(addprefix ../,$(JAVA))
 	$(ECHO) Creating java class files 
-	@$(RM) $@
+	$(RM) $@
 	$(JAVACCMD) -d $(INSTALL_JAVA) $^
 
 $(INSTALL_JAVADOC): $(addprefix ../,$(JAVA))
 	$(ECHO) Creating java doc files 
-	@$(RM) $@
+	$(RM) $@
 	$(JAVADOCCMD) -d $(addprefix $(INSTALL_HTML)/,$(JAVADOC)) $^
 
 $(COMMON_DIR)/%.jar: $(JARDEPFILES)
 	$(ECHO) Creating java jar file $@
-	@$(RM) $@
+	$(RM) $@
 	$(JARCMD)
 
 $(INSTALL_JAVA)/%.jar: $(COMMON_DIR)/%.jar
 	$(ECHO) "Installing java jar file $@"
-	@$(INSTALL) -d -m  $(INSTALL_PERMISSIONS) $< $(@D)
+	$(INSTALL) -d -m  $(INSTALL_PERMISSIONS) $< $(@D)
 
 $(INSTALL_JAVA)/%.jar: %.jar
 	$(ECHO) "Installing java jar file $@"
-	@$(INSTALL) -d -m  $(INSTALL_PERMISSIONS) $< $(@D)
+	$(INSTALL) -d -m  $(INSTALL_PERMISSIONS) $< $(@D)
 
 $(addprefix $(INSTALL_JAVA)/, $(JARINPUT)): $(INSTALL_JAVA)/%: ../%
 	$(ECHO) "Installing jar input file $@"
-	@$(INSTALL) -d -m  $(INSTALL_PERMISSIONS) $< $(@D)
+	$(INSTALL) -d -m  $(INSTALL_PERMISSIONS) $< $(@D)
 
 .PHONY: all install buildInstall rebuild clean build inc
 

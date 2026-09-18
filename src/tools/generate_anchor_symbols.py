@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 import argparse
+import re
 from pathlib import Path
-
 
 parser = argparse.ArgumentParser(
     prog="generate_anchor_symbols",
@@ -16,7 +16,8 @@ parser.add_argument(
 parser.add_argument("libs", nargs="+")
 
 args = parser.parse_args()
-filename = Path(f"{args.prod}_weakAnchor.cpp")
+filestring = re.sub(r"\s+", "_", args.prod)
+filename = Path(f"{filestring}_weakAnchor.cpp")
 
 symbols = [
     f"extern int {l}_moduleAnchor;static __attribute__((used)) int {l}_anchorHolder = {l}_moduleAnchor;"

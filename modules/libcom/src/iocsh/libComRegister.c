@@ -123,8 +123,9 @@ static void pwdCallFunc (const iocshArgBuf *args)
     char buf[1024];
     char *pwd = getcwd ( buf, sizeof(buf) );
     if ( pwd ) {
-        buf[sizeof(buf)-1u] = '\0';
-        printf ( "%s\n", pwd );
+      /* Ensure proper termination */
+      buf[sizeof(buf)-1u] = '\0';
+      printf ( "%s\n", pwd );
     }
 }
 

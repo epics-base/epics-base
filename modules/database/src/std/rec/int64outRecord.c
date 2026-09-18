@@ -91,7 +91,7 @@ static long init_record(dbCommon *pcommon, int pass)
 {
     int64outRecord *prec = (int64outRecord*)pcommon;
     int64outdset *pdset;
-    long status=0;
+    long status;
 
     if (pass == 0) return 0;
 

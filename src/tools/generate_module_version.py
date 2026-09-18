@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 import argparse
+import re
 from pathlib import Path
 
 parser = argparse.ArgumentParser(
@@ -10,7 +11,8 @@ parser.add_argument("-n", "--name")
 parser.add_argument("-v", "--version")
 
 args = parser.parse_args()
-filename = Path(f"{args.name}_registerModule.cpp")
+filestring = re.sub(r"\s+", "_", args.name)
+filename = Path(f"{filestring}_registerModule.cpp")
 
 CODE_TEMPLATE = f"""
 /* THIS IS A GENERATED FILE. DO NOT EDIT! */

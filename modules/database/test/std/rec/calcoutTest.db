@@ -1,0 +1,15 @@
+record(calcout, "test_calcout"){
+
+}
+
+record(ao, "test_ao1"){
+
+}
+
+record(ao, "test_ao2"){
+
+}
+
+record(ao, "test_out"){
+
+}

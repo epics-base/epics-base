@@ -271,7 +271,7 @@ MAIN(epicsStdlibTest)
     testOk(epicsScanLLong("-0x7fffffffffffffff", &ll, 0)
         && ll == -0x7fffffffffffffffLL, "LLong '-0x7fffffffffffffff'");
     testOk(epicsScanULLong("-0x7fffffffffffffff", &ull, 0) &&
-        ull == -0x7fffffffffffffffULL, "ULLong '-0x7fffffffffffffff'");
+        ull == (unsigned long long)-0x7fffffffffffffffLL, "ULLong '-0x7fffffffffffffff'");
     testOk(epicsScanFloat("-0xffffff", &f) && f == -0xffffff,
         "Float '-0xffffff'");
     testOk(epicsScanDouble("-0x7fffffff", &d) && d == -0x7fffffff,
@@ -313,7 +313,7 @@ MAIN(epicsStdlibTest)
 
     testOk(!epicsParseInt32("0x7fffffff", &i32, 0, NULL) && i32 == 0x7fffffff,
         "Int32 '0x7fffffff'");
-    testOk(!epicsParseInt32("-0x80000000", &i32, 0, NULL) && i32 == -0x80000000L,
+    testOk(!epicsParseInt32("-0x80000000", &i32, 0, NULL) && i32 == -0x80000000LL,
         "Int32 '-0x80000000'");
     testOk(!epicsParseUInt32("0xffffffff", &u32, 0, NULL) && u32 == 0xffffffff,
         "UInt32 '0xffffffff'");

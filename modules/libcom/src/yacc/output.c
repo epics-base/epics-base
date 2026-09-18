@@ -1008,7 +1008,7 @@ output_debug(void)
             }
             else
             {
-                k = strlen(s) + 3;
+                k = (int)strlen(s) + 3;
                 j += k;
                 if (j > 80)
                 {

@@ -17,7 +17,7 @@
  * epicsSocketConvertErrorToString ()
  */
 void epicsSocketConvertErrorToString (
-        char * pBuf, unsigned bufSize, int theSockError )
+        char * pBuf, size_t bufSize, int theSockError )
 {
     if ( bufSize ) {
         /*
@@ -27,7 +27,7 @@ void epicsSocketConvertErrorToString (
             FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_MAX_WIDTH_MASK,
             NULL, theSockError,
             MAKELANGID ( LANG_NEUTRAL, SUBLANG_DEFAULT ), /* Default language */
-            pBuf, bufSize, NULL );
+            pBuf, static_cast<DWORD>(bufSize), NULL );
         if ( ! success ) {
             int status = epicsSnprintf (
                 pBuf, bufSize, "WINSOCK Error %d", theSockError );
@@ -43,7 +43,7 @@ void epicsSocketConvertErrorToString (
  * epicsSocketConvertErrnoToString ()
  */
 void epicsSocketConvertErrnoToString (
-        char * pBuf, unsigned bufSize )
+        char * pBuf, size_t bufSize )
 {
     epicsSocketConvertErrorToString ( pBuf, bufSize, SOCKERRNO );
 }

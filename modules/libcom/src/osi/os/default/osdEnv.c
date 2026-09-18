@@ -25,7 +25,6 @@
 #include "envDefs.h"
 #include "osiUnistd.h"
 #include "epicsFindSymbol.h"
-#include "iocsh.h"
 
 #ifdef __rtems__
 #  include <rtems.h>
@@ -44,9 +43,8 @@
  * Leaks memory, but the assumption is that this routine won't be
  * called often enough for the leak to be a problem.
  */
-LIBCOM_API void epicsStdCall epicsEnvSet (const char *name, const char *value)
+void osdEnvSet (const char *name, const char *value)
 {
-    iocshEnvClear(name);
     if(setenv(name, value, 1))
         errlogPrintf("setenv(\"%s\", \"%s\") -> %d\n", name, value, errno);
 }
@@ -56,9 +54,8 @@ LIBCOM_API void epicsStdCall epicsEnvSet (const char *name, const char *value)
  * Using putenv with a an existing name but without "=..." deletes
  */
 
-LIBCOM_API void epicsStdCall epicsEnvUnset (const char *name)
+void osdEnvUnset (const char *name)
 {
-    iocshEnvClear(name);
     if(unSetEnv(name))
         errlogPrintf("unsetenv(\"%s\") -> %d\n", name, errno);
 }

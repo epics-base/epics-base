@@ -25,7 +25,6 @@
 #include "epicsStdio.h"
 #include "epicsString.h"
 #include "errlog.h"
-#include "iocsh.h"
 
 
 /*
@@ -33,7 +32,7 @@
  * Leaks memory, but the assumption is that this routine won't be
  * called often enough for the leak to be a problem.
  */
-LIBCOM_API void epicsStdCall epicsEnvSet (const char *name, const char *value)
+void osdEnvSet (const char *name, const char *value)
 {
     size_t alen = (!name || !value) ? 2u : strlen(name) + strlen(value) + 2u; /* <NAME> '=' <VALUE> '\0' */
     const int onstack = alen <= 512u; /* use on-stack dynamic array for small strings */
@@ -54,8 +53,6 @@ LIBCOM_API void epicsStdCall epicsEnvSet (const char *name, const char *value)
         strcat (cp, "=");
         strcat (cp, value);
 
-        iocshEnvClear(name);
-
         if((err=putenv(cp)) < 0)
             errlogPrintf("epicsEnvSet(\"%s\", \"%s\" -> %d\n", name, value, err);
     }
@@ -69,12 +66,11 @@ LIBCOM_API void epicsStdCall epicsEnvSet (const char *name, const char *value)
  * support to really unset an environment variable.
  */
 
-LIBCOM_API void epicsStdCall epicsEnvUnset (const char *name)
+void osdEnvUnset (const char *name)
 {
     char* var;
 
     if (!name) return;
-    iocshEnvClear(name);
     var = getenv(name);
     if (!var) return;
     var -= strlen(name);

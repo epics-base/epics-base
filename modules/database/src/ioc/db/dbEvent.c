@@ -789,12 +789,14 @@ static void db_queue_event_log (evSubscrip *pevent, db_field_log *pLog)
 
     /* if we have an event on the queue and both the last
      * event on the queue and the current event reference
-     * a record field, simply ignore duplicate events.
+     * a record field, replace the queued event so that
+     * the current alarm and timestamp metadata is kept.
      */
     if (pevent->npend > 0u
             && !dbfl_has_copy(*pevent->pLastLog)
             && !dbfl_has_copy(pLog)) {
-        db_delete_field_log(pLog);
+        db_delete_field_log(*pevent->pLastLog);
+        *pevent->pLastLog = pLog;
         UNLOCKEVQUE (ev_que);
         return;
     }
@@ -810,7 +812,8 @@ static void db_queue_event_log (evSubscrip *pevent, db_field_log *pLog)
      */
     rngSpace = ringSpace ( ev_que );
     if ( pevent->npend>0u &&
-        (ev_que->evUser->flowCtrlMode || rngSpace<=EVENTSPERQUE) ) {
+        (ev_que->evUser->flowCtrlMode
+            || rngSpace <= ev_que->quota / EVENTENTRIES) ) {
         /*
          * replace last event if no space is left
          */

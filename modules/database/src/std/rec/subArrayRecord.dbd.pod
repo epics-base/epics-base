@@ -304,9 +304,10 @@ sub-array were acquired.
 
 Only the device support module C<Soft Channel> is currently provided.
 
-=head4 Soft Channel
+=head3 Soft Channel
 
-INP is expected to point to an array field of a waveform record or similar.
+INP is expected to point to an array field of a waveform record or
+similar. The INP link is a standard input link.
 
 =cut
 

@@ -229,13 +229,26 @@ associated functionality is not required for this support layer.
 Most device supports also provide an C<init_record()> routine to configure the
 record instance and connect it to the hardware or driver support layer.
 
-=head2 Device Support for Soft Records
+=head3 Device Support For Soft Records
 
-A device support module for DTYP C<Soft Channel> is provided for retrieving
-values from other records or other software components.
+Two device support modules are provided for retrieving values into
+records that have no hardware-specific device support attached.
 
-Device support for DTYP C<getenv> is provided for retrieving strings from
-environment variables. C<INST_IO> addressing C<< @<environment variable> >> is
-used on the C<INP> link field to select the desired environment variable.
+=head3 Soft Channel
+
+This module reads the value using the record's INP link.
+
+C<read_lsi()> calls C<dbGetLink()> to read the value into VAL,
+truncating at SIZV characters.
+
+The INP link is a standard input link.
+
+=head3 getenv
+
+This module reads the named environment variable into VAL on each
+process event. C<INST_IO> addressing is used on the INP link with the
+environment variable name as the parameter, e.g.
+C<< field(INP, "@HOSTNAME") >>. See L<Built-in Device Support|devSoft/getenv>
+for details.
 
 =cut

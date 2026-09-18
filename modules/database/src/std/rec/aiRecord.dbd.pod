@@ -677,4 +677,35 @@ which is a very common case (when I<RVAL_min> is zero).
 
 ...
 
+=head3 Device Support For Soft Records
+
+Three soft device support modules, C<Soft Channel>, C<Raw Soft
+Channel>, and C<Async Soft Channel>, are provided for analog input
+records not related to actual hardware devices. The INP link must be
+a standard input link.
+
+=head3 Soft Channel
+
+The C<Soft Channel> device support reads the value directly into VAL,
+so no conversion is performed (C<read_ai()> returns 2). If the INP
+link type is CONSTANT, the constant value is stored in VAL by
+C<init_record()> and UDF is set to FALSE. If the INP link type is
+PV_LINK, C<dbCaAddInlink> is called by C<init_record()>.
+
+C<read_ai()> calls C<dbGetLinkValue> to read the current value of VAL.
+See L<Soft Input> for details.
+
+=head3 Raw Soft Channel
+
+This module is like the previous except that values are read into
+RVAL, allowing the record's conversion stage (linear or breakpoint
+table) to run. C<read_ai()> returns 0, so the record support computes
+VAL from RVAL in the normal way.
+
+=head3 Async Soft Channel
+
+This module is like C<Soft Channel> except that it reads the value
+using asynchronous processing that does not complete until the INP
+target record's processing has completed.
+
 =cut

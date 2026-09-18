@@ -22,7 +22,7 @@
 #include "mbboDirectRecord.h"
 #include "epicsExport.h"
 
-static long write_mbbo(mbboDirectRecord *prec)
+static long write_mbboDirect(mbboDirectRecord *prec)
 {
     struct link *plink = &prec->out;
     long status;
@@ -42,6 +42,6 @@ static long write_mbbo(mbboDirectRecord *prec)
 /* Create the dset for devMbboDirectSoftCallback */
 mbbodirectdset devMbboDirectSoftCallback = {
     {5, NULL, NULL, NULL, NULL},
-    write_mbbo
+    write_mbboDirect
 };
 epicsExportAddress(dset, devMbboDirectSoftCallback);

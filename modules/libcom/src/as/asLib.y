@@ -11,6 +11,7 @@
 static int yyerror(char *);
 static int yy_start;
 #include "asLibRoutines.c"
+#include "epicsString.h"
 static int yyFailed = FALSE;
 static int yyWarned = FALSE;
 static int line_num=1;
@@ -19,30 +20,27 @@ static HAG *yyHag=NULL;
 static ASG *yyAsg=NULL;
 static ASGRULE *yyAsgRule=NULL;
 
-static
-char* yystrdup(const char *inp) {
-    char* ret = strdup(inp);
-    if(!ret)
-        yyerror("MALLOC");
-    return ret;
-}
+static AUTHORITY *yyCurrentAuthority=NULL;  /* parent for AUTHORITY nodes being parsed */
 
+static int asAuthorityNew(char *id, char *commonName);
+static void asAuthorityClose();
+static char* yystrdup(const char *inp);
 %}
 
 %start asconfig
 
-%token tokenUAG tokenHAG tokenASG tokenRULE tokenCALC
+%token tokenUAG tokenHAG tokenASG tokenRULE tokenCALC tokenMETHOD tokenAUTHORITY tokenPROTOCOL
 %token <Str> tokenSTRING
 %token <Int64> tokenINT64 tokenINP
 %token <Float64> tokenFLOAT64
 
-%union
-{
+%union {
     epicsInt64 Int64;
     epicsFloat64 Float64;
     char *Str;
 }
 
+%type <Str> auth_head
 %type <Str> non_rule_keyword
 %type <Str> generic_block_elem_name
 %type <Str> generic_block_elem
@@ -59,6 +57,7 @@ asconfig_item:  tokenUAG uag_head uag_body
     |   tokenUAG uag_head
     |   tokenHAG hag_head hag_body
     |   tokenHAG hag_head
+    |   tokenAUTHORITY top_auth { asAuthorityClose(); }
     |   tokenASG asg_head asg_body
     |   tokenASG asg_head
     |   generic_item
@@ -71,6 +70,12 @@ keyword: tokenUAG
     { $$ = yystrdup("HAG"); }
     | tokenCALC
     { $$ = yystrdup("CALC"); }
+    | tokenMETHOD
+    { $$ = yystrdup("METHOD"); }
+    | tokenAUTHORITY
+    { $$ = yystrdup("AUTHORITY"); }
+    | tokenPROTOCOL
+    { $$ = yystrdup("PROTOCOL"); }
     | non_rule_keyword
     ;
 
@@ -216,6 +221,45 @@ hag_host_list_name: tokenSTRING
     }
     ;
 
+top_auth: top_auth_head  auth_body
+    | top_auth_head
+    ;
+
+top_auth_head: auth_head
+    ;
+
+auth_body: '{' auth_body_item_list '}'
+    ;
+
+auth_body_item_list: auth_body_item auth_body_item_list
+    | auth_body_item
+    ;
+
+auth_body_item: tokenAUTHORITY auth_head auth_body
+    {
+        asAuthorityClose();
+    }
+    | tokenAUTHORITY auth_head
+    {
+        asAuthorityClose();
+    }
+    ;
+
+/* Create the AUTHORITY node and descend into it; the enclosing rule calls
+ * asAuthorityClose() to ascend after any child block is parsed.
+ * Two-arg form is (id, "commonName"); one-arg form is an unnamed ("commonName"). */
+auth_head: '(' tokenSTRING ',' tokenSTRING ')'
+    {
+        if (asAuthorityNew($2, $4))
+            yyerror("");
+    }
+    | '(' tokenSTRING ')'
+    {
+        if (asAuthorityNew(NULL, $2))
+            yyerror("");
+    }
+    ;
+
 asg_head:   '(' tokenSTRING ')'
     {
         yyAsg = asAsgAdd($2);
@@ -262,6 +306,8 @@ rule_head_mandatory:    tokenINT64 ',' tokenSTRING
             yyAsgRule = asAsgAddRule(yyAsg,asREAD,(int)$1);
         } else if((strcmp($3,"WRITE")==0)) {
             yyAsgRule = asAsgAddRule(yyAsg,asWRITE,(int)$1);
+        } else if((strcmp($3,"RPC")==0)) {
+            yyAsgRule = asAsgAddRule(yyAsg,asRPC,(int)$1);
         } else {
             yywarn("Ignoring RULE that contains an unsupported keyword", $3);
         }
@@ -291,6 +337,23 @@ rule_list:  rule_list rule_list_item
 
 rule_list_item: tokenUAG '(' rule_uag_list ')'
     |   tokenHAG  '(' rule_hag_list ')'
+    |   tokenMETHOD '(' rule_method_list ')'
+    |   tokenAUTHORITY '(' rule_authority_list ')'
+    |   tokenPROTOCOL '(' tokenSTRING ')'
+    {
+        if((epicsStrCaseCmp($3,"TLS")==0)) {
+            if (asAsgAddProtocolAdd(yyAsgRule,AS_PROTOCOL_TLS))
+                yyerror("");
+        } else if((epicsStrCaseCmp($3,"TCP")==0)) {
+            if (asAsgAddProtocolAdd(yyAsgRule,AS_PROTOCOL_TCP))
+                yyerror("");
+        } else {
+            yywarn("Ignoring RULE containing unsupported PROTOCOL", $3);
+            if (asAsgRuleDisable(yyAsgRule))
+                yyerror("");
+        }
+        free($3);
+    }
     |   tokenCALC '(' tokenSTRING ')'
     {
         if (asAsgRuleCalc(yyAsgRule,$3))
@@ -329,6 +392,31 @@ rule_hag_list_name: tokenSTRING
         free($1);
     }
     ;
+
+rule_method_list: rule_method_list ',' rule_method_list_name
+    |   rule_method_list_name
+    ;
+
+rule_method_list_name: tokenSTRING
+    {
+        if (asAsgRuleMethodAdd(yyAsgRule, $1))
+            yyerror("");
+        free($1);
+    }
+    ;
+
+rule_authority_list: rule_authority_list ',' rule_authority_list_name
+    |   rule_authority_list_name
+    ;
+
+rule_authority_list_name: tokenSTRING
+    {
+        if (asAsgRuleAuthorityAdd(yyAsgRule, $1))
+            yyerror("");
+        free($1);
+    }
+    ;
+
 %%
 
 #include "asLib_lex.c"
@@ -349,6 +437,7 @@ static int yywarn(char *str, char *token)
     yyWarned = TRUE;
     return 0;
 }
+
 static int myParse(ASINPUTFUNCPTR inputfunction)
 {
     static int  FirstFlag = 1;
@@ -363,6 +452,42 @@ static int myParse(ASINPUTFUNCPTR inputfunction)
         yyrestart(NULL);
     }
     FirstFlag = 0;
+    yyCurrentAuthority = NULL;   // Start parsing authorities at the tree root
     rtnval = yyparse();
     if(rtnval!=0 || yyFailed) return(-1); else return(0);
 }
+
+/**
+ * Create an AUTHORITY definition node for the certificate authority currently
+ * being parsed and descend into it, so any nested AUTHORITY blocks become its
+ * children. @p id is the (optional) ACF reference name; @p commonName is the
+ * certificate common name. Both are consumed (freed) here.
+ */
+static int asAuthorityNew(char *id, char *commonName) {
+    AUTHORITY *pauth = asAuthorityPush(yyCurrentAuthority, id, commonName);
+    free(id);
+    free(commonName);
+    if (!pauth) {
+        yyerror("");
+        return -1;
+    }
+    yyCurrentAuthority = pauth;
+    return 0;
+}
+
+/**
+ * Ascend to the parent authority once an AUTHORITY block has been fully parsed.
+ */
+static void asAuthorityClose() {
+    if (yyCurrentAuthority)
+        yyCurrentAuthority = yyCurrentAuthority->parent;
+}
+
+static
+char* yystrdup(const char *inp) {
+    char* ret = strdup(inp);
+    if(!ret)
+        yyerror("MALLOC");
+    return ret;
+}
+

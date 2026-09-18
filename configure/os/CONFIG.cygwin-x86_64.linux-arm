@@ -1,7 +1,0 @@
-# CONFIG.cygwin-x86_64.linux-arm
-#
-# Definitions for cygwin-x86_64 host - linux-arkm targets
-# Override these settings in CONFIG_SITE.cygwin-x86_64.linux-arm
-#-------------------------------------------------------
-
-include $(CONFIG)/os/CONFIG.cygwin-x86.linux-arm

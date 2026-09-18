@@ -46,13 +46,6 @@
     } // extern "C"
 #endif
 
-#ifdef __CYGWIN__
-int clock_settime(clockid_t clock, const timespec *tp)
-{
-    return -EFAULT;
-}
-#endif
-
 
 static int timeRegister(void)
 {

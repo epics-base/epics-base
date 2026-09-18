@@ -1,8 +1,0 @@
-# CONFIG_SITE.cygwin-x86.cygwin-x86
-#
-# Site override definitions for cygwin-x86 host - cygwin-x86 target builds
-#-------------------------------------------------------
- 
-#  GNU_DIR used when COMMANDLINE_LIBRARY is READLINE
-#GNU_DIR=C:/cygwin
-

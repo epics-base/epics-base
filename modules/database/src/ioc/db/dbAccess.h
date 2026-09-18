@@ -27,4 +27,10 @@
 #include "dbCommon.h"
 #include "db_field_log.h"
 
+/** @file dbAccess.h
+ *  @brief Interface definition for the run time database access library
+ * 
+ *  Acts as a wrapper header for the various components of the database access library.
+ */
+
 #endif /*INCdbAccessh*/

@@ -38,6 +38,13 @@ static epicsMutexId asLock;
 #define LOCK epicsMutexMustLock(asLock)
 #define UNLOCK epicsMutexUnlock(asLock)
 
+/* pasbase points to the currently active access-security configuration, or
+ * NULL when none is loaded.  asActive is set TRUE once a configuration has
+ * been successfully loaded and must only be TRUE while pasbase is non-NULL;
+ * when FALSE the asCheck* macros default to granting access.  Code that tears
+ * down the configuration (eg. asShutdown) must clear asActive before/when it
+ * clears pasbase so the two stay consistent.
+ */
 /*following must be global because asCa nneeds it*/
 ASBASE volatile *pasbase=NULL;
 static ASBASE *pasbasenew=NULL;

@@ -989,11 +989,12 @@ static int getDirectory(void)
         if (dir[0] != '\0') {
             char *name = ioc_log_file_name;
             char *slash = strrchr(ioc_log_file_name, '/');
-            char temp[256];
+            char temp[sizeof(ioc_log_file_name)];
 
             if (slash != NULL) name = slash + 1;
-            strcpy(temp,name);
-            sprintf(ioc_log_file_name,"%s/%s",dir,temp);
+            epicsSnprintf(temp, sizeof(temp), "%s", name);
+            epicsSnprintf(ioc_log_file_name, sizeof(ioc_log_file_name),
+                "%s/%s", dir, temp);
         }
     }
     return IOCLS_OK;

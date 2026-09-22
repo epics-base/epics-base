@@ -28,7 +28,7 @@ my $tfmt = '%Y-%m-%dT%H:%M';
 $tfmt .= '%z' unless $^O eq 'MSWin32'; # %z returns zone name on Windows
 my $now = strftime($tfmt, localtime);
 
-our ($opt_d, $opt_h, $opt_i, $opt_v, $opt_q);
+our ($opt_d, $opt_h, $opt_i, $opt_v, $opt_q, $opt_p);
 our $opt_t = '.';
 our $opt_N = 'VCSVERSION';
 our $opt_V = $now;
@@ -38,8 +38,9 @@ our $RevDate = $now;
 my $vcs;
 my $cv;
 
-getopts('dhivqt:N:V:') && @ARGV == 1
-    or HELP_MESSAGE();
+getopts('dhivqpt:N:V:') or HELP_MESSAGE();
+
+if (!$opt_p) {@ARGV == 1 or HELP_MESSAGE();}
 
 my ($outfile) = @ARGV;
 
@@ -157,6 +158,11 @@ __END
 
 print "== Want:\n$output==\n" if $opt_v;
 
+if ($opt_p) {
+	print "$opt_V";
+	exit 0;
+}
+
 my $DST;
 if (open($DST, '+<', $absfile)) {
 
@@ -210,6 +216,7 @@ Usage:
         -d         - Dry-run
         -i         - Question mode
         -q         - Quiet
+        -p         - Only print the version and exit
         -t top     - Path to the module's top (default '$opt_t')
         -N NAME    - Macro name to be defined (default '$opt_N')
         -V version - Version if no VCS (e.g. '$opt_V')

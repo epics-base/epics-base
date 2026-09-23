@@ -11,6 +11,6 @@ include $(TOP)/configure/CONFIG
 
 TESTS += msi
 
-TESTSCRIPTS_HOST += $(TESTS:%=%.t)
+TESTSCRIPTS_IOC += $(TESTS:%=%.t)
 
 include $(TOP)/configure/RULES

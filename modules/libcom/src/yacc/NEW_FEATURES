@@ -1,5 +1,5 @@
      The -r option has been implemented.  The -r option tells Yacc to
-put the read-only tables in y.tab.c and the code and variables in
+put the read-only tables in y.c and the code and variables in
 y.code.c.  Keith Bostic asked for this option so that :yyfix could be
 eliminated.
 

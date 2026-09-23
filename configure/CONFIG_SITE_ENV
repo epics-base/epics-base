@@ -76,6 +76,8 @@ IOCSH_HISTSIZE=50
 IOCSH_HISTEDIT_DISABLE=
 
 # Log Server:
+# EPICS_IOC_LOG_PORT 
+#	Log server port number etc.
 # EPICS_IOC_LOG_INET 
 #	Log server ip addr.
 # EPICS_IOC_LOG_FILE_NAME 
@@ -87,6 +89,7 @@ IOCSH_HISTEDIT_DISABLE=
 #       path name in response to SIGHUP - the new path name will
 #       replace any path name supplied in EPICS_IOC_LOG_FILE_NAME
 
+EPICS_IOC_LOG_PORT=7004
 EPICS_IOC_LOG_INET=
 EPICS_IOC_LOG_FILE_NAME=
 EPICS_IOC_LOG_FILE_COMMAND=

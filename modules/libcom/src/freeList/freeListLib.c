@@ -46,7 +46,7 @@ typedef struct allocMem {
     void                *memory;
 }allocMem;
 typedef struct {
-    int         size;
+    size_t      size;
     int         nmalloc;
     void        *head;
     allocMem    *mallochead;

@@ -18,6 +18,7 @@
 #include "osiSock.h"
 #include "epicsTypes.h"
 #include "epicsStdio.h"
+#include "epicsString.h"
 #include "dbDefs.h"
 #include "epicsThread.h"
 #include "epicsString.h"
@@ -219,7 +220,7 @@ static int myInputFunction(char *buf, int max_size)
         if(fgetsRtn==NULL) return(0);
         my_buffer_ptr = my_buffer;
     }
-    l = strlen(my_buffer_ptr);
+    l = (int)epicsStrnLen(my_buffer_ptr, max_size);
     n = (l<=max_size ? l : max_size);
     memcpy(buf,my_buffer_ptr,n);
     my_buffer_ptr += n;

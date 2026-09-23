@@ -48,7 +48,7 @@ inline RefCtr :: RefCtr ()
 
 inline RefCtr :: ~RefCtr ()
 {
-    unsigned cnt = epicsAtomicGetSizeT ( & m_cnt );
+    size_t cnt = epicsAtomicGetSizeT ( & m_cnt );
     assert ( cnt == 0u );
 }
 

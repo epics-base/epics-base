@@ -177,11 +177,11 @@ LIBCOM_API void epicsStdCall epicsSocketDestroy ( SOCKET s )
  * On many systems, gethostbyaddr must be protected by a
  * mutex since the routine is not thread-safe.
  */
-LIBCOM_API unsigned epicsStdCall ipAddrToHostName
-            (const struct in_addr *pAddr, char *pBuf, unsigned bufSize)
+LIBCOM_API size_t epicsStdCall ipAddrToHostName
+            (const struct in_addr *pAddr, char *pBuf, size_t bufSize)
 {
     struct hostent *ent;
-    int ret = 0;
+    size_t ret = 0;
 
     if (bufSize<1) {
         return 0;
@@ -226,7 +226,7 @@ LIBCOM_API int epicsStdCall hostToIPAddr
 
 #ifdef USE_INFO
 
-unsigned epicsStdCall ipAddrToHostName(const struct in_addr *pAddr, char *pBuf, unsigned bufSize)
+size_t epicsStdCall ipAddrToHostName(const struct in_addr *pAddr, char *pBuf, size_t bufSize)
 {
     osiSockAddr query;
 
@@ -237,10 +237,9 @@ unsigned epicsStdCall ipAddrToHostName(const struct in_addr *pAddr, char *pBuf, 
     query.ia.sin_family = AF_INET;
     query.ia.sin_addr = *pAddr;
 
-    int ret = getnameinfo(&query.sa, sizeof(query), pBuf, bufSize, NULL, 0, NI_NAMEREQD);
-    if(ret==0) {
+    size_t ret;
+    if (getnameinfo(&query.sa, sizeof(query), pBuf, bufSize, NULL, 0, NI_NAMEREQD) == 0) {
         ret = strlen (pBuf);
-
     } else { // lookup fails
         ret = 0; // indicate failure to caller
     }

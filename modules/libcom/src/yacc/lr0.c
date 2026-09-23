@@ -1,3 +1,4 @@
+#include <stddef.h>
 #include "defs.h"
 
 extern short *itemset;
@@ -166,7 +167,7 @@ get_state(int symbol)
     short *iend;
     core *sp;
     int found;
-    int n;
+    ptrdiff_t n;
 
 #ifdef  TRACE
     fprintf(stderr, "Entering get_state(%d)\n", symbol);
@@ -287,7 +288,7 @@ new_itemsets(void)
 static core *
 new_state(int symbol)
 {
-    int n;
+    ptrdiff_t n;
     core *p;
     short *isp1;
     short *isp2;
@@ -307,7 +308,7 @@ new_state(int symbol)
     p = (core *) allocate((unsigned) (sizeof(core) + (n - 1) * sizeof(short)));
     p->accessing_symbol = symbol;
     p->number = nstates;
-    p->nitems = n;
+    p->nitems = (short)n;
 
     isp2 = p->items;
     while (isp1 < iend)

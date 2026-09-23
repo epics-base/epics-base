@@ -236,7 +236,7 @@ allocate(unsigned int n)
 static void
 create_file_names(void)
 {
-    int len;
+    size_t len;
 
     len = strlen(file_prefix);
 

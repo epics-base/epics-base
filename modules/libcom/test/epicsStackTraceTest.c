@@ -30,7 +30,7 @@
 
 typedef struct TestDataRec_ {
     char buf[TST_BUFSZ];
-    int  pos;
+    size_t  pos;
 } TestDataRec, *TestData;
 
 typedef void (*RecFn)(int);

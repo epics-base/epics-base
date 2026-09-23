@@ -30,6 +30,11 @@
  * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
+#ifdef _MSC_VER
+#pragma warning (disable:4244)
+#pragma warning (disable:4267)
+#endif
+
 #include "flexdef.h"
 
 int pat, scnum, eps, headcnt, trailcnt, anyccl, lastchar, i, actvp, rulelen;

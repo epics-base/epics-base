@@ -49,7 +49,7 @@ int dbTranslateEscape(char *dst, const char *src)
 int epicsStrnRawFromEscaped(char *dst, size_t dstlen, const char *src,
     size_t srclen)
 {
-    int rem = dstlen;
+    int rem = (int)dstlen;
     int ndst = 0;
 
     while (srclen--) {
@@ -120,7 +120,7 @@ done:
 int epicsStrnEscapedFromRaw(char *dst, size_t dstlen, const char *src,
     size_t srclen)
 {
-    int rem = dstlen;
+    int rem = (int)dstlen;
     int ndst = 0;
 
     if (dst == src)

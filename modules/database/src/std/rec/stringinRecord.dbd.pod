@@ -10,9 +10,12 @@
 =title String Input Record (stringin)
 
 The string input record retrieves an arbitrary ASCII string of up to 40
-characters (which can be bypassed by using L<Long String Input|lsiRecord/long-string-input-record-lsi>). Several device support routines are available, all of which are soft
+characters (which can be bypassed by using
+L<Long String Input|lsiRecord/long-string-input-record-lsi>).
+Several device support routines are available, all of which are soft
 device support for retrieving values from other records or other software
 components.
+
 
 =recordtype stringin
 

@@ -73,6 +73,7 @@ database_HEADERS += dbChannel
 database_HEADERS += dbCommon
 database_HEADERS += dbEvent
 database_HEADERS += dbExtractArray
+database_HEADERS += dbFldTypes
 database_HEADERS += dbLink
 database_HEADERS += dbLock
 database_HEADERS += dbScan

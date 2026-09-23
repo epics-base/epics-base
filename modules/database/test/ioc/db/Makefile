@@ -25,8 +25,7 @@ dbTestIoc_SRCS += devx.c
 dbTestIoc_SRCS += jlinkz.c
 dbTestIoc_LIBS = dbCore ca Com
 
-TARGETS += $(COMMON_DIR)/dbTestIoc.dbd
-DBDDEPENDS_FILES += dbTestIoc.dbd$(DEP)
+TARGETS_IOC += $(COMMON_DIR)/dbTestIoc.dbd
 dbTestIoc_DBD += menuGlobal.dbd
 dbTestIoc_DBD += menuConvert.dbd
 dbTestIoc_DBD += menuScan.dbd
@@ -138,8 +137,7 @@ dbChannelTest_SRCS += dbTestIoc_registerRecordDeviceDriver.cpp
 testHarness_SRCS += dbChannelTest.c
 TESTS += dbChannelTest
 
-TARGETS += $(COMMON_DIR)/dbChArrTest.dbd
-DBDDEPENDS_FILES += dbChArrTest.dbd$(DEP)
+TARGETS_IOC += $(COMMON_DIR)/dbChArrTest.dbd
 dbChArrTest_DBD += arrRecord.dbd
 TESTPROD_IOC += dbChArrTest
 dbChArrTest_SRCS += dbChArrTest.cpp
@@ -211,6 +209,9 @@ ifneq ($(filter $(T_A),$(CROSS_COMPILER_RUNTEST_ARCHS)),)
 TESTPROD += $(TESTPROD_IOC)
 TESTSCRIPTS += $(TESTS:%=%.t)
 endif
+
+# Track dependencies only for database test targets selected by RULES.
+DBDDEPENDS_FILES += $(addsuffix $(DEP),$(notdir $(filter %.dbd,$(TARGETS))))
 
 include $(TOP)/configure/RULES
 

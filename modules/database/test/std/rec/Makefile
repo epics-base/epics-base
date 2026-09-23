@@ -20,10 +20,7 @@ dbRecStdTest_LIBS += dbRecStd dbCore ca Com
 
 PROD_LIBS = dbRecStdTest dbRecStd dbCore ca Com
 
-TARGETS += $(COMMON_DIR)/recTestIoc.dbd
-ifneq (inc,$(strip $(MAKECMDGOALS)))
-DBDDEPENDS_FILES += recTestIoc.dbd$(DEP)
-endif
+TARGETS_IOC += $(COMMON_DIR)/recTestIoc.dbd
 recTestIoc_DBD = base.dbd
 recTestIoc_DBD += bptTypeKdegC.dbd
 recTestIoc_DBD += bptTypeKdegF.dbd
@@ -142,8 +139,7 @@ testHarness_SRCS += aiTest.c
 TESTFILES += ../aiTest.db
 TESTS += aiTest
 
-TARGETS += $(COMMON_DIR)/asTestIoc.dbd
-DBDDEPENDS_FILES += asTestIoc.dbd$(DEP)
+TARGETS_IOC += $(COMMON_DIR)/asTestIoc.dbd
 asTestIoc_DBD += base.dbd
 asTestIoc_DBD += asTest.dbd
 TESTPROD_IOC += asTest
@@ -153,8 +149,7 @@ testHarness_SRCS += asTest.c
 TESTFILES += $(COMMON_DIR)/asTestIoc.dbd ../asTest.db
 TESTS += asTest
 
-TARGETS += $(COMMON_DIR)/analogMonitorTest.dbd
-DBDDEPENDS_FILES += analogMonitorTest.dbd$(DEP)
+TARGETS_IOC += $(COMMON_DIR)/analogMonitorTest.dbd
 analogMonitorTest_DBD += base.dbd
 TESTPROD_IOC += analogMonitorTest
 analogMonitorTest_SRCS += analogMonitorTest.c
@@ -164,8 +159,7 @@ testHarness_SRCS += analogMonitorTest_registerRecordDeviceDriver.cpp
 TESTFILES += $(COMMON_DIR)/analogMonitorTest.dbd ../analogMonitorTest.db
 TESTS += analogMonitorTest
 
-TARGETS += $(COMMON_DIR)/scanEventTest.dbd
-DBDDEPENDS_FILES += scanEventTest.dbd$(DEP)
+TARGETS_IOC += $(COMMON_DIR)/scanEventTest.dbd
 scanEventTest_DBD += base.dbd
 TESTPROD_IOC += scanEventTest
 scanEventTest_SRCS += scanEventTest.c
@@ -175,8 +169,7 @@ testHarness_SRCS += scanEventTest_registerRecordDeviceDriver.cpp
 TESTFILES += $(COMMON_DIR)/scanEventTest.dbd ../scanEventTest.db
 TESTS += scanEventTest
 
-TARGETS += $(COMMON_DIR)/regressTest.dbd
-DBDDEPENDS_FILES += regressTest.dbd$(DEP)
+TARGETS_IOC += $(COMMON_DIR)/regressTest.dbd
 regressTest_DBD += base.dbd
 TESTPROD_IOC += regressTest
 regressTest_SRCS += regressTest.c
@@ -187,12 +180,8 @@ TESTFILES += ../regressLongCalc.db
 TESTFILES += ../regressLinkSevr.db
 TESTS += regressTest
 
-TARGETS += $(COMMON_DIR)/simmTest.dbd
-TARGETS += $(COMMON_DIR)/simmTest.db
-DBDDEPENDS_FILES += simmTest.dbd$(DEP)
-ifneq (inc,$(strip $(MAKECMDGOALS)))
-DBDDEPENDS_FILES += simmTest.db$(DEP)
-endif
+TARGETS_IOC += $(COMMON_DIR)/simmTest.dbd
+TARGETS_IOC += $(COMMON_DIR)/simmTest.db
 simmTest_DBD += base.dbd
 TESTPROD_IOC += simmTest
 simmTest_SRCS += simmTest.c
@@ -216,8 +205,7 @@ testHarness_SRCS += mbbioDirectTest.c
 TESTFILES += ../mbbioDirectTest.db
 TESTS += mbbioDirectTest
 
-TARGETS += $(COMMON_DIR)/asyncproctest.dbd
-DBDDEPENDS_FILES += asyncproctest.dbd$(DEP)
+TARGETS_IOC += $(COMMON_DIR)/asyncproctest.dbd
 asyncproctest_DBD += base.dbd
 TESTPROD_IOC += asyncproctest
 asyncproctest_SRCS += asyncproctest.c
@@ -225,8 +213,7 @@ asyncproctest_SRCS += asyncproctest_registerRecordDeviceDriver.cpp
 TESTFILES += $(COMMON_DIR)/asyncproctest.dbd ../asyncproctest.db
 TESTS += asyncproctest
 
-TARGETS += $(COMMON_DIR)/subproctest.dbd
-DBDDEPENDS_FILES += subproctest.dbd$(DEP)
+TARGETS_IOC += $(COMMON_DIR)/subproctest.dbd
 subproctest_DBD += base.dbd
 TESTPROD_IOC += subproctest
 subproctest_SRCS += subproctest.c
@@ -242,8 +229,7 @@ testHarness_SRCS += linkFilterTest.c
 TESTFILES += ../linkFilterTest.db
 TESTS += linkFilterTest
 
-TARGETS += $(COMMON_DIR)/epicsExportTestIoc.dbd
-DBDDEPENDS_FILES += epicsExportTestIoc.dbd$(DEP)
+TARGETS_IOC += $(COMMON_DIR)/epicsExportTestIoc.dbd
 epicsExportTestIoc_DBD += base.dbd
 epicsExportTestIoc_DBD += epicsExportTest.dbd
 TESTFILES += $(COMMON_DIR)/epicsExportTestIoc.dbd ../epicsExportTest.db
@@ -302,6 +288,15 @@ TESTSCRIPTS_IOC += $(TESTS:%=%.t)
 ifneq ($(filter $(T_A),$(CROSS_COMPILER_RUNTEST_ARCHS)),)
 TESTPROD += $(TESTPROD_IOC)
 TESTSCRIPTS += $(TESTS:%=%.t)
+endif
+
+# Track dependencies only for database test targets selected by RULES.
+DBDDEPENDS_FILES += $(addsuffix $(DEP), \
+    $(filter-out recTestIoc.dbd,$(notdir $(filter %.dbd,$(TARGETS)))))
+# Breakpoint tables and msi generated databases are not available during inc.
+ifneq (inc,$(strip $(MAKECMDGOALS)))
+DBDDEPENDS_FILES += $(addsuffix $(DEP), \
+    $(filter %.db recTestIoc.dbd,$(notdir $(TARGETS))))
 endif
 
 include $(TOP)/configure/RULES

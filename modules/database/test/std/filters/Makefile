@@ -21,8 +21,7 @@ Recs_LIBS += dbCore ca Com
 
 PROD_LIBS = Recs dbRecStd dbCore ca Com
 
-DBDDEPENDS_FILES += filterTest.dbd$(DEP)
-TARGETS += $(COMMON_DIR)/filterTest.dbd
+TARGETS_IOC += $(COMMON_DIR)/filterTest.dbd
 filterTest_DBD += menuGlobal.dbd
 filterTest_DBD += menuConvert.dbd
 filterTest_DBD += menuScan.dbd
@@ -84,6 +83,9 @@ ifneq ($(filter $(T_A),$(CROSS_COMPILER_RUNTEST_ARCHS)),)
 TESTPROD += $(TESTPROD_IOC)
 TESTSCRIPTS += $(TESTS:%=%.t)
 endif
+
+# Track dependencies only for database test targets selected by RULES.
+DBDDEPENDS_FILES += $(addsuffix $(DEP),$(notdir $(filter %.dbd,$(TARGETS))))
 
 include $(TOP)/configure/RULES
 

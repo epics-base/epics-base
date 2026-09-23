@@ -125,6 +125,7 @@ private:
             epicsGuard < epicsMutex > &, const char * pBuf, size_t bufLen );
         void show (
             epicsGuard < epicsMutex > &, unsigned level ) const;
+        void getAddr ( osiSockAddr & ) const;
     private:
         int _lastError;
         osiSockAddr _destAddr;

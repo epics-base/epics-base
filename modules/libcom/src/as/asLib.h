@@ -25,7 +25,7 @@ extern "C" {
 struct dbChannel;
 
 /* 0 - Use (unverified) client provided host name string.
- * 1 - Use actual client IP address.  HAG() are resolved to IPs at ACF load time.
+ * 1 - Use actual client IP address.  HAG() host names are resolved to IPs.
  */
 LIBCOM_API extern int asCheckClientIP;
 
@@ -103,6 +103,21 @@ LIBCOM_API long epicsStdCall asComputeAllAsg(void);
 LIBCOM_API long epicsStdCall asComputeAsg(ASG *pasg);
 */
 LIBCOM_API long epicsStdCall asCompute(ASCLIENTPVT asClientPvt);
+/**
+ * Refresh due hostname HAG entries and update existing clients.
+ *
+ * Call this periodically from a control-plane thread.  Successful hostname
+ * resolutions are refreshed after 300 seconds and failures after 60 seconds.
+ * DNS is never performed by asCheckGet() or asCheckPut().
+ *
+ * If changed is not NULL, it is set to one only when the effective HAG to
+ * IPv4 mapping changes.  Existing change-of-access callbacks are run for
+ * clients whose rights change.  DNS failures remove stale mappings and are
+ * retried later; they are not reported as API errors.
+ *
+ * Returns S_asLib_asNotActive when Access Security is not active.
+ */
+LIBCOM_API long epicsStdCall asRefreshHag(unsigned *changed);
 LIBCOM_API int epicsStdCall asDump(
     void (*memcallback)(ASMEMBERPVT,FILE *),
     void (*clientcallback)(ASCLIENTPVT,FILE *),int verbose);

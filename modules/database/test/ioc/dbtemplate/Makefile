@@ -11,6 +11,9 @@ include $(TOP)/configure/CONFIG
 
 TESTS += msi
 
+# msi is a host tool, so its tests must run on the host.
+ifeq ($(T_A),$(EPICS_HOST_ARCH))
 TESTSCRIPTS_IOC += $(TESTS:%=%.t)
+endif
 
 include $(TOP)/configure/RULES

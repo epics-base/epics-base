@@ -52,17 +52,13 @@ use File::Spec;
 C<UnixPath> should be used on any pathnames provided by external tools to
 convert them into a form that Perl understands.
 
-On cygwin we convert Windows drive specs to the equivalent cygdrive path, and on
-Windows we switch directory separators from back-slash to forward slashes.
+On windows we switch directory separators from back-slash to forward slashes.
 
 =cut
 
 sub UnixPath {
     my ($newpath) = @_;
-    if ($^O eq 'cygwin') {
-        $newpath =~ s{\\}{/}go;
-        $newpath =~ s{^([a-zA-Z]):/}{/cygdrive/$1/};
-    } elsif ($^O eq 'MSWin32') {
+    if ($^O eq 'MSWin32') {
         $newpath =~ s{\\}{/}go;
     }
     return $newpath;

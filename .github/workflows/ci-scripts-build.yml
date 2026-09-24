@@ -44,6 +44,7 @@ jobs:
       BCFG: ${{ matrix.configuration }}
       CI_CROSS_TARGETS: ${{ matrix.cross }}
       EXTRA: ${{ matrix.extra }}
+      MAKEFLAGS: ${{ matrix.makeflags }}
       TEST: ${{ matrix.test }}
     strategy:
       fail-fast: false
@@ -95,6 +96,13 @@ jobs:
             cmp: clang
             configuration: default
             extra: "CMD_CXXFLAGS=-std=c++11"
+
+          - name: "Ub-latest gcc host-only"
+            os: ubuntu-latest
+            cmp: gcc
+            configuration: default
+            valid_builds: Host
+            makeflags: "SUBMODULES="
 
           - name: "MacOS clang"
             os: macos-latest
@@ -223,6 +231,13 @@ jobs:
       if: runner.os == 'Linux'
     - name: Prepare and compile dependencies
       run: python .ci/cue.py prepare
+    - name: Configure VALID_BUILDS
+      if: matrix.valid_builds
+      shell: bash
+      run: |
+        EPICS_HOST_ARCH=$(perl src/tools/EpicsHostArch.pl)
+        printf '\nVALID_BUILDS = %s\n' '${{ matrix.valid_builds }}' \
+          >> "configure/os/CONFIG_SITE.Common.${EPICS_HOST_ARCH}"
     - name: Build main module
       run: python .ci/cue.py build
     - name: Run main module tests

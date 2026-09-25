@@ -13,7 +13,7 @@ include $(TOP)/configure/CONFIG
 
 USR_CPPFLAGS += -DUSE_TYPED_RSET
 
-TESTLIBRARY = Recs
+TESTLIBRARY_IOC = Recs
 
 Recs_SRCS += xRecord.c
 Recs_SRCS += arrRecord.c
@@ -21,8 +21,7 @@ Recs_LIBS += dbCore ca Com
 
 PROD_LIBS = Recs dbRecStd dbCore ca Com
 
-DBDDEPENDS_FILES += filterTest.dbd$(DEP)
-TARGETS += $(COMMON_DIR)/filterTest.dbd
+TARGETS_IOC += $(COMMON_DIR)/filterTest.dbd
 filterTest_DBD += menuGlobal.dbd
 filterTest_DBD += menuConvert.dbd
 filterTest_DBD += menuScan.dbd
@@ -33,33 +32,33 @@ TESTFILES += $(COMMON_DIR)/filterTest.dbd
 
 testHarness_SRCS += filterTest_registerRecordDeviceDriver.cpp
 
-TESTPROD_HOST += tsTest
+TESTPROD_IOC += tsTest
 tsTest_SRCS += tsTest.c
 tsTest_SRCS += filterTest_registerRecordDeviceDriver.cpp
 testHarness_SRCS += tsTest.c
 TESTFILES += ../xRecord.db
 TESTS += tsTest
 
-TESTPROD_HOST += dbndTest
+TESTPROD_IOC += dbndTest
 dbndTest_SRCS += dbndTest.c
 dbndTest_SRCS += filterTest_registerRecordDeviceDriver.cpp
 testHarness_SRCS += dbndTest.c
 TESTS += dbndTest
 
-TESTPROD_HOST += arrTest
+TESTPROD_IOC += arrTest
 arrTest_SRCS += arrTest.cpp
 arrTest_SRCS += filterTest_registerRecordDeviceDriver.cpp
 testHarness_SRCS += arrTest.cpp
 TESTFILES += ../arrTest.db
 TESTS += arrTest
 
-TESTPROD_HOST += syncTest
+TESTPROD_IOC += syncTest
 syncTest_SRCS += syncTest.c
 syncTest_SRCS += filterTest_registerRecordDeviceDriver.cpp
 testHarness_SRCS += syncTest.c
 TESTS += syncTest
 
-TESTPROD_HOST += decTest
+TESTPROD_IOC += decTest
 decTest_SRCS += decTest.c
 decTest_SRCS += filterTest_registerRecordDeviceDriver.cpp
 testHarness_SRCS += decTest.c
@@ -79,11 +78,13 @@ PROD_RTEMS = filterTestHarness
 TESTSPEC_vxWorks = filterTestHarness.munch; epicsRunFilterTests
 TESTSPEC_RTEMS = filterTestHarness.boot; epicsRunFilterTests
 
-TESTSCRIPTS_HOST += $(TESTS:%=%.t)
-ifneq ($(filter $(T_A),$(CROSS_COMPILER_RUNTEST_ARCHS)),)
-TESTPROD += $(TESTPROD_HOST)
-TESTSCRIPTS += $(TESTS:%=%.t)
+# Generate test scripts only for architectures this host can run.
+ifneq ($(filter $(T_A),$(EPICS_HOST_ARCH) $(CROSS_COMPILER_RUNTEST_ARCHS)),)
+TESTSCRIPTS_IOC += $(TESTS:%=%.t)
 endif
+
+# Track dependencies only for database test targets selected by RULES.
+DBDDEPENDS_FILES += $(addsuffix $(DEP),$(notdir $(filter %.dbd,$(TARGETS))))
 
 include $(TOP)/configure/RULES
 

@@ -87,7 +87,10 @@ LIBSRCS += msgForMultiplyDefinedPV.cpp
 API_HEADER = libCaAPI.h
 ca_API = libCa
 
+# CA serves both command line clients and IOCs.
+ifneq ($(filter Command Ioc,$(VALID_BUILDS)),)
 LIBRARY=ca
+endif
 
 ca_RCS = ca.rc
 
@@ -113,7 +116,7 @@ caConnTest_SRCS = caConnTestMain.cpp caConnTest.cpp
 
 casw_SYS_LIBS_solaris = socket
 
-SCRIPTS_HOST = S99caRepeater
+SCRIPTS_CMD = S99caRepeater
 SCRIPTS_Linux = caRepeater.service
 
 EXPAND += S99caRepeater@
@@ -121,7 +124,7 @@ EXPAND += caRepeater.service@
 EXPAND_VARS = INSTALL_BIN=$(FINAL_LOCATION)/bin/$(T_A)
 
 SRC_DIRS += $(CURDIR)/test
-PROD_HOST += ca_test
+PROD_CMD += ca_test
 ca_test_SRCS = ca_test_main.c ca_test.c
 ca_test_SYS_LIBS_WIN32 = ws2_32 advapi32 user32
 

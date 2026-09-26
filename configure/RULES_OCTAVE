@@ -32,7 +32,7 @@ clean: octave_clean
 
 #This clean works from O.* dirs.
 octave_clean: 
-	@$(RM) *.mex *.m
+	$(RM) *.mex *.m
 
 .PHONY: octave_clean
 

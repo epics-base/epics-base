@@ -52,8 +52,8 @@ $(RELEASE_LOCAL): Makefile $(CONFIG)/CONFIG_SITE \
     $(wildcard $(CONFIG)/CONFIG_SITE.local)
 	$(ECHO) "Creating $@ with"
 	$(ECHO) "    $(PARENT_MODULE) = $(INSTALL_ABSOLUTE)"
-	@echo $(PARENT_MODULE) = $(INSTALL_ABSOLUTE)> $@.stdout
-	@$(MV) $@.stdout $@
+	echo $(PARENT_MODULE) = $(INSTALL_ABSOLUTE)> $@.stdout
+	$(MV) $@.stdout $@
 
 .PHONY: RELEASE.host
 
@@ -62,4 +62,4 @@ TESTS_FAILED_LOGS = $(wildcard $(addsuffix /$(TESTS_FAILED_LOG), \
     $(LIVE_SUBMODULES)))
 runtests test-results: % : | $(addsuffix $(DIVIDER)%, $(LIVE_SUBMODULES))
 	$(if $(TESTS_FAILED_LOGS), \
-	    @$(CAT) $(TESTS_FAILED_LOGS)>> $(TESTS_FAILED_PATH))
+	    $(CAT) $(TESTS_FAILED_LOGS)>> $(TESTS_FAILED_PATH))

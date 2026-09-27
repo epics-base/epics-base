@@ -55,7 +55,7 @@ private:
     epicsEvent block;
     epicsMutex & mutex;
     cacWriteNotify * pNotify;
-    unsigned long maxValueSize;
+    size_t maxValueSize;
     // arguments for db_put_field
     void *pbuffer;
     long nRequest;
@@ -63,7 +63,7 @@ private:
     // end arguments for db_put_field
     dbSubscriptionIO * isSubscription ();
     void expandValueBuf (
-        epicsGuard < epicsMutex > &, unsigned long newSize );
+        epicsGuard < epicsMutex > &, size_t newSize );
     friend void putNotifyCompletion ( processNotify * ppn );
     friend int  putNotifyPut ( processNotify *ppn, notifyPutType type );
     dbPutNotifyBlocker ( const dbPutNotifyBlocker & );

@@ -60,8 +60,7 @@ void getCopy::completion (
     arrayElementCount countIn, const void *pDataIn )
 {
     if ( this->type == typeIn ) {
-        unsigned size = dbr_size_n ( typeIn, countIn );
-        memcpy ( this->pValue, pDataIn, size );
+        memcpy ( this->pValue, pDataIn, dbr_size_n ( typeIn, countIn ) );
         this->cacCtx.decrementOutstandingIO ( guard, this->ioSeqNo );
         this->cacCtx.destroyGetCopy ( guard, *this );
         // this object destroyed by preceding function call

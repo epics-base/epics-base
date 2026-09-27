@@ -445,7 +445,7 @@ static void printSearchStat ( const ti * pi, unsigned iterations )
  * timeIt ()
  */
 void timeIt ( tf *pfunc, ti *pItems, unsigned iterations,
-    unsigned nBytesSent, unsigned nBytesRecv )
+    size_t nBytesSent, size_t nBytesRecv )
 {
     epicsTimeStamp      end_time;
     epicsTimeStamp      start_time;
@@ -476,8 +476,8 @@ void timeIt ( tf *pfunc, ti *pItems, unsigned iterations,
  */
 static void test ( ti *pItems, unsigned iterations )
 {
-    unsigned payloadSize, dblPayloadSize;
-    unsigned nBytesSent, nBytesRecv;
+    unsigned dblPayloadSize;
+    size_t payloadSize, nBytesSent, nBytesRecv;
 
     payloadSize =
         dbr_size_n ( pItems[0].type, pItems[0].count );
@@ -487,10 +487,10 @@ static void test ( ti *pItems, unsigned iterations )
     dblPayloadSize = CA_MESSAGE_ALIGN ( dblPayloadSize );
 
     if ( payloadSize > dblPayloadSize ) {
-        unsigned factor = payloadSize / dblPayloadSize;
+        size_t factor = payloadSize / dblPayloadSize;
         while ( factor ) {
             if ( iterations > 10 * factor ) {
-                iterations /= factor;
+                iterations /= (unsigned)factor; // cast is safe: factor is small
                 break;
             }
             factor /= 2;
@@ -534,7 +534,7 @@ int catime ( const char * channelName,
     unsigned i;
     int j;
     unsigned strsize;
-    unsigned nBytesSent, nBytesRecv;
+    size_t nBytesSent, nBytesRecv;
     ti *pItemList;
 
     if ( channelCount == 0 ) {

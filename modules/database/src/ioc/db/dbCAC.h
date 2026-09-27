@@ -193,7 +193,7 @@ private:
     chronIntIdResTable < dbBaseIO > ioTable;
     dbContextReadNotifyCache readNotifyCache;
     dbEventCtx ctx;
-    unsigned long stateNotifyCacheSize;
+    size_t stateNotifyCacheSize;
     epicsMutex & mutex;
     epicsMutex & cbMutex;
     cacContextNotify & notify;

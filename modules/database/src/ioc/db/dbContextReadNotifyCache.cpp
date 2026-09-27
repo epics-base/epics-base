@@ -77,9 +77,8 @@ void dbContextReadNotifyCache::callReadNotify (
     }
 
     long realcount = (count==0)?maxcount:count;
-    unsigned long size = dbr_size_n ( type, realcount );
 
-    privateAutoDestroyPtr ptr ( _allocator, size );
+    privateAutoDestroyPtr ptr ( _allocator, dbr_size_n ( type, realcount ) );
     int status;
     {
         epicsGuardRelease < epicsMutex > unguard ( guard );

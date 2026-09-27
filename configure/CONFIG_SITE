@@ -164,6 +164,14 @@ EPICS_SITE_VERSION =
 #  Must be either YES or NO
 GCC_PIPE = NO
 
+# Set the compiler language standard for code that doesn't set one
+# and the compiler default doesn't work. If no standard is set or
+# the variable is empty, the compiler default is used. Examples:
+#  DEFAULT_LANG_C = c23
+#  DEFAULT_LANG_CXX = c++23
+#DEFAULT_LANG_C =
+#DEFAULT_LANG_CXX =
+
 # Set RPATH when linking executables and libraries.
 #  Must be either YES, NO, or ORIGIN.  If you set this to NO you must also provide a
 #  way for Base executables to find their shared libraries when they are

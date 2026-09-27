@@ -17,13 +17,16 @@
 #include <string.h>
 #include <math.h>
 #include <float.h>
+#include <limits.h>
 
 #include "alarm.h"
 #include "cvtFast.h"
+#include "epicsMath.h"
 #include "dbDefs.h"
 #include "epicsConvert.h"
 #include "epicsStdlib.h"
 #include "epicsStdio.h"
+#include "epicsTypes.h"
 #include "errlog.h"
 #include "errMdef.h"
 
@@ -69,6 +72,32 @@
  *  A DB_LINK that is not initialized with recGblInitFastXXXLink()
  *     will have this conversion.
  */
+
+/* Saturating floating-point -> integer assignment.
+ *
+ * A bare C cast of a floating value that is out of the integer type's
+ * range, or is NaN, to that integer type is undefined behaviour
+ * (C17 6.3.1.4p1). The value produced diverges by target: x86-64
+ * (cvttsd2si) yields INT_MIN, aarch64 (fcvtzs) saturates and maps NaN
+ * to 0 -- both ordinary EPICS platforms. Define the conversion instead:
+ * clamp to [imin, imax] and map NaN to 0 (the aarch64 behaviour). This
+ * matches dbConvert.c's GET_SAT/PUT_SAT on the CA/network conversion path.
+ *
+ * imin/imax are the destination type's min/max as integer constants; the
+ * (double) casts are the saturation thresholds. For the 64-bit types the
+ * true max is not representable as a double and (double)imax rounds up to
+ * 2^63 / 2^64, which is exactly the threshold at which the value no longer
+ * fits, so the comparison stays correct while the assigned constant is the
+ * exact type max. +/-Inf fall through to the imax/imin branches.
+ */
+#define ASSIGN_SAT(pdst, val, typeb, imin, imax) \
+    do { \
+        double _v = (double) (val); \
+        if (isnan(_v))                 *(pdst) = 0; \
+        else if (_v <= (double)(imin)) *(pdst) = (imin); \
+        else if (_v >= (double)(imax)) *(pdst) = (imax); \
+        else                           *(pdst) = (typeb) _v; \
+    } while (0)
 
 /* Convert String to String */
 static long cvt_st_st(const void *f, void *t, const dbAddr *paddr)
@@ -1235,7 +1264,7 @@ static long cvt_f_c(const void *f, void *t, const dbAddr *paddr)
 {
     const epicsFloat32 *from = (const epicsFloat32 *) f;
     epicsInt8 *to = (epicsInt8 *) t;
-    *to=(epicsInt8)*from;
+    ASSIGN_SAT(to, *from, epicsInt8, SCHAR_MIN, SCHAR_MAX);
     return 0;
 }
 
@@ -1244,7 +1273,7 @@ static long cvt_f_uc(const void *f, void *t, const dbAddr *paddr)
 {
     const epicsFloat32 *from = (const epicsFloat32 *) f;
     epicsUInt8 *to = (epicsUInt8 *) t;
-    *to=(epicsUInt8)*from;
+    ASSIGN_SAT(to, *from, epicsUInt8, 0, UCHAR_MAX);
     return 0;
 }
 
@@ -1253,7 +1282,7 @@ static long cvt_f_s(const void *f, void *t, const dbAddr *paddr)
 {
     const epicsFloat32 *from = (const epicsFloat32 *) f;
     epicsInt16 *to = (epicsInt16 *) t;
-    *to=(epicsInt16)*from;
+    ASSIGN_SAT(to, *from, epicsInt16, SHRT_MIN, SHRT_MAX);
     return 0;
 }
 
@@ -1262,7 +1291,7 @@ static long cvt_f_us(const void *f, void *t, const dbAddr *paddr)
 {
     const epicsFloat32 *from = (const epicsFloat32 *) f;
     epicsUInt16 *to = (epicsUInt16 *) t;
-    *to=(epicsUInt16)*from;
+    ASSIGN_SAT(to, *from, epicsUInt16, 0, USHRT_MAX);
     return 0;
 }
 
@@ -1271,7 +1300,7 @@ static long cvt_f_l(const void *f, void *t, const dbAddr *paddr)
 {
     const epicsFloat32 *from = (const epicsFloat32 *) f;
     epicsInt32 *to = (epicsInt32 *) t;
-    *to=(epicsInt32)*from;
+    ASSIGN_SAT(to, *from, epicsInt32, INT_MIN, INT_MAX);
     return 0;
 }
 
@@ -1280,7 +1309,7 @@ static long cvt_f_ul(const void *f, void *t, const dbAddr *paddr)
 {
     const epicsFloat32 *from = (const epicsFloat32 *) f;
     epicsUInt32 *to = (epicsUInt32 *) t;
-    *to=(epicsUInt32)*from;
+    ASSIGN_SAT(to, *from, epicsUInt32, 0, UINT_MAX);
     return 0;
 }
 
@@ -1289,7 +1318,7 @@ static long cvt_f_q(const void *f, void *t, const dbAddr *paddr)
 {
     const epicsFloat32 *from = (const epicsFloat32 *) f;
     epicsInt64 *to = (epicsInt64 *) t;
-    *to=*from;
+    ASSIGN_SAT(to, *from, epicsInt64, epicsInt64Min, epicsInt64Max);
     return 0;
 }
 
@@ -1298,7 +1327,7 @@ static long cvt_f_uq(const void *f, void *t, const dbAddr *paddr)
 {
     const epicsFloat32 *from = (const epicsFloat32 *) f;
     epicsUInt64 *to = (epicsUInt64 *) t;
-    *to=*from;
+    ASSIGN_SAT(to, *from, epicsUInt64, 0, epicsUInt64Max);
     return 0;
 }
 
@@ -1325,7 +1354,7 @@ static long cvt_f_e(const void *f, void *t, const dbAddr *paddr)
 {
     const epicsFloat32 *from = (const epicsFloat32 *) f;
     epicsEnum16 *to = (epicsEnum16 *) t;
-    *to=(epicsEnum16)*from;
+    ASSIGN_SAT(to, *from, epicsEnum16, 0, USHRT_MAX);
     return 0;
 }
 
@@ -1351,7 +1380,7 @@ static long cvt_d_c(const void *f, void *t, const dbAddr *paddr)
 {
     const epicsFloat64 *from = (const epicsFloat64 *) f;
     epicsInt8 *to = (epicsInt8 *) t;
-    *to=(epicsInt8)*from;
+    ASSIGN_SAT(to, *from, epicsInt8, SCHAR_MIN, SCHAR_MAX);
     return 0;
 }
 
@@ -1360,7 +1389,7 @@ static long cvt_d_uc(const void *f, void *t, const dbAddr *paddr)
 {
     const epicsFloat64 *from = (const epicsFloat64 *) f;
     epicsUInt8 *to = (epicsUInt8 *) t;
-    *to=(epicsUInt8)*from;
+    ASSIGN_SAT(to, *from, epicsUInt8, 0, UCHAR_MAX);
     return 0;
 }
 
@@ -1369,7 +1398,7 @@ static long cvt_d_s(const void *f, void *t, const dbAddr *paddr)
 {
     const epicsFloat64 *from = (const epicsFloat64 *) f;
     epicsInt16 *to = (epicsInt16 *) t;
-    *to=(epicsInt16)*from;
+    ASSIGN_SAT(to, *from, epicsInt16, SHRT_MIN, SHRT_MAX);
     return 0;
 }
 
@@ -1378,7 +1407,7 @@ static long cvt_d_us(const void *f, void *t, const dbAddr *paddr)
 {
     const epicsFloat64 *from = (const epicsFloat64 *) f;
     epicsUInt16 *to = (epicsUInt16 *) t;
-    *to=(epicsUInt16)*from;
+    ASSIGN_SAT(to, *from, epicsUInt16, 0, USHRT_MAX);
     return 0;
 }
 
@@ -1387,7 +1416,7 @@ static long cvt_d_l(const void *f, void *t, const dbAddr *paddr)
 {
     const epicsFloat64 *from = (const epicsFloat64 *) f;
     epicsInt32 *to = (epicsInt32 *) t;
-    *to=*from;
+    ASSIGN_SAT(to, *from, epicsInt32, INT_MIN, INT_MAX);
     return 0;
 }
 
@@ -1396,7 +1425,7 @@ static long cvt_d_ul(const void *f, void *t, const dbAddr *paddr)
 {
     const epicsFloat64 *from = (const epicsFloat64 *) f;
     epicsUInt32 *to = (epicsUInt32 *) t;
-    *to=*from;
+    ASSIGN_SAT(to, *from, epicsUInt32, 0, UINT_MAX);
     return 0;
 }
 
@@ -1405,7 +1434,7 @@ static long cvt_d_q(const void *f, void *t, const dbAddr *paddr)
 {
     const epicsFloat64 *from = (const epicsFloat64 *) f;
     epicsInt64 *to = (epicsInt64 *) t;
-    *to=*from;
+    ASSIGN_SAT(to, *from, epicsInt64, epicsInt64Min, epicsInt64Max);
     return 0;
 }
 
@@ -1414,7 +1443,7 @@ static long cvt_d_uq(const void *f, void *t, const dbAddr *paddr)
 {
     const epicsFloat64 *from = (const epicsFloat64 *) f;
     epicsUInt64 *to = (epicsUInt64 *) t;
-    *to=*from;
+    ASSIGN_SAT(to, *from, epicsUInt64, 0, epicsUInt64Max);
     return 0;
 }
 
@@ -1439,7 +1468,7 @@ static long cvt_d_e(const void *f, void *t, const dbAddr *paddr)
 {
     const epicsFloat64 *from = (const epicsFloat64 *) f;
     epicsEnum16 *to = (epicsEnum16 *) t;
-    *to=(epicsEnum16)*from;
+    ASSIGN_SAT(to, *from, epicsEnum16, 0, USHRT_MAX);
     return 0;
 }
 

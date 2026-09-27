@@ -375,7 +375,10 @@ static void test_prec_flag(void){
 static void test_h_flag(void){
 
     const char format_string[] = "Format test string %hx";
-    const char result_string[] = "Format test string baba";
+    /* The 'h' modifier makes doPrintf() fetch the link as a DBR_USHORT.
+     * 0xffbaba is out of range for an epicsUInt16, so the conversion from
+     * the DBF_DOUBLE input field saturates at USHRT_MAX. */
+    const char result_string[] = "Format test string ffff";
 
     /* set format string */
     testdbPutFieldOk("test_printf_rec.FMT", DBF_STRING, format_string);
@@ -392,7 +395,10 @@ static void test_h_flag(void){
 static void test_hh_flag(void){
 
     const char format_string[] = "Format test string %hhx";
-    const char result_string[] = "Format test string c1";
+    /* The 'hh' modifier makes doPrintf() fetch the link as a DBR_UCHAR.
+     * 0xffc0c1 is out of range for an epicsUInt8, so the conversion from
+     * the DBF_DOUBLE input field saturates at UCHAR_MAX. */
+    const char result_string[] = "Format test string ff";
 
     /* set format string */
     testdbPutFieldOk("test_printf_rec.FMT", DBF_STRING, format_string);
@@ -400,14 +406,10 @@ static void test_hh_flag(void){
     /* set value on inp0 */
     testdbPutFieldOk("test_printf_inp0_rec.VAL", DBF_LONG, 0xffc0c1);
 
-    /* verify that string is formatted as expected */
-    #ifdef __rtems__
-    testTodoBegin("Fails on UB-20 gcc-9 on RTEMS");
-    #endif
+    /* verify that string is formatted as expected.
+     * The out-of-range conversion is now defined, so this no longer
+     * needs the RTEMS testTodo() it used to carry. */
     testdbGetFieldEqual("test_printf_rec.VAL", DBF_STRING, result_string);
-    #ifdef __rtems__
-    testTodoEnd();
-    #endif
 
     // number of tests = 3
 }

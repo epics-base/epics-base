@@ -22,6 +22,11 @@
 #include "osiClockTime.h"
 #include "taskwd.h"
 
+#if defined(vxWorks) || defined(__rtems__)
+#else
+#  error Unsupported OS
+#endif
+
 #define NSEC_PER_SEC 1000000000
 #define ClockTimeSyncInterval_initial 1.0
 #define ClockTimeSyncInterval_normal 60.0
@@ -41,7 +46,7 @@ static struct {
 static epicsThreadOnceId onceId = EPICS_THREAD_ONCE_INIT;
 
 
-#if defined(CLOCK_REALTIME) && !defined(_WIN32) && !defined(__APPLE__)
+#if defined(CLOCK_REALTIME)
 /* This code is not used on systems without Posix CLOCK_REALTIME,
  * but the only way to detect that is from the OS headers, so the
  * Makefile can't exclude compiling this file on those systems.
@@ -51,7 +56,6 @@ static epicsThreadOnceId onceId = EPICS_THREAD_ONCE_INIT;
 
 int osdTimeGetCurrent(epicsTimeStamp *pDest);
 
-#if defined(vxWorks) || defined(__rtems__)
 static void ClockTimeSync(void *dummy);
 
 /* ClockTime_Init iocsh command */
@@ -74,7 +78,6 @@ static void ShutdownCallFunc(const iocshArgBuf *args)
 {
     ClockTime_Shutdown(NULL);
 }
-#endif
 
 /* ClockTime_Report iocsh command */
 static const iocshArg ReportArg0 = { "interest_level", iocshArgArgv};
@@ -106,10 +109,8 @@ static void ClockTime_InitOnce(void *pfirst)
     epicsAtExit(ClockTime_Shutdown, NULL);
 
     /* Register the iocsh commands */
-#if defined(vxWorks) || defined(__rtems__)
     iocshRegister(&InitFuncDef, InitCallFunc);
     iocshRegister(&ShutdownFuncDef, ShutdownCallFunc);
-#endif
     iocshRegister(&ReportFuncDef, ReportCallFunc);
 
     /* Register as a time provider */
@@ -126,7 +127,6 @@ void ClockTime_Init(int synchronize)
     if (synchronize) {
         if (ClockTimePvt.synchronize == CLOCKTIME_NOSYNC) {
 
-#if defined(vxWorks) || defined(__rtems__)
             /* Start synchronizing */
             ClockTimePvt.synchronize = CLOCKTIME_SYNC;
             ClockTimePvt.ClockTimeSyncInterval = ClockTimeSyncInterval_initial;
@@ -135,9 +135,6 @@ void ClockTime_Init(int synchronize)
             epicsThreadCreate("ClockTimeSync", epicsThreadPriorityHigh,
                 epicsThreadGetStackSize(epicsThreadStackSmall),
                 ClockTimeSync, NULL);
-#else
-            errlogPrintf("Clock synchronization must be performed by the OS\n");
-#endif
 
         }
         else {
@@ -174,7 +171,6 @@ void ClockTime_GetProgramStart(epicsTimeStamp *pDest)
 
 /* Synchronization thread */
 
-#if defined(vxWorks) || defined(__rtems__)
 CLOCKTIME_SYNCHOOK ClockTime_syncHook = NULL;
 
 static void ClockTimeSync(void *dummy)
@@ -220,7 +216,6 @@ static void ClockTimeSync(void *dummy)
         ClockTime_syncHook(0);
     taskwdRemove(0);
 }
-#endif
 
 
 /* Time Provider Routine */
@@ -229,11 +224,6 @@ int osdTimeGetCurrent(epicsTimeStamp *pDest)
 {
     struct timespec clockNow;
 
-    /* If a Hi-Res clock is available and works, use it */
-    #ifdef CLOCK_REALTIME_HR
-        clock_gettime(CLOCK_REALTIME_HR, &clockNow) &&
-        /* Note: Uses the lo-res clock below if the above call fails */
-    #endif
     clock_gettime(CLOCK_REALTIME, &clockNow);
 
     if (!ClockTimePvt.synchronized &&
@@ -241,14 +231,9 @@ int osdTimeGetCurrent(epicsTimeStamp *pDest)
         clockNow.tv_sec = POSIX_TIME_AT_EPICS_EPOCH + 86400;
         clockNow.tv_nsec = 0;
 
-#if defined(vxWorks) || defined(__rtems__)
         clock_settime(CLOCK_REALTIME, &clockNow);
         errlogPrintf("WARNING: OS Clock time was read before being set.\n"
             "Using 1990-01-02 00:00:00.000000 UTC\n");
-#else
-        errlogPrintf("WARNING: OS Clock pre-dates the EPICS epoch!\n"
-            "Using 1990-01-02 00:00:00.000000 UTC\n");
-#endif
     }
 
     epicsTimeFromTimespec(pDest, &clockNow);

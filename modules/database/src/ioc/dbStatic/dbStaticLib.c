@@ -2591,7 +2591,8 @@ long dbPutString(DBENTRY *pdbentry,const char *pstring)
         ((char *)pfield)[pflddes->size-1] = 0;
 
         if((pflddes->special == SPC_CALC) && !stringHasMacro) {
-            char  rpcl[RPCL_LEN];
+            /* size the postfix output from the field's actual capacity */
+            char *rpcl = dbmfMalloc(INFIX_TO_POSTFIX_SIZE(pflddes->size));
             short err;
 
             if (postfix(pstring,rpcl,&err)) {
@@ -2599,6 +2600,7 @@ long dbPutString(DBENTRY *pdbentry,const char *pstring)
                 errlogPrintf("%s in CALC expression '%s'\n",
                               calcErrorStr(err), pstring);
             }
+            dbmfFree(rpcl);
         }
         break;
 
@@ -2746,10 +2748,12 @@ char * dbVerify(DBENTRY *pdbentry, const char *pstring)
         }
 
         if (pflddes->special == SPC_CALC) {
-            char  rpcl[RPCL_LEN];
+            /* size the postfix output from the field's actual capacity */
+            char *rpcl = dbmfMalloc(INFIX_TO_POSTFIX_SIZE(pflddes->size));
             short err;
 
             status = postfix(pstring, rpcl, &err);
+            dbmfFree(rpcl);
             if (status)  {
                 sprintf(message,"%s in CALC expression '%s'",
                         calcErrorStr(err), pstring);

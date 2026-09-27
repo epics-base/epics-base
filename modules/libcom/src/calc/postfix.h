@@ -107,6 +107,8 @@
 #define CALC_ERR_NULL_ARG       12
 /** \brief Internal error, bad element type */
 #define CALC_ERR_INTERNAL       13
+/** \brief Memory allocation failure */
+#define CALC_ERR_NOMEM          14
 
 /** @} */
 

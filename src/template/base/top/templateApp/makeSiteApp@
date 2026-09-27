@@ -1,0 +1,21 @@
+#!/usr/bin/env perl
+#
+# Short-cut script to run makeBaseApp.pl with these local templates.
+# The installed version of this script can be put anywhere, it knows
+# the absolute paths to the modules it was configured with, i.e.:
+#   EPICS_BASE: @EPICS_BASE@
+#       MYTOP: @MYTOP@
+
+use strict;
+use File::Basename 'basename';
+
+my $tool = basename($0);
+my $mba = '@EPICS_BASE@/bin/@ARCH@/makeBaseApp.pl';
+my $templates = '@MYTOP@/templates/makeBaseApp/top';
+
+die "$tool: Can't find makeBaseApp.pl\n"
+    unless -x $mba;
+die "$tool: Can't find iocStd templates\n"
+    unless -d $templates;
+
+exec $mba, '-T', $templates, @ARGV;

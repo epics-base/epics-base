@@ -80,15 +80,27 @@ If bit 0 (LSB) is set, LNK0 is processed.
 
 =item *
 
-If bit 1 is set, LNK2 is processed.
+If bit 1 is set, LNK1 is processed.
 
 =item *
 
-If bit 2 is set, LNK3 is processed, etc.
+If bit 2 is set, LNK2 is processed, etc.
 
 =back
 
 =back
+
+I<(If not set, the SHFT field is -1 so bits from SELN are shifted left by 1)>
+
+=head4 B<Note about SHFT and OFFS fields>
+
+The first versions of the fanout record had LNK fields starting with index ONE
+(LNK1). The fanout record now supports 16 links, starting from index ZERO (LNK0).
+The default behaviour of the SHFT and OFFS fields was introduced for compatibility
+with old databases that used fanout records with links indexed from one.
+
+B<To use the LNK0 field when SELM = Mask, the SHFT field must be explicitly set
+to ZERO.>
 
 SELN reads its value from SELL. SELL can be a constant, a database link, or a
 channel access link.  If a constant, SELN is initialized with the constant value

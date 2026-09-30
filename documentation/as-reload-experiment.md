@@ -20,7 +20,8 @@ are laboratory workloads, not a sample of operational ACFs.
 
 Each timing case has five warm-up reloads followed by thirty measured reloads.
 Numeric HAG and hostname-string cases provide controls. A separate diagnostic
-reload enables `asCaDebug` and prints `ascar(2)`; timing runs disable debug output.
+reload enables `asCaDebug` and prints `ascar(2)`; timing runs disable debug
+output.
 
 `reload_ns` measures only the synchronous `asInit()` call using
 `epicsMonotonicGet()`. `inputs_connected_ns` measures from that call's start
@@ -82,35 +83,45 @@ current directory, and a new task-owned scratch directory:
 
 ```sh
 scratch=$(mktemp -d)
-printf '# asReloadProbe resolver fixture\n127.0.0.1 localhost\n::1 localhost\n127.0.0.1 hag-refresh.test\n' > "$scratch/hosts.fixture"
+printf '%s\n' '# asReloadProbe resolver fixture' '127.0.0.1 localhost' \
+    '::1 localhost' '127.0.0.1 hag-refresh.test' > "$scratch/hosts.fixture"
 docker run --rm --network none --cpus 4 --memory 4g \
     --user "$(id -u):$(id -g)" \
     --mount "type=bind,src=$PWD,dst=/work" \
     --mount "type=bind,src=$scratch,dst=/evidence" \
     --mount "type=bind,src=$scratch/hosts.fixture,dst=/hosts.fixture" \
     --mount "type=bind,src=$scratch/hosts.fixture,dst=/etc/hosts" \
-    as-reload-test sh -c 'make -j4 && python3 modules/database/test/std/rec/runAsReloadExperiment.py --hosts-file /hosts.fixture --output /evidence/run'
+    as-reload-test sh -c '
+        make -j4 &&
+        python3 modules/database/test/std/rec/runAsReloadExperiment.py \
+            --hosts-file /hosts.fixture --output /evidence/run'
 ```
 
 ## Findings and validation
 
 The 2026-09-30 run used upstream `7.0` at
-`e6c7dd045c2f7bb6fea43961d6a7df1328bc03f7` plus this evidence patch. The Linux
+`e6c7dd045c2f7bb6fea43961d6a7df1328bc03f7` plus this evidence patch at candidate
+`653dea3347ea6418e99ce709e418fcc26bf73d71`. Later edits document subprocess
+trust boundaries and format this report; they do not change experiment behavior.
+The Linux
 image ran on an x86-64 build host, with four CPU equivalents, a 4 GiB memory
 limit, Ubuntu 24.04, GCC 13.3.0, Python 3.12.3, glibc 2.39, and Perl 5.38.2.
 The host also had other workloads; these timings do not establish production
 reload costs or a performance benefit for a future refresh implementation.
 
-Image ID: `sha256:6223da79095520e088d1aa1c81fa4c4d838b5138af1674b6f32cb603cfba4fcf`.
+Image ID:
+`sha256:6223da79095520e088d1aa1c81fa4c4d838b5138af1674b6f32cb603cfba4fcf`.
 The base-image digest is pinned in the recipe above. The run used
 `build-essential 12.10ubuntu1`, `libc6 2.39-0ubuntu8.9`,
 `libreadline-dev 8.2-4build1`, `perl 5.38.2-3.2ubuntu0.6`, and
 `python3 3.12.3-0ubuntu2.1`.
 
-All values below are milliseconds except the write-removal count. Raw records
-for the 240 measured reloads are in [as-reload-samples.csv](as-reload-samples.csv).
+All values below are milliseconds except the write-removal count (out of 30
+reloads). The call columns describe `asInit()`. Raw records
+for the 240 measured reloads are in
+[as-reload-samples.csv](as-reload-samples.csv).
 
-| Groups | External inputs | `asInit` median | `asInit` p95 | All inputs connected, median | Observed write removals / reloads |
+| Groups | Inputs | Call median | Call p95 | Connected median | Write removals |
 | ---: | ---: | ---: | ---: | ---: | ---: |
 | 1 | 0 | 0.077 | 0.152 | N/A | 0 / 30 |
 | 1 | 1 | 0.122 | 7.753 | 31.685 | 30 / 30 |
@@ -135,7 +146,7 @@ operation from refreshing DNS-derived membership while preserving inputs.
 
 With the same ACF and retained client, the resolver scenarios produced:
 
-| Resolver change | Write access before reload | Write access after reload | `asInit` status |
+| Resolver change | Write before | Write after | Reload status |
 | --- | ---: | ---: | ---: |
 | `127.0.0.1` to `127.0.0.2` | 1 | 0 | 0 |
 | Restore `127.0.0.1` | 0 | 1 | 0 |
@@ -151,10 +162,10 @@ Validation completed:
 
 - Native macOS core Base build, 90/90 `aslibtest` assertions, all 51 libCom test
   programs (4,588 assertions), and the four-case experiment smoke run.
-- Linux shared core Base build, 90/90 `aslibtest` assertions, the controlled-name
+- Linux shared core Base build, 90/90 `aslibtest` assertions, the controlled
   smoke run, and the full eight-case experiment with four resolver transitions.
 - Linux libCom: 52 test programs and 4,590 assertions. The initial `--network
-  none` run failed `osiSockTest` assertions 19–20, which require a non-loopback
+  none` run failed `osiSockTest` assertions 19–20, which require a broadcast
   broadcast interface. That unchanged test passed all 24 assertions when rerun
   on a task-owned internal Docker bridge. The CA measurements used `--network
   none` throughout.

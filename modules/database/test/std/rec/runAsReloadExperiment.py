@@ -9,7 +9,8 @@ from pathlib import Path
 import platform
 import socket
 import statistics
-import subprocess
+# The runner executes programs from a trusted local Base build, without a shell.
+import subprocess  # nosec B404
 import threading
 import time
 import uuid
@@ -17,12 +18,14 @@ import uuid
 
 class Process:
     def __init__(self, argv, env, logfile):
+        """Start a trusted local Base probe and collect its output."""
         self.events = []
         self.condition = threading.Condition()
         self.logfile = logfile
-        self.proc = subprocess.Popen(argv, env=env, stdin=subprocess.PIPE,
+        # argv is constructed below from the selected build and generated fixtures.
+        self.proc = subprocess.Popen(argv, env=env, stdin=subprocess.PIPE,  # nosec B603
                                      stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                                     text=True, bufsize=1)
+                                     text=True, bufsize=1, shell=False)
         self.reader = threading.Thread(target=self.read, daemon=True)
         self.reader.start()
 
@@ -228,7 +231,8 @@ def profile(args, probe, dbd, groups, inputs, mode):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--base", type=Path, default=Path(__file__).resolve().parents[5])
+    parser.add_argument("--base", type=Path, default=Path(__file__).resolve().parents[5],
+                        help="trusted local Base build containing this experiment")
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--groups", type=int, nargs="+", default=[1, 16, 128])
     parser.add_argument("--warmup", type=int, default=5)
@@ -243,8 +247,10 @@ def main():
         parser.error("groups/samples must be positive and warm-up nonnegative")
     args.base, args.output = args.base.resolve(), args.output.resolve()
     args.output.mkdir(parents=True, exist_ok=False)
-    arch = subprocess.check_output(["perl", str(args.base / "src/tools/EpicsHostArch.pl")],
-                                   text=True).strip()
+    # This is the existing architecture helper in the explicitly selected build.
+    arch = subprocess.check_output(  # nosec B603
+        ["perl", str(args.base / "src/tools/EpicsHostArch.pl")],
+        text=True, shell=False).strip()
     testdir = args.base / "modules/database/test/std/rec"
     probe, dbd = testdir / ("O." + arch) / "asReloadProbe", testdir / "O.Common/recTestIoc.dbd"
     metadata = dict(platform=platform.platform(), arch=arch, python=platform.python_version(),

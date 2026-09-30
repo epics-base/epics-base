@@ -49,6 +49,13 @@ dbScanTest_SRCS += dbTestIoc_registerRecordDeviceDriver.cpp
 testHarness_SRCS += dbScanTest.c
 TESTS += dbScanTest
 
+TESTPROD_HOST += dbNotifyTest
+dbNotifyTest_SRCS += dbNotifyTest.c
+dbNotifyTest_SRCS += dbTestIoc_registerRecordDeviceDriver.cpp
+testHarness_SRCS += dbNotifyTest.c
+TESTFILES += ../dbNotifyTest.db
+TESTS += dbNotifyTest
+
 TESTPROD_HOST += dbShutdownTest
 dbShutdownTest_SRCS += dbShutdownTest.c
 dbShutdownTest_SRCS += dbTestIoc_registerRecordDeviceDriver.cpp

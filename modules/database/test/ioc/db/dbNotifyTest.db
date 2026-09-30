@@ -1,0 +1,6 @@
+record(x, "passive") {
+}
+
+record(x, "scanned") {
+    field(SCAN, "10 second")
+}

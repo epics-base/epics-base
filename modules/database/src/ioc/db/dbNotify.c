@@ -245,7 +245,8 @@ static void processNotifyCommon(processNotify *ppn, dbCommon *precord, int first
         (dbChannelFldDes(ppn->chan)->process_passive && precord->scan == 0)))
        doProcess = 1;
     else
-        if (ppn->requestType == processGetRequest &&
+        if ((ppn->requestType == processRequest ||
+             ppn->requestType == processGetRequest) &&
             precord->scan == 0)
             doProcess = 1;
 

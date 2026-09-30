@@ -27,6 +27,7 @@
 #include "epicsEvent.h"
 #include "epicsInterrupt.h"
 #include "epicsRingPointer.h"
+#include "epicsSpin.h"
 #include "epicsString.h"
 #include "epicsThread.h"
 #include "epicsTimer.h"
@@ -52,7 +53,10 @@ static int callbackQueueSize = 2000;
 
 typedef struct cbQueueSet {
     epicsEventId semWakeUp;
+    epicsSpinId lock;       /* guards queue, nSleeping, wakeupPrio */
     epicsRingPointerId queue;
+    unsigned nSleeping;     /* workers waiting on semWakeUp */
+    int wakeupPrio;         /* priority of pending wake-up, -1 if none */
     int queueOverflow;
     int queueOverflows;
     int shutdown; // use atomic
@@ -120,9 +124,11 @@ int callbackQueueStatus(const int reset, callbackQueueStats *result)
         int prio;
         result->size = callbackQueueSize;
         for(prio = 0; prio < NUM_CALLBACK_PRIORITIES; prio++) {
-            epicsRingPointerId qId = callbackQueue[prio].queue;
-            result->numUsed[prio] = epicsRingPointerGetUsed(qId);
-            result->maxUsed[prio] = epicsRingPointerGetHighWaterMark(qId);
+            cbQueueSet *mySet = &callbackQueue[prio];
+            epicsSpinLock(mySet->lock);
+            result->numUsed[prio] = epicsRingPointerGetUsed(mySet->queue);
+            result->maxUsed[prio] = epicsRingPointerGetHighWaterMark(mySet->queue);
+            epicsSpinUnlock(mySet->lock);
             result->numOverflow[prio] = epicsAtomicGetIntT(&callbackQueue[prio].queueOverflows);
         }
         ret = 0;
@@ -132,7 +138,10 @@ int callbackQueueStatus(const int reset, callbackQueueStats *result)
     if (reset) {
         int prio;
         for(prio = 0; prio < NUM_CALLBACK_PRIORITIES; prio++) {
-            epicsRingPointerResetHighWaterMark(callbackQueue[prio].queue);
+            cbQueueSet *mySet = &callbackQueue[prio];
+            epicsSpinLock(mySet->lock);
+            epicsRingPointerResetHighWaterMark(mySet->queue);
+            epicsSpinUnlock(mySet->lock);
         }
     }
     return ret;
@@ -207,6 +216,19 @@ found:
     return 0;
 }
 
+/* Call with lock held. Allows one wake-up in flight, unless a thread of
+ * higher priority than the one that claimed it posts (that one may be
+ * preempted before signalling).
+ */
+static int needWakeup(cbQueueSet *mySet, int prio)
+{
+    if (mySet->nSleeping > 0 && prio > mySet->wakeupPrio) {
+        mySet->wakeupPrio = prio;
+        return 1;
+    }
+    return 0;
+}
+
 static void callbackTask(void *arg)
 {
     int prio = *(int*)arg;
@@ -215,19 +237,32 @@ static void callbackTask(void *arg)
     taskwdInsert(0, NULL, NULL);
     epicsEventSignal(startStopEvent);
 
+    epicsSpinLock(mySet->lock);
     while(!epicsAtomicGetIntT(&mySet->shutdown)) {
-        void *ptr;
-        if (epicsRingPointerIsEmpty(mySet->queue))
-            epicsEventMustWait(mySet->semWakeUp);
+        epicsCallback *pcallback = epicsRingPointerPop(mySet->queue);
 
-        while ((ptr = epicsRingPointerPop(mySet->queue))) {
-            epicsCallback *pcallback = (epicsCallback *)ptr;
-            if(!epicsRingPointerIsEmpty(mySet->queue))
-                epicsEventMustTrigger(mySet->semWakeUp);
+        if (pcallback) {
+            /* More work queued: wake another worker if none is pending */
+            int wake = mySet->wakeupPrio < 0 &&
+                       !epicsRingPointerIsEmpty(mySet->queue) &&
+                       needWakeup(mySet, threadPriority[prio]);
+
             mySet->queueOverflow = FALSE;
+            epicsSpinUnlock(mySet->lock);
+            if (wake)
+                epicsEventMustTrigger(mySet->semWakeUp);
             (*pcallback->callback)(pcallback);
+            epicsSpinLock(mySet->lock);
+        } else {
+            mySet->nSleeping++;
+            epicsSpinUnlock(mySet->lock);
+            epicsEventMustWait(mySet->semWakeUp);
+            epicsSpinLock(mySet->lock);
+            mySet->nSleeping--;
+            mySet->wakeupPrio = -1;
         }
     }
+    epicsSpinUnlock(mySet->lock);
 
     if(!epicsAtomicDecrIntT(&mySet->threadsRunning))
         epicsEventSignal(startStopEvent);
@@ -275,6 +310,8 @@ void callbackCleanup(void)
         mySet->semWakeUp = NULL;
         epicsRingPointerDelete(mySet->queue);
         mySet->queue = NULL;
+        epicsSpinDestroy(mySet->lock);
+        mySet->lock = NULL;
         free(mySet->threads);
         mySet->threads = NULL;
     }
@@ -303,10 +340,13 @@ void callbackInit(void)
         epicsThreadId tid;
 
         callbackQueue[i].semWakeUp = epicsEventMustCreate(epicsEventEmpty);
-        callbackQueue[i].queue = epicsRingPointerLockedCreate(callbackQueueSize);
+        callbackQueue[i].lock = epicsSpinMustCreate();
+        callbackQueue[i].queue = epicsRingPointerCreate(callbackQueueSize);
         if (callbackQueue[i].queue == 0)
-            cantProceed("epicsRingPointerLockedCreate failed for %s\n",
+            cantProceed("epicsRingPointerCreate failed for %s\n",
                 threadNamePrefix[i]);
+        callbackQueue[i].nSleeping = 0;
+        callbackQueue[i].wakeupPrio = -1;
         callbackQueue[i].queueOverflow = FALSE;
 
         if (callbackQueue[i].threadsConfigured == 0)
@@ -341,7 +381,7 @@ void callbackInit(void)
 int callbackRequest(epicsCallback *pcallback)
 {
     int priority;
-    int pushOK;
+    int pushOK, wake = 0, myPrio;
     cbQueueSet *mySet;
 
     if (!pcallback) {
@@ -364,15 +404,24 @@ int callbackRequest(epicsCallback *pcallback)
     }
     if (mySet->queueOverflow) return S_db_bufFull;
 
+    myPrio = epicsInterruptIsInterruptContext() ? 1000 :
+             (int)epicsThreadGetPrioritySelf();
+
+    epicsSpinLock(mySet->lock);
     pushOK = epicsRingPointerPush(mySet->queue, pcallback);
+    if (pushOK)
+        wake = needWakeup(mySet, myPrio);
+    else
+        mySet->queueOverflow = TRUE;
+    epicsSpinUnlock(mySet->lock);
 
     if (!pushOK) {
         epicsInterruptContextMessage(fullMessage[priority]);
-        mySet->queueOverflow = TRUE;
         epicsAtomicIncrIntT(&mySet->queueOverflows);
         return S_db_bufFull;
     }
-    epicsEventSignal(mySet->semWakeUp);
+    if (wake)
+        epicsEventSignal(mySet->semWakeUp);
     return 0;
 }
 

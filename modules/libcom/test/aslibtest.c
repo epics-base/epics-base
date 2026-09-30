@@ -660,6 +660,93 @@ static void testUseIP(void)
     testAccess("rw", 0);
 }
 
+static void countAccessChanges(ASCLIENTPVT client, asClientStatus status)
+{
+    unsigned *count = asGetClientPvt(client);
+    if(status == asClientCOAR)
+        ++*count;
+}
+
+/* Keep both clients attached while the loaded policy is replaced. */
+static void testReloadClients(void)
+{
+    static const char first[] =
+        "HAG(hosts) {127.0.0.1}\n"
+        "ASG(DEFAULT) { RULE(0, NONE) }\n"
+        "ASG(managed) { RULE(1, WRITE) { HAG(hosts) } }\n";
+    static const char second[] =
+        "HAG(hosts) {127.0.0.2}\n"
+        "ASG(DEFAULT) { RULE(0, NONE) }\n"
+        "ASG(managed) { RULE(1, WRITE) { HAG(hosts) } }\n";
+    static const char duplicate[] =
+        "HAG(hosts) {127.0.0.2, 127.0.0.2}\n"
+        "ASG(DEFAULT) { RULE(0, NONE) }\n"
+        "ASG(managed) { RULE(1, WRITE) { HAG(hosts) } }\n";
+    ASMEMBERPVT member = NULL;
+    ASCLIENTPVT oldClient = NULL, newClient = NULL;
+    unsigned oldChanges = 0, newChanges = 0;
+    char oldHost[] = "127.0.0.1", newHost[] = "127.0.0.2";
+    long status;
+
+    testDiag("testReloadClients()");
+    asCheckClientIP = 1;
+    testOk1(asInitMem(first, NULL) == 0);
+    testOk1(asAddMember(&member, "managed") == 0);
+    testOk1(asAddClient(&oldClient, member, 0, "testing", oldHost) == 0);
+    testOk1(asAddClient(&newClient, member, 0, "testing", newHost) == 0);
+    if(!oldClient || !newClient)
+        testAbort("Unable to create reload clients");
+    asPutClientPvt(oldClient, &oldChanges);
+    asPutClientPvt(newClient, &newChanges);
+    testOk1(asRegisterClientCallback(oldClient, countAccessChanges) == 0);
+    testOk1(asRegisterClientCallback(newClient, countAccessChanges) == 0);
+    testOk(asCheckGet(oldClient) && asCheckPut(oldClient) &&
+           !asCheckGet(newClient) && !asCheckPut(newClient),
+           "initial membership grants rights only to the first client");
+    testOk(oldChanges == 1 && newChanges == 1,
+           "callback registration reports each client's initial rights");
+
+    testOk1(asInitMem(first, NULL) == 0);
+    testOk(asCheckPut(oldClient) && !asCheckPut(newClient),
+           "unchanged reload preserves attached clients' rights");
+    testOk(oldChanges == 1 && newChanges == 1,
+           "unchanged reload sends no change-of-access callbacks");
+
+    testOk1(asInitMem(second, NULL) == 0);
+    testOk(!asCheckGet(oldClient) && !asCheckPut(oldClient) &&
+           asCheckGet(newClient) && asCheckPut(newClient),
+           "membership replacement updates the same client objects");
+    testOk(oldChanges == 2 && newChanges == 2,
+           "membership replacement notifies each affected client once");
+
+    eltc(0); /* Expected duplicate-host diagnostic. */
+    status = asInitMem(duplicate, NULL);
+    eltc(1);
+    testOk1(status == 0);
+    testOk(!asCheckPut(oldClient) && asCheckPut(newClient),
+           "duplicate effective mapping preserves rights");
+    testOk(oldChanges == 2 && newChanges == 2,
+           "duplicate effective mapping sends no additional callbacks");
+
+    eltc(0); /* Expected parser diagnostic. */
+    status = asInitMem("HAG(hosts) {", NULL);
+    eltc(1);
+    testOk(status == S_asLib_badConfig, "incomplete policy fails to load");
+    testOk(!asCheckPut(oldClient) && asCheckPut(newClient),
+           "failed reload retains the previous policy and client rights");
+    testOk(oldChanges == 2 && newChanges == 2,
+           "failed reload sends no change-of-access callbacks");
+
+    testOk1(asInitMem(first, NULL) == 0);
+    testOk(asCheckPut(oldClient) && !asCheckPut(newClient),
+           "restoring membership updates the retained clients");
+    testOk(oldChanges == 3 && newChanges == 3,
+           "restoration notifies each affected client once");
+    testOk1(asRemoveClient(&oldClient) == 0);
+    testOk1(asRemoveClient(&newClient) == 0);
+    testOk1(asRemoveMember(&member) == 0);
+}
+
 static void testFutureProofParser(void)
 {
     long ret;
@@ -783,11 +870,12 @@ static void testFutureProofParser(void)
 
 MAIN(aslibtest)
 {
-    testPlan(64);
+    testPlan(90);
     testSyntaxErrors();
     testFutureProofParser();
     testHostNames();
     testUseIP();
+    testReloadClients();
     errlogFlush();
     return testDone();
 }

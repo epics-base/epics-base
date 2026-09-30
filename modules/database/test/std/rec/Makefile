@@ -32,6 +32,12 @@ recTestIoc_DBD += bptTypeJdegC.dbd
 
 TESTFILES += $(COMMON_DIR)/recTestIoc.dbd
 
+# Optional reload experiment; not part of the embedded test harness.
+TESTPROD_HOST += asReloadProbe
+asReloadProbe_SRCS += asReloadProbe.c
+asReloadProbe_SRCS += asReloadProbeIoc.c
+asReloadProbe_SRCS += recTestIoc_registerRecordDeviceDriver.cpp
+
 testHarness_SRCS += recTestIoc_registerRecordDeviceDriver.cpp
 testHarness_SRCS += asTestIoc_registerRecordDeviceDriver.cpp
 

@@ -21,6 +21,9 @@ extern "C" {
 /* At the moment, only PTHREAD_MUTEX_DEFAULT and PTHREAD_MUTEX_RECURSIVE are supported */
 int osdPosixMutexInit(pthread_mutex_t *,int mutextype);
 
+/* Non-zero if EPICS threads use SCHED_FIFO. Creates no mutexes. */
+int osdPosixRealtimeScheduling(void);
+
 #ifdef __cplusplus
 }
 #endif

@@ -20,6 +20,7 @@
 int testdbConvert(void);
 int callbackTest(void);
 int callbackParallelTest(void);
+int callbackScalingTest(void);
 int dbStateTest(void);
 int dbServerTest(void);
 int dbCaStatsTest(void);
@@ -43,6 +44,7 @@ void epicsRunDbTests(void)
     runTest(testdbConvert);
     runTest(callbackTest);
     runTest(callbackParallelTest);
+    runTest(callbackScalingTest);
     runTest(dbStateTest);
     runTest(dbServerTest);
     runTest(dbCaStatsTest);

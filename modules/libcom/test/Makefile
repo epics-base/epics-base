@@ -167,6 +167,11 @@ ringPointerTest_SRCS += ringPointerTest.c
 testHarness_SRCS += ringPointerTest.c
 TESTS += ringPointerTest
 
+TESTPROD_HOST += epicsMPMCQueueTest
+epicsMPMCQueueTest_SRCS += epicsMPMCQueueTest.c
+testHarness_SRCS += epicsMPMCQueueTest.c
+TESTS += epicsMPMCQueueTest
+
 TESTPROD_HOST += ringBytesTest
 ringBytesTest_SRCS += ringBytesTest.c
 testHarness_SRCS += ringBytesTest.c

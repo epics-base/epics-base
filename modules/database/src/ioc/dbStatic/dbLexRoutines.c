@@ -1404,7 +1404,7 @@ static void dbRecordField(char *name,char *value)
 
     status = dbPutString(pdbentry,value);
     if (status) {
-        char msg[128];
+        char msg[ERRSYM_BUFLEN];
 
         errSymLookup(status, msg, sizeof(msg));
         fprintf(stderr, ERL_ERROR

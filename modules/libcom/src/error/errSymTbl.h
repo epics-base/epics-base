@@ -38,6 +38,11 @@ typedef ERRSYMTAB *ERRSYMTAB_ID;
 extern "C" {
 #endif
 
+/** Suggested output buffer size for errSymLookup()
+ * @since UNRELEASED Added
+ */
+#define ERRSYM_BUFLEN 80
+
 /** \brief Lookup message from error/status code.
  * \param status Input code
  * \param pBuf Output string buffer
@@ -47,6 +52,8 @@ extern "C" {
  *
  * Copies in a message for any status code.  Unknown status codes
  * are printed numerically.
+ *
+ * @since UNRELEASED Suggest use of ERRSYM_BUFLEN to size output buffer
  */
 LIBCOM_API void errSymLookup(long status, char *pBuf, size_t bufLength);
 /** \brief Lookup message from error/status code.

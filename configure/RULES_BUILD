@@ -114,7 +114,8 @@ endif
 
 ifneq ($(filter-out inc,$(strip $(MAKECMDGOALS))),)
 ifneq (,$(strip $(HDEPENDS_FILES)))
-$(filter-out $(wildcard *$(DEP)), $(HDEPENDS_FILES)): | $(COMMON_INC)
+# Avoid recording a transient common header path while regenerating .d files.
+$(HDEPENDS_FILES): | $(COMMON_INC)
 -include $(HDEPENDS_FILES)
 endif
 endif

@@ -16,6 +16,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "epicsAtomic.h"
 #include "epicsEvent.h"
 #include "epicsMessageQueue.h"
 #include "epicsPrint.h"
@@ -208,8 +209,11 @@ static void testcbmulti(xpriv *priv, void *raw)
 static void testcompmulti(void *raw, IOSCANPVT scan, int prio)
 {
     int *mask = raw;
-    testOk(((*mask)&(1<<prio))==0, "(0x%x)&(0x%x)==0", *mask, 1<<prio);
-    *mask |= 1<<prio;
+    int seen = epicsAtomicGetIntT(mask);
+    testOk((seen & (1<<prio))==0, "(0x%x)&(0x%x)==0", seen, 1<<prio);
+    /* each bit is set once, so add is the same as or; the three
+     * priorities' workers reach here concurrently */
+    epicsAtomicAddIntT(mask, 1<<prio);
 }
 
 static void testMultiThreading(void)

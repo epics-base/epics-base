@@ -83,9 +83,6 @@ static int callbackQueueSize = 2000;
 #ifndef CB_FREE_EVERY
 #define CB_FREE_EVERY 16   /* callbacks run between pool returns and progress updates */
 #endif
-#ifndef CB_TAKE
-#define CB_TAKE 1          /* nodes a worker takes from the ready stack at once */
-#endif
 #ifndef CB_STALE_US
 #define CB_STALE_US 20
 #endif
@@ -366,8 +363,8 @@ static void nodeFreeChain(cbQueueSet *mySet, cbNode *first, cbNode *last)
     }
 }
 
-/* ready stack: the same tagged LIFO; a take is up to CB_TAKE nodes
- * from the head, a push is a chain */
+/* ready stack: the same tagged LIFO; a take is one node from the
+ * head, a push is a chain */
 static void readyPush(cbQueueSet *mySet, cbNode *first, cbNode *last, size_t *ph)
 {
     size_t h = *ph;
@@ -381,13 +378,13 @@ static void readyPush(cbQueueSet *mySet, cbNode *first, cbNode *last, size_t *ph
     }
 }
 
-/* take up to CB_TAKE nodes from the head of the ready stack with one
- * CAS, as a NULL-terminated chain; *more says whether the stack holds
- * more. *ph is the head as this worker last left it: a CAS against it
- * needs no fresh read while nobody else touched the stack, and
- * returns the current head when somebody did. Walking the chain races
- * with other takers, but every next pointer leads into the pool or to
- * NULL and the tagged head rejects a chain that changed under us. */
+/* take the head node of the ready stack with one CAS; *more says
+ * whether the stack holds more. *ph is the head as this worker last
+ * left it: a CAS against it needs no fresh read while nobody else
+ * touched the stack, and returns the current head when somebody did.
+ * Reading the node's next races with other takers, but every next
+ * pointer leads into the pool or to NULL and the tagged head rejects
+ * a node that changed under us. */
 static cbNode *readyTake(cbQueueSet *mySet, size_t *ph, int *more)
 {
     size_t h = *ph;
@@ -395,16 +392,14 @@ static cbNode *readyTake(cbQueueSet *mySet, size_t *ph, int *more)
         h = epicsAtomicGetSizeT(&mySet->ready);
     for (;;) {
         size_t i = CB_IDX(h), nx, cur, nh;
-        cbNode *n, *last;
-        int k = 1;
+        cbNode *n;
         if (i == CB_IDX_NONE) { *ph = h; *more = 0; return NULL; }
-        n = last = &mySet->pool[i];
-        while (k < CB_TAKE && last->next) { last = last->next; k++; }
-        nx = last->next ? (size_t)(last->next - mySet->pool) : CB_IDX_NONE;
+        n = &mySet->pool[i];
+        nx = n->next ? (size_t)(n->next - mySet->pool) : CB_IDX_NONE;
         nh = CB_PACK(nx, CB_TAG(h) + 1);
         cur = epicsAtomicCmpAndSwapSizeT(&mySet->ready, h, nh);
         if (cur == h) {
-            last->next = NULL;
+            n->next = NULL;
             *ph = nh;
             *more = nx != CB_IDX_NONE;
             return n;
@@ -438,23 +433,20 @@ static cbNode *grabInbox(cbQueueSet *mySet, cbNode **plast)
     return rev;
 }
 
-/* the next nodes to run, up to CB_TAKE as a NULL-terminated chain:
- * from the ready stack, else the oldest of the inbox, whose rest goes
- * onto the stack. *more says whether the stack holds work after this */
-static cbNode *nextBatch(cbQueueSet *mySet, size_t *ph, int *more)
+/* the next node to run: from the ready stack, else the oldest of the
+ * inbox, whose rest goes onto the stack. *more says whether the stack
+ * holds work after this */
+static cbNode *nextNode(cbQueueSet *mySet, size_t *ph, int *more)
 {
-    cbNode *nd = readyTake(mySet, ph, more), *last, *cut;
-    int k = 1;
+    cbNode *nd = readyTake(mySet, ph, more), *last;
 
     if (nd) return nd;
     nd = grabInbox(mySet, &last);
     if (!nd) return NULL;   /* *more is 0 from the take */
-    cut = nd;
-    while (k < CB_TAKE && cut->next) { cut = cut->next; k++; }
-    *more = cut->next != NULL;
-    if (cut->next) {
-        readyPush(mySet, cut->next, last, ph);
-        cut->next = NULL;
+    *more = nd->next != NULL;
+    if (nd->next) {
+        readyPush(mySet, nd->next, last, ph);
+        nd->next = NULL;
     }
     return nd;
 }
@@ -559,10 +551,9 @@ static void callbackTask(void *arg)
          * pushed before, and the rest of the queue, is seen here and a
          * sleeper woken for it */
         epicsAtomicSetIntT(&me->busy, 1);
-        nd = nextBatch(mySet, &ready, &more);
-        while (nd) {
+        nd = nextNode(mySet, &ready, &more);
+        if (nd) {
             epicsCallback *cb = nd->cb;
-            cbNode *nx = nd->next;
 
             if (epicsAtomicGetSizeT(&mySet->sleepers) &&
                 (more || !readyEmpty(mySet) || epicsAtomicGetPtrT(&mySet->inbox)))
@@ -578,11 +569,6 @@ static void callbackTask(void *arg)
                 epicsAtomicAddIntT(&mySet->nQueued, -ran);
                 epicsAtomicIncrIntT(&mySet->batches);
                 ran = 0;
-            }
-            nd = nx;
-            if (nd) {
-                epicsAtomicSetIntT(&me->busy, 1);
-                more = 0;
             }
         }
         if (more) continue;

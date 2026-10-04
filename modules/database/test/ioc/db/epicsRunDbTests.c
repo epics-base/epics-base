@@ -25,6 +25,7 @@ int dbServerTest(void);
 int dbCaStatsTest(void);
 int dbShutdownTest(void);
 int dbScanTest(void);
+int dbScanParallelTest(void);
 int scanIoTest(void);
 int dbLockTest(void);
 int dbPutLinkTest(void);
@@ -48,6 +49,7 @@ void epicsRunDbTests(void)
     runTest(dbCaStatsTest);
     runTest(dbShutdownTest);
     runTest(dbScanTest);
+    runTest(dbScanParallelTest);
     runTest(scanIoTest);
     runTest(dbLockTest);
     runTest(dbPutLinkTest);

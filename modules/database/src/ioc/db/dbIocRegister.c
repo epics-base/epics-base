@@ -484,6 +484,19 @@ static const iocshFuncDef scanpiolFuncDef = {"scanpiol",0,0,
                                              "Print info for records with SCAN = \"I/O Intr\".\n"};
 static void scanpiolCallFunc(const iocshArgBuf *args) { iocshSetError(scanpiol());}
 
+/* scanParallelThreads */
+static const iocshArg scanParallelThreadsArg0 = { "no of threads",iocshArgInt};
+static const iocshArg * const scanParallelThreadsArgs[1] =
+    {&scanParallelThreadsArg0};
+static const iocshFuncDef scanParallelThreadsFuncDef = {"scanParallelThreads",1,scanParallelThreadsArgs,
+                                                        "Configure helper threads shared by all periodic scan rates.\n"
+                                                        "0 uses scanParallelThreadsDefault, a negative count\n"
+                                                        "leaves that many CPUs without a helper.\n"};
+static void scanParallelThreadsCallFunc(const iocshArgBuf *args)
+{
+    iocshSetError(scanParallelThreads(args[0].ival));
+}
+
 /* callbackSetQueueSize */
 static const iocshArg callbackSetQueueSizeArg0 = { "bufsize",iocshArgInt};
 static const iocshArg * const callbackSetQueueSizeArgs[1] =
@@ -648,6 +661,7 @@ void dbIocRegister(void)
     iocshRegister(&dbLockShowLockedFuncDef,dbLockShowLockedCallFunc);
 
     iocshRegister(&scanOnceSetQueueSizeFuncDef,scanOnceSetQueueSizeCallFunc);
+    iocshRegister(&scanParallelThreadsFuncDef,scanParallelThreadsCallFunc);
     iocshRegister(&scanOnceQueueShowFuncDef,scanOnceQueueShowCallFunc);
     iocshRegister(&scanpplFuncDef,scanpplCallFunc);
     iocshRegister(&scanpelFuncDef,scanpelCallFunc);

@@ -62,6 +62,13 @@ testHarness_SRCS += dbPutLinkTest.c
 TESTS += dbPutLinkTest
 TESTFILES += ../dbPutLinkTest.db ../dbPutLinkTestJ.db ../dbBadLink.db
 
+TESTPROD_HOST += dbScanParallelTest
+dbScanParallelTest_SRCS += dbScanParallelTest.c
+dbScanParallelTest_SRCS += dbTestIoc_registerRecordDeviceDriver.cpp
+testHarness_SRCS += dbScanParallelTest.c
+TESTS += dbScanParallelTest
+TESTFILES += ../dbScanParallelTest.db
+
 TESTPROD_HOST += dbLockTest
 dbLockTest_SRCS += dbLockTest.c
 dbLockTest_SRCS += dbTestIoc_registerRecordDeviceDriver.cpp
@@ -217,6 +224,7 @@ include $(TOP)/configure/RULES
 arrRecord$(DEP): $(COMMON_DIR)/arrRecord.h
 dbCaLinkTest$(DEP): $(COMMON_DIR)/xRecord.h $(COMMON_DIR)/arrRecord.h
 dbDbLinkTest$(DEP): $(COMMON_DIR)/xRecord.h
+dbScanParallelTest$(DEP): $(COMMON_DIR)/xRecord.h
 dbPutLinkTest$(DEP): $(COMMON_DIR)/xRecord.h
 dbPutGetTest$(DEP): $(COMMON_DIR)/xRecord.h
 dbStressLock$(DEP): $(COMMON_DIR)/xRecord.h

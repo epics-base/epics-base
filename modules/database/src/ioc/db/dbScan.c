@@ -48,6 +48,7 @@
 #include "dbScan.h"
 #include "dbStaticLib.h"
 #include "devSup.h"
+#include "epicsExport.h"
 #include "link.h"
 #include "recGbl.h"
 
@@ -88,6 +89,29 @@ typedef struct scan_element{
 
 #define OVERRUN_REPORT_DELAY 10.0   /* Time between initial reports */
 #define OVERRUN_REPORT_MAX 3600.0   /* Maximum time between reports */
+
+/* A periodic pass works on a snapshot of the scan list, taken in PHAS
+ * order at the start of the pass. The leader (the period's own thread)
+ * publishes one PHAS group at a time and takes slots from it like any
+ * helper; a slot is claimed by a CAS on `cursor`, and claims stop at
+ * `limit`. Both words carry the pass generation in their high bits so
+ * a stale limit from the previous pass can never be paired with the
+ * new cursor. Within a pass the limit only grows, group by group, after
+ * `outstanding` for the previous group has reached zero, which is what
+ * keeps a higher PHAS from starting before a lower one has finished.
+ */
+typedef struct scan_slot {
+    struct dbCommon     *prec;
+    short               phas;
+} scan_slot;
+
+#define SP_IDX_BITS   (sizeof(size_t) > 4 ? 32 : 20)
+#define SP_IDX_MASK   (((size_t)1 << SP_IDX_BITS) - 1)
+#define SP_PACK(g, i) (((size_t)(g) << SP_IDX_BITS) | (size_t)(i))
+#define SP_IDX(w)     ((w) & SP_IDX_MASK)
+#define SP_GEN(w)     ((w) >> SP_IDX_BITS)
+#define SP_NONE       ((size_t)-1)
+
 typedef struct periodic_scan_list {
     scan_list           scan_list;
     double              period;
@@ -95,11 +119,45 @@ typedef struct periodic_scan_list {
     unsigned long       overruns;
     volatile enum ctl   scanCtl;
     epicsEventId        loopEvent;
+    int                 scan;        /* menuScan value of this list */
+    unsigned            prio;        /* thread priority of the leader */
+    scan_slot           *snap;       /* snapshot of scan_list, PHAS order */
+    size_t              snapCap;
+    size_t              snapLen;
+    size_t              cursor;      /* atomic SP_PACK(gen, next slot) */
+    size_t              limit;       /* atomic SP_PACK(gen, end of group) */
+    int                 outstanding; /* atomic: slots of the group not done */
+    epicsEventId        doneEvent;   /* outstanding reached zero */
 } periodic_scan_list;
 
 static int nPeriodic = 0;
 static periodic_scan_list **papPeriodic; /* pointer to array of pointers */
 static epicsThreadId *periodicTaskId;    /* array of thread ids */
+
+/* Helpers are a pool shared by every period. A leader that publishes a
+ * group sets its bit in helpWanted and wakes as many sleeping helpers
+ * as the group has further slots. A helper serves the fastest period
+ * wanting help, at that period's leader priority, one slot at a time,
+ * and looks for a faster period after each one. A helper announces
+ * itself in helperSleepers before its last look for work, and a leader
+ * publishes before it looks at helperSleepers, so one of them sees the
+ * other. Leaders never depend on helpers for progress.
+ */
+typedef struct scan_helper {
+    epicsEventId        wake;
+    epicsThreadId       tid;        /* written by the spawner, read at stop */
+    unsigned            idx;
+} scan_helper;
+
+#define SP_MAX_HELPERS (8 * sizeof(size_t))
+int scanParallelThreadsDefault = 2;
+epicsExportAddress(int, scanParallelThreadsDefault);
+static int nHelpersConfigured = 0;
+static int nHelpers = 0;
+static scan_helper *helpers;
+static size_t helpWanted;        /* atomic bitmask of period indices */
+static size_t helperSleepers;    /* atomic bitmask of helper indices */
+static int helperShutdown;       /* atomic */
 
 
 static char *priorityName[NUM_CALLBACK_PRIORITIES] = {
@@ -145,6 +203,10 @@ static void periodicTask(void *arg);
 static void initPeriodic(void);
 static void deletePeriodic(void);
 static void spawnPeriodic(int ind);
+static void periodicPass(periodic_scan_list *ppsl);
+static void helperTask(void *arg);
+static void spawnHelpers(void);
+static void stopHelpers(void);
 static void eventCallback(epicsCallback *pcallback);
 static void ioscanInit(void);
 static void ioscanCallback(epicsCallback *pcallback);
@@ -175,6 +237,7 @@ void scanStop(void)
     for (i = 0; i < nPeriodic; i++) {
         epicsThreadMustJoin(periodicTaskId[i]);
     }
+    stopHelpers();
 
     scanOnce((dbCommon *)&exitOnce);
     epicsEventWait(startStopEvent);
@@ -205,9 +268,30 @@ long scanInit(void)
     initPeriodic();
     initOnce();
     buildScanLists();
+    spawnHelpers();
     for (i = 0; i < nPeriodic; i++)
         spawnPeriodic(i);
 
+    return 0;
+}
+
+int scanParallelThreads(int count)
+{
+    if (papPeriodic) {
+        fprintf(stderr, "scanParallelThreads: scan system already initialized\n");
+        return -1;
+    }
+    if (count < 0)
+        count = epicsThreadGetCPUs() + count;
+    else if (count == 0)
+        count = scanParallelThreadsDefault;
+    if (count < 0) count = 0;
+    if (count > (int)SP_MAX_HELPERS) {
+        fprintf(stderr, "scanParallelThreads: clamping %d to %d\n",
+            count, (int)SP_MAX_HELPERS);
+        count = SP_MAX_HELPERS;
+    }
+    nHelpersConfigured = count;
     return 0;
 }
 
@@ -807,7 +891,7 @@ static void periodicTask(void *arg)
         epicsTimeStamp now;
 
         if (ppsl->scanCtl == ctlRun)
-            scanList(&ppsl->scan_list);
+            periodicPass(ppsl);
 
         epicsTimeAddSeconds(&next, ppsl->period);
         epicsTimeGetMonotonic(&now);
@@ -910,6 +994,9 @@ static void initPeriodic(void)
         ppsl->name = choice;
         ppsl->scanCtl = ctlPause;
         ppsl->loopEvent = epicsEventMustCreate(epicsEventEmpty);
+        ppsl->scan = i + SCAN_1ST_PERIODIC;
+        ppsl->prio = epicsThreadPriorityScanLow + i;
+        ppsl->doneEvent = epicsEventMustCreate(epicsEventEmpty);
 
         number = ppsl->period / quantum;
         if ((ppsl->period < 2 * quantum) ||
@@ -932,7 +1019,9 @@ static void deletePeriodic(void)
         if (!ppsl) continue;
         ellFree(&ppsl->scan_list.list);
         epicsEventDestroy(ppsl->loopEvent);
+        epicsEventDestroy(ppsl->doneEvent);
         epicsMutexDestroy(ppsl->scan_list.lock);
+        free(ppsl->snap);
         free(ppsl);
     }
 
@@ -946,10 +1035,10 @@ static void spawnPeriodic(int ind)
     char taskName[20];
     epicsThreadOpts opts = EPICS_THREAD_OPTS_INIT;
     opts.joinable = 1;
-    opts.priority = epicsThreadPriorityScanLow + ind;
     opts.stackSize = epicsThreadStackBig;
 
     if (!ppsl) return;
+    opts.priority = ppsl->prio;
 
     sprintf(taskName, "scan-%g", ppsl->period);
     periodicTaskId[ind] = epicsThreadCreateOpt(
@@ -958,6 +1047,272 @@ static void spawnPeriodic(int ind)
     epicsEventWait(startStopEvent);
 }
 
+/* atomic bitmask helpers */
+static void maskSet(size_t *pmask, size_t bits)
+{
+    size_t m = epicsAtomicGetSizeT(pmask);
+    for (;;) {
+        size_t cur = epicsAtomicCmpAndSwapSizeT(pmask, m, m | bits);
+        if (cur == m) return;
+        m = cur;
+    }
+}
+
+/* clear bits; return the bits that were set */
+static size_t maskClear(size_t *pmask, size_t bits)
+{
+    size_t m = epicsAtomicGetSizeT(pmask);
+    for (;;) {
+        size_t cur = epicsAtomicCmpAndSwapSizeT(pmask, m, m & ~bits);
+        if (cur == m) return m & bits;
+        m = cur;
+    }
+}
+
+static unsigned lowBit(size_t m)
+{
+    unsigned i = 0;
+    while (!(m & 1)) { m >>= 1; i++; }
+    return i;
+}
+
+/* Claim the next slot of the published group, or SP_NONE. A cursor and
+ * a limit from different generations mean the leader is between the
+ * two stores of a publish; there is no work to take from it yet. */
+static size_t claimSlot(periodic_scan_list *ppsl)
+{
+    size_t c = epicsAtomicGetSizeT(&ppsl->cursor);
+    for (;;) {
+        size_t l = epicsAtomicGetSizeT(&ppsl->limit);
+        size_t cur;
+
+        if (SP_GEN(c) != SP_GEN(l) || SP_IDX(c) >= SP_IDX(l))
+            return SP_NONE;
+        cur = epicsAtomicCmpAndSwapSizeT(&ppsl->cursor, c, c + 1);
+        if (cur == c)
+            return SP_IDX(c);
+        c = cur;
+    }
+}
+
+/* Run slots of the published group until none is left or, for a
+ * helper, until a faster period wants help. Finished slots are
+ * subtracted from outstanding once, on the way out. */
+static void runSlots(periodic_scan_list *ppsl, int helper)
+{
+    size_t faster = ~(((size_t)2 << (ppsl->scan - SCAN_1ST_PERIODIC)) - 1);
+    size_t slot;
+    int n = 0;
+
+    while ((slot = claimSlot(ppsl)) != SP_NONE) {
+        struct dbCommon *prec = ppsl->snap[slot].prec;
+
+        /* SCAN may have changed since the snapshot, even by the
+         * record's own processing: only process it while it is still
+         * on this list, as the list walk would have. */
+        dbScanLock(prec);
+        if (prec->scan == ppsl->scan)
+            dbProcess(prec);
+        dbScanUnlock(prec);
+        n++;
+        if (helper && (epicsAtomicGetSizeT(&helpWanted) & faster))
+            break;
+    }
+    if (n && epicsAtomicAddIntT(&ppsl->outstanding, -n) == 0)
+        epicsEventSignal(ppsl->doneEvent);
+}
+
+static void wakeHelpers(size_t want)
+{
+    while (want) {
+        size_t m = epicsAtomicGetSizeT(&helperSleepers);
+        size_t bit;
+
+        if (!m) return;
+        bit = (size_t)1 << lowBit(m);
+        if (!maskClear(&helperSleepers, bit)) continue;
+        epicsEventSignal(helpers[lowBit(bit)].wake);
+        want--;
+    }
+}
+
+static void snapshotList(periodic_scan_list *ppsl)
+{
+    scan_list *psl = &ppsl->scan_list;
+    scan_element *pse;
+    size_t n, i = 0;
+
+    for (;;) {
+        epicsMutexMustLock(psl->lock);
+        n = ellCount(&psl->list);
+        if (n <= ppsl->snapCap) break;
+        epicsMutexUnlock(psl->lock);
+        free(ppsl->snap);
+        ppsl->snapCap = n + n / 2 + 8;
+        ppsl->snap = dbCalloc(ppsl->snapCap, sizeof(scan_slot));
+    }
+    for (pse = (scan_element *)ellFirst(&psl->list); pse;
+         pse = (scan_element *)ellNext(&pse->node)) {
+        ppsl->snap[i].prec = pse->precord;
+        ppsl->snap[i].phas = pse->precord->phas;
+        i++;
+    }
+    ppsl->snapLen = i;
+    epicsMutexUnlock(psl->lock);
+}
+
+/* One pass over the period's records, PHAS group by PHAS group. The
+ * leader takes slots itself, so with no helpers this is the old
+ * sequential walk over a snapshot. A record added to the list during
+ * the pass waits for the next one. */
+static void periodicPass(periodic_scan_list *ppsl)
+{
+    size_t gen, start = 0;
+    size_t mybit = (size_t)1 << (ppsl->scan - SCAN_1ST_PERIODIC);
+
+    snapshotList(ppsl);
+    if (ppsl->snapLen == 0)
+        return;
+    if (ppsl->snapLen > SP_IDX_MASK) {
+        /* more records than a slot index holds (32-bit only): the
+         * leader walks the snapshot alone */
+        for (start = 0; start < ppsl->snapLen; start++) {
+            struct dbCommon *prec = ppsl->snap[start].prec;
+
+            dbScanLock(prec);
+            if (prec->scan == ppsl->scan)
+                dbProcess(prec);
+            dbScanUnlock(prec);
+        }
+        return;
+    }
+    gen = (SP_GEN(epicsAtomicGetSizeT(&ppsl->cursor)) + 1) & SP_GEN(SP_NONE);
+
+    while (start < ppsl->snapLen) {
+        size_t end = start + 1;
+
+        while (end < ppsl->snapLen &&
+               ppsl->snap[end].phas == ppsl->snap[start].phas)
+            end++;
+
+        /* outstanding before the words a claim needs, cursor last on
+         * the first group: a claim that succeeds has seen them all */
+        epicsAtomicSetIntT(&ppsl->outstanding, (int)(end - start));
+        epicsAtomicSetSizeT(&ppsl->limit, SP_PACK(gen, end));
+        if (start == 0)
+            epicsAtomicSetSizeT(&ppsl->cursor, SP_PACK(gen, 0));
+        if (nHelpers && end - start > 1) {
+            maskSet(&helpWanted, mybit);
+            wakeHelpers(end - start - 1);
+        }
+
+        runSlots(ppsl, 0);
+        while (epicsAtomicGetIntT(&ppsl->outstanding) != 0)
+            epicsEventWait(ppsl->doneEvent);
+        if (nHelpers)
+            maskClear(&helpWanted, mybit);
+        start = end;
+    }
+}
+
+static void helperTask(void *arg)
+{
+    scan_helper *me = (scan_helper *)arg;
+    size_t mybit = (size_t)1 << me->idx;
+    unsigned prio = epicsThreadGetPrioritySelf();
+
+    taskwdInsert(0, NULL, NULL);
+    epicsEventSignal(startStopEvent);
+
+    while (!epicsAtomicGetIntT(&helperShutdown)) {
+        size_t wanted = epicsAtomicGetSizeT(&helpWanted);
+        int announced = 0;
+        int i;
+
+        /* fastest period first; a second look after announcing sleep */
+        for (;;) {
+            for (i = nPeriodic - 1; i >= 0; i--) {
+                periodic_scan_list *ppsl;
+
+                if (!(wanted & ((size_t)1 << i))) continue;
+                ppsl = papPeriodic[i];
+                if (SP_IDX(epicsAtomicGetSizeT(&ppsl->cursor)) >=
+                    SP_IDX(epicsAtomicGetSizeT(&ppsl->limit)))
+                    continue;
+                if (announced)
+                    maskClear(&helperSleepers, mybit);
+                if (prio != ppsl->prio) {
+                    prio = ppsl->prio;
+                    epicsThreadSetPriority(epicsThreadGetIdSelf(), prio);
+                }
+                runSlots(ppsl, 1);
+                goto next;
+            }
+            if (announced) break;
+            maskSet(&helperSleepers, mybit);
+            announced = 1;
+            wanted = epicsAtomicGetSizeT(&helpWanted);
+        }
+        epicsEventMustWait(me->wake);
+next:   ;
+    }
+
+    taskwdRemove(0);
+}
+
+static void spawnHelpers(void)
+{
+    int i;
+
+    nHelpers = nHelpersConfigured;
+    if (!nHelpers) return;
+    if (nPeriodic > (int)SP_MAX_HELPERS) {
+        errlogPrintf("scanParallelThreads: %d scan rates exceed the %d the "
+            "helper pool can serve, running without helpers\n",
+            nPeriodic, (int)SP_MAX_HELPERS);
+        nHelpers = 0;
+        return;
+    }
+    helpers = dbCalloc(nHelpers, sizeof(scan_helper));
+    epicsAtomicSetIntT(&helperShutdown, 0);
+    epicsAtomicSetSizeT(&helpWanted, 0);
+    epicsAtomicSetSizeT(&helperSleepers, 0);
+
+    for (i = 0; i < nHelpers; i++) {
+        epicsThreadOpts opts = EPICS_THREAD_OPTS_INIT;
+        char name[32];
+
+        opts.joinable = 1;
+        opts.priority = epicsThreadPriorityScanLow;
+        opts.stackSize = epicsThreadStackBig;
+        helpers[i].idx = i;
+        helpers[i].wake = epicsEventMustCreate(epicsEventEmpty);
+        sprintf(name, "scanHelper%d", i);
+        helpers[i].tid = epicsThreadCreateOpt(name, helperTask,
+            &helpers[i], &opts);
+        epicsEventWait(startStopEvent);
+    }
+}
+
+/* called from scanStop after the leaders have exited, so no helper
+ * holds a claim; a helper still awake sees the flag on its next look */
+static void stopHelpers(void)
+{
+    int i;
+
+    if (!nHelpers) return;
+    epicsAtomicSetIntT(&helperShutdown, 1);
+    for (i = 0; i < nHelpers; i++)
+        epicsEventSignal(helpers[i].wake);
+    for (i = 0; i < nHelpers; i++) {
+        epicsThreadMustJoin(helpers[i].tid);
+        epicsEventDestroy(helpers[i].wake);
+    }
+    free(helpers);
+    helpers = NULL;
+    nHelpers = 0;
+}
+
 static void ioscanCallback(epicsCallback *pcallback)
 {
     ioscan_head *piosh;

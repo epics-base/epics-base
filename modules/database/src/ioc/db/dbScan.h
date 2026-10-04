@@ -108,6 +108,26 @@ DBCORE_API int scanOnceSetQueueSize(int size);
 DBCORE_API int scanOnceQueueStatus(const int reset, scanOnceQueueStats *result);
 DBCORE_API void scanOnceQueueShow(const int reset);
 
+/** @brief Configure helper threads for periodic scanning
+ *
+ * Each periodic scan rate keeps its own thread, which times the passes
+ * and processes records. Helpers are a pool shared by all rates: during
+ * a pass they process records of the same PHAS alongside the rate's
+ * own thread, at that thread's priority, preferring the fastest rate
+ * that has work. Records of a higher PHAS start only after every record
+ * of a lower PHAS has finished, as in a sequential pass.
+ *
+ * @param count If zero, use the scanParallelThreadsDefault global.
+ *              If positive, exact number of helper threads to create.
+ *              If negative, leave this many CPUs without a helper.
+ * @return zero on success, non-zero if called after iocInit().
+ *
+ * @pre Must be called before iocInit()
+ */
+DBCORE_API int scanParallelThreads(int count);
+/** Helper count used by scanParallelThreads(0); also an iocsh variable */
+DBCORE_API extern int scanParallelThreadsDefault;
+
 /*print periodic lists*/
 DBCORE_API int scanppl(double rate);
 

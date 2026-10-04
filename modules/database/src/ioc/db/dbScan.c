@@ -142,19 +142,27 @@ static epicsThreadId *periodicTaskId;    /* array of thread ids */
  * itself in helperSleepers before its last look for work, and a leader
  * publishes before it looks at helperSleepers, so one of them sees the
  * other. Leaders never depend on helpers for progress.
+ *
+ * The first nReserve helpers serve only the fastest rate that had
+ * records at iocInit, so a short pass of that rate never finds every
+ * helper inside a long record of a slower rate.
  */
 typedef struct scan_helper {
     epicsEventId        wake;
     epicsThreadId       tid;        /* written by the spawner, read at stop */
     unsigned            idx;
+    size_t              serves;     /* bitmask of period indices */
 } scan_helper;
 
 #define SP_MAX_HELPERS (8 * sizeof(size_t))
 int scanParallelThreadsDefault = 2;
 epicsExportAddress(int, scanParallelThreadsDefault);
 static int nHelpersConfigured = 0;
+static int nReserveConfigured = 0;
 static int nHelpers = 0;
 static scan_helper *helpers;
+static size_t reservedHelpers;   /* bitmask of helper indices */
+static int reservedPeriod = -1;  /* period index the reserve serves */
 static size_t helpWanted;        /* atomic bitmask of period indices */
 static size_t helperSleepers;    /* atomic bitmask of helper indices */
 static int helperShutdown;       /* atomic */
@@ -275,7 +283,7 @@ long scanInit(void)
     return 0;
 }
 
-int scanParallelThreads(int count)
+int scanParallelThreads(int count, int reserve)
 {
     if (papPeriodic) {
         fprintf(stderr, "scanParallelThreads: scan system already initialized\n");
@@ -291,7 +299,14 @@ int scanParallelThreads(int count)
             count, (int)SP_MAX_HELPERS);
         count = SP_MAX_HELPERS;
     }
+    if (reserve < 0) reserve = 0;
+    if (reserve > count) {
+        fprintf(stderr, "scanParallelThreads: clamping reserve %d to %d\n",
+            reserve, count);
+        reserve = count;
+    }
     nHelpersConfigured = count;
+    nReserveConfigured = reserve;
     return 0;
 }
 
@@ -1122,10 +1137,10 @@ static void runSlots(periodic_scan_list *ppsl, int helper)
         epicsEventSignal(ppsl->doneEvent);
 }
 
-static void wakeHelpers(size_t want)
+static void wakeHelpers(size_t want, size_t eligible)
 {
     while (want) {
-        size_t m = epicsAtomicGetSizeT(&helperSleepers);
+        size_t m = epicsAtomicGetSizeT(&helperSleepers) & eligible;
         size_t bit;
 
         if (!m) return;
@@ -1168,7 +1183,9 @@ static void snapshotList(periodic_scan_list *ppsl)
 static void periodicPass(periodic_scan_list *ppsl)
 {
     size_t gen, start = 0;
-    size_t mybit = (size_t)1 << (ppsl->scan - SCAN_1ST_PERIODIC);
+    int ind = ppsl->scan - SCAN_1ST_PERIODIC;
+    size_t mybit = (size_t)1 << ind;
+    size_t eligible = ind == reservedPeriod ? ~(size_t)0 : ~reservedHelpers;
 
     snapshotList(ppsl);
     if (ppsl->snapLen == 0)
@@ -1203,7 +1220,7 @@ static void periodicPass(periodic_scan_list *ppsl)
             epicsAtomicSetSizeT(&ppsl->cursor, SP_PACK(gen, 0));
         if (nHelpers && end - start > 1) {
             maskSet(&helpWanted, mybit);
-            wakeHelpers(end - start - 1);
+            wakeHelpers(end - start - 1, eligible);
         }
 
         runSlots(ppsl, 0);
@@ -1225,7 +1242,7 @@ static void helperTask(void *arg)
     epicsEventSignal(startStopEvent);
 
     while (!epicsAtomicGetIntT(&helperShutdown)) {
-        size_t wanted = epicsAtomicGetSizeT(&helpWanted);
+        size_t wanted = epicsAtomicGetSizeT(&helpWanted) & me->serves;
         int announced = 0;
         int i;
 
@@ -1251,7 +1268,7 @@ static void helperTask(void *arg)
             if (announced) break;
             maskSet(&helperSleepers, mybit);
             announced = 1;
-            wanted = epicsAtomicGetSizeT(&helpWanted);
+            wanted = epicsAtomicGetSizeT(&helpWanted) & me->serves;
         }
         epicsEventMustWait(me->wake);
 next:   ;
@@ -1262,7 +1279,7 @@ next:   ;
 
 static void spawnHelpers(void)
 {
-    int i;
+    int i, nReserve = nReserveConfigured;
 
     nHelpers = nHelpersConfigured;
     if (!nHelpers) return;
@@ -1273,6 +1290,16 @@ static void spawnHelpers(void)
         nHelpers = 0;
         return;
     }
+    /* the reserve serves the fastest rate with records; none, no reserve */
+    reservedPeriod = -1;
+    for (i = nPeriodic - 1; i >= 0 && reservedPeriod < 0; i--) {
+        if (ellCount(&papPeriodic[i]->scan_list.list))
+            reservedPeriod = i;
+    }
+    if (reservedPeriod < 0)
+        nReserve = 0;
+    reservedHelpers = nReserve ? ((size_t)1 << nReserve) - 1 : 0;
+
     helpers = dbCalloc(nHelpers, sizeof(scan_helper));
     epicsAtomicSetIntT(&helperShutdown, 0);
     epicsAtomicSetSizeT(&helpWanted, 0);
@@ -1286,6 +1313,8 @@ static void spawnHelpers(void)
         opts.priority = epicsThreadPriorityScanLow;
         opts.stackSize = epicsThreadStackBig;
         helpers[i].idx = i;
+        helpers[i].serves = i < nReserve ?
+            (size_t)1 << reservedPeriod : ~(size_t)0;
         helpers[i].wake = epicsEventMustCreate(epicsEventEmpty);
         sprintf(name, "scanHelper%d", i);
         helpers[i].tid = epicsThreadCreateOpt(name, helperTask,
@@ -1311,6 +1340,8 @@ static void stopHelpers(void)
     free(helpers);
     helpers = NULL;
     nHelpers = 0;
+    reservedHelpers = 0;
+    reservedPeriod = -1;
 }
 
 static void ioscanCallback(epicsCallback *pcallback)

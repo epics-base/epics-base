@@ -486,15 +486,17 @@ static void scanpiolCallFunc(const iocshArgBuf *args) { iocshSetError(scanpiol()
 
 /* scanParallelThreads */
 static const iocshArg scanParallelThreadsArg0 = { "no of threads",iocshArgInt};
-static const iocshArg * const scanParallelThreadsArgs[1] =
-    {&scanParallelThreadsArg0};
-static const iocshFuncDef scanParallelThreadsFuncDef = {"scanParallelThreads",1,scanParallelThreadsArgs,
+static const iocshArg scanParallelThreadsArg1 = { "reserved for fastest rate",iocshArgInt};
+static const iocshArg * const scanParallelThreadsArgs[2] =
+    {&scanParallelThreadsArg0,&scanParallelThreadsArg1};
+static const iocshFuncDef scanParallelThreadsFuncDef = {"scanParallelThreads",2,scanParallelThreadsArgs,
                                                         "Configure helper threads shared by all periodic scan rates.\n"
                                                         "0 uses scanParallelThreadsDefault, a negative count\n"
-                                                        "leaves that many CPUs without a helper.\n"};
+                                                        "leaves that many CPUs without a helper. The second\n"
+                                                        "argument reserves that many helpers for the fastest rate.\n"};
 static void scanParallelThreadsCallFunc(const iocshArgBuf *args)
 {
-    iocshSetError(scanParallelThreads(args[0].ival));
+    iocshSetError(scanParallelThreads(args[0].ival, args[1].ival));
 }
 
 /* callbackSetQueueSize */

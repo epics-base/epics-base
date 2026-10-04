@@ -39,6 +39,8 @@ static int started[NPHASE];     /* atomic */
 static int done[NPHASE];        /* atomic */
 static int violations;          /* atomic */
 static int slowStarted;         /* atomic */
+static int reserve;             /* helpers reserved for the fast list */
+static int reservedOnSlow;      /* atomic */
 
 static epicsMutexId tidLock;
 static epicsThreadId tids[MAXTHREADS];
@@ -86,7 +88,14 @@ static void fastProc(xRecord *prec)
 
 static void slowProc(xRecord *prec)
 {
+    int idx;
+
     epicsAtomicIncrIntT(&slowStarted);
+    if (sscanf(epicsThreadGetNameSelf(), "scanHelper%d", &idx) == 1 &&
+        idx < reserve) {
+        epicsAtomicIncrIntT(&reservedOnSlow);
+        testDiag("%s processed by reserved helper %d", prec->name, idx);
+    }
     epicsThreadSleep(0.005);
 }
 
@@ -125,18 +134,21 @@ static void hookRecords(void)
 }
 
 /* helpers < 0: leave the scan system unconfigured (no helpers) */
-static void runWith(int helpers, double seconds)
+static void runWith(int helpers, int reserved, double seconds)
 {
     int k, passes;
 
     if (helpers < 0)
         testDiag("no scanParallelThreads() for %.1f s", seconds);
     else
-        testDiag("scanParallelThreads(%d) for %.1f s", helpers, seconds);
+        testDiag("scanParallelThreads(%d, %d) for %.1f s", helpers, reserved,
+            seconds);
     memset(started, 0, sizeof started);
     memset(done, 0, sizeof done);
     violations = 0;
     slowStarted = 0;
+    reserve = reserved;
+    reservedOnSlow = 0;
     ntids = 0;
 
     testdbPrepare();
@@ -146,7 +158,7 @@ static void runWith(int helpers, double seconds)
     hookRecords();
 
     if (helpers >= 0)
-        testOk1(scanParallelThreads(helpers) == 0);
+        testOk1(scanParallelThreads(helpers, reserved) == 0);
     else
         testSkip(1, "unconfigured");
 
@@ -154,7 +166,7 @@ static void runWith(int helpers, double seconds)
     testIocInitOk();
     eltc(1);
 
-    testOk(scanParallelThreads(helpers) != 0,
+    testOk(scanParallelThreads(helpers, reserved) != 0,
         "scanParallelThreads refused after iocInit");
 
     epicsThreadSleep(seconds);
@@ -176,6 +188,8 @@ static void runWith(int helpers, double seconds)
             "PHAS %d done %d of %d started", k, done[k], started[k]);
     }
     testOk(slowStarted >= NSLOW, "slow list ran: %d", slowStarted);
+    testOk(reservedOnSlow == 0, "reserved helpers on the slow list: %d",
+        reservedOnSlow);
     if (helpers >= 0)
         testOk(ntids > 1, "helpers took part: %d threads", ntids);
     else
@@ -187,11 +201,11 @@ static void runWith(int helpers, double seconds)
 
 MAIN(dbScanParallelTest)
 {
-    testPlan(3 * 13);
+    testPlan(3 * 14);
     tidLock = epicsMutexMustCreate();
-    runWith(-1, 2.0);
-    runWith(2, 2.0);
-    runWith(8, 3.0);
+    runWith(-1, 0, 2.0);
+    runWith(2, 0, 2.0);
+    runWith(8, 3, 3.0);
     epicsMutexDestroy(tidLock);
     return testDone();
 }

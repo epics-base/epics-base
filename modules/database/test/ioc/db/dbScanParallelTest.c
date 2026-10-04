@@ -136,7 +136,7 @@ static void hookRecords(void)
 /* helpers < 0: leave the scan system unconfigured (no helpers) */
 static void runWith(int helpers, int reserved, double seconds)
 {
-    int k, passes;
+    int k, passes, nslow, nthreads;
 
     if (helpers < 0)
         testDiag("no scanParallelThreads() for %.1f s", seconds);
@@ -176,24 +176,33 @@ static void runWith(int helpers, int reserved, double seconds)
     testOk1(iocPause() == 0);
     epicsThreadSleep(0.5);
 
-    passes = started[0] / nrec[0];
+    /* the scan threads are idle now; atomic reads for the sanitizer's sake */
+    passes = epicsAtomicGetIntT(&started[0]) / nrec[0];
+    nslow = epicsAtomicGetIntT(&slowStarted);
+    epicsMutexMustLock(tidLock);
+    nthreads = ntids;
+    epicsMutexUnlock(tidLock);
     testDiag("%d passes of the fast list, %d slow records, %d threads",
-        passes, slowStarted, ntids);
+        passes, nslow, nthreads);
     testOk(passes >= (int)(seconds * 10) / 2, "enough passes: %d", passes);
-    testOk(violations == 0, "PHAS order violations: %d", violations);
+    testOk(epicsAtomicGetIntT(&violations) == 0, "PHAS order violations: %d",
+        epicsAtomicGetIntT(&violations));
     for (k = 0; k < NPHASE; k++) {
-        testOk(started[k] == nrec[k] * passes,
-            "PHAS %d started %d times for %d passes", k, started[k], passes);
-        testOk(done[k] == started[k],
-            "PHAS %d done %d of %d started", k, done[k], started[k]);
+        int s = epicsAtomicGetIntT(&started[k]);
+        int d = epicsAtomicGetIntT(&done[k]);
+
+        testOk(s == nrec[k] * passes,
+            "PHAS %d started %d times for %d passes", k, s, passes);
+        testOk(d == s, "PHAS %d done %d of %d started", k, d, s);
     }
-    testOk(slowStarted >= NSLOW, "slow list ran: %d", slowStarted);
-    testOk(reservedOnSlow == 0, "reserved helpers on the slow list: %d",
-        reservedOnSlow);
+    testOk(nslow >= NSLOW, "slow list ran: %d", nslow);
+    testOk(epicsAtomicGetIntT(&reservedOnSlow) == 0,
+        "reserved helpers on the slow list: %d",
+        epicsAtomicGetIntT(&reservedOnSlow));
     if (helpers >= 0)
-        testOk(ntids > 1, "helpers took part: %d threads", ntids);
+        testOk(nthreads > 1, "helpers took part: %d threads", nthreads);
     else
-        testOk(ntids == 1, "leader alone: %d threads", ntids);
+        testOk(nthreads == 1, "leader alone: %d threads", nthreads);
 
     testIocShutdownOk();
     testdbCleanup();

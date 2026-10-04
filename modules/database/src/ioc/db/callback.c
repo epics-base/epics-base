@@ -109,6 +109,26 @@ static unsigned cbLowBit(size_t m)
 #  define CB_LOWBIT(m) cbLowBit(m)
 #endif
 
+/* loads that need no fence of their own: each one below either feeds
+ * a CAS that rejects a stale value, or follows a locked read-modify-
+ * write or the busy mark's fence on the same thread, which already
+ * orders it. epicsAtomicGet* puts a full fence before every load and
+ * epicsAtomicSet* one after every store, each a store-buffer drain on
+ * x86. The busy mark keeps its fence: the store must be visible before
+ * the loads behind it. Clearing it only has to follow the callback. */
+#if (defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 7))) \
+    || defined(__clang__)
+#  define CB_GET_INT(p)  __atomic_load_n((p), __ATOMIC_RELAXED)
+#  define CB_GET_SIZE(p) __atomic_load_n((p), __ATOMIC_RELAXED)
+#  define CB_GET_PTR(p)  __atomic_load_n((p), __ATOMIC_RELAXED)
+#  define CB_SET_INT_RELEASE(p, v) __atomic_store_n((p), (v), __ATOMIC_RELEASE)
+#else
+#  define CB_GET_INT(p)  epicsAtomicGetIntT(p)
+#  define CB_GET_SIZE(p) epicsAtomicGetSizeT(p)
+#  define CB_GET_PTR(p)  epicsAtomicGetPtrT(p)
+#  define CB_SET_INT_RELEASE(p, v) epicsAtomicSetIntT((p), (v))
+#endif
+
 /* each worker, and each shared word of a queue, on its own pair of
  * cache lines: adjacent-line prefetch would otherwise drag a line the
  * other side writes per callback along with one this side only reads */
@@ -339,7 +359,7 @@ found:
 static cbNode *nodeAlloc(cbQueueSet *mySet)
 {
     for (;;) {
-        size_t h = epicsAtomicGetSizeT(&mySet->freeHead);
+        size_t h = CB_GET_SIZE(&mySet->freeHead);
         size_t i = CB_IDX(h);
         cbNode *n;
         size_t nx;
@@ -354,7 +374,7 @@ static cbNode *nodeAlloc(cbQueueSet *mySet)
 static void nodeFreeChain(cbQueueSet *mySet, cbNode *first, cbNode *last)
 {
     for (;;) {
-        size_t h = epicsAtomicGetSizeT(&mySet->freeHead);
+        size_t h = CB_GET_SIZE(&mySet->freeHead);
         size_t i = CB_IDX(h);
         last->next = (i == CB_IDX_NONE) ? NULL : &mySet->pool[i];
         if (epicsAtomicCmpAndSwapSizeT(&mySet->freeHead, h,
@@ -389,7 +409,7 @@ static cbNode *readyTake(cbQueueSet *mySet, size_t *ph, int *more)
 {
     size_t h = *ph;
     if (CB_IDX(h) == CB_IDX_NONE)
-        h = epicsAtomicGetSizeT(&mySet->ready);
+        h = CB_GET_SIZE(&mySet->ready);
     for (;;) {
         size_t i = CB_IDX(h), nx, cur, nh;
         cbNode *n;
@@ -410,7 +430,7 @@ static cbNode *readyTake(cbQueueSet *mySet, size_t *ph, int *more)
 
 static int readyEmpty(cbQueueSet *mySet)
 {
-    return CB_IDX(epicsAtomicGetSizeT(&mySet->ready)) == CB_IDX_NONE;
+    return CB_IDX(CB_GET_SIZE(&mySet->ready)) == CB_IDX_NONE;
 }
 
 /* take the whole inbox and reverse it to oldest first; *plast is its
@@ -420,7 +440,7 @@ static cbNode *grabInbox(cbQueueSet *mySet, cbNode **plast)
     cbNode *head, *rev = NULL;
 
     do {
-        head = epicsAtomicGetPtrT(&mySet->inbox);
+        head = CB_GET_PTR(&mySet->inbox);
         if (!head) return NULL;
     } while (epicsAtomicCmpAndSwapPtrT(&mySet->inbox, head, NULL) != head);
     *plast = head;
@@ -456,7 +476,7 @@ static int takeSleeperBit(cbQueueSet *mySet, unsigned i)
 {
     size_t bit = (size_t)1 << i;
     for (;;) {
-        size_t m = epicsAtomicGetSizeT(&mySet->sleepers);
+        size_t m = CB_GET_SIZE(&mySet->sleepers);
         if (!(m & bit)) return 0;
         if (epicsAtomicCmpAndSwapSizeT(&mySet->sleepers, m, m & ~bit) == m) return 1;
     }
@@ -484,7 +504,7 @@ static void triggerAndClaim(cbQueueSet *mySet, cbWorker *w, size_t s)
  * sleep and reads the queue. */
 static void pokeSleeper(cbQueueSet *mySet)
 {
-    size_t m = epicsAtomicGetSizeT(&mySet->sleepers);
+    size_t m = CB_GET_SIZE(&mySet->sleepers);
     int i;
 
     while (m) {
@@ -493,19 +513,19 @@ static void pokeSleeper(cbQueueSet *mySet)
         if (!takeSleeperBit(mySet, i)) continue;
         {
             cbWorker *w = &mySet->workers[i];
-            size_t s = epicsAtomicGetSizeT(&w->state);
+            size_t s = CB_GET_SIZE(&w->state);
             if (CB_ST(s) == CB_SLEEPING) {
                 triggerAndClaim(mySet, w, s);
                 return;
             }
         }
         /* its bit was stale: that worker is leaving its sleep; scan again */
-        m = epicsAtomicGetSizeT(&mySet->sleepers);
+        m = CB_GET_SIZE(&mySet->sleepers);
     }
-    if (epicsAtomicGetIntT(&mySet->nAwake) < mySet->threadsConfigured) {
+    if (CB_GET_INT(&mySet->nAwake) < mySet->threadsConfigured) {
         for (i = 0; i < mySet->threadsConfigured; i++) {
             cbWorker *w = &mySet->workers[i];
-            size_t s = epicsAtomicGetSizeT(&w->state);
+            size_t s = CB_GET_SIZE(&w->state);
             if (CB_ST(s) == CB_SLEEPING) {
                 triggerAndClaim(mySet, w, s);
                 return;
@@ -522,8 +542,8 @@ static int anyReady(cbQueueSet *mySet)
 
     for (j = 0; j < mySet->threadsConfigured; j++) {
         cbWorker *w = &mySet->workers[j];
-        if (CB_ST(epicsAtomicGetSizeT(&w->state)) != CB_SLEEPING &&
-            !epicsAtomicGetIntT(&w->busy))
+        if (CB_ST(CB_GET_SIZE(&w->state)) != CB_SLEEPING &&
+            !CB_GET_INT(&w->busy))
             return 1;
     }
     return 0;
@@ -542,7 +562,7 @@ static void callbackTask(void *arg)
     taskwdInsert(0, NULL, NULL);
     epicsEventSignal(startStopEvent);
 
-    while(!epicsAtomicGetIntT(&mySet->shutdown)) {
+    while(!CB_GET_INT(&mySet->shutdown)) {
         cbNode *nd;
         int more;
 
@@ -555,11 +575,11 @@ static void callbackTask(void *arg)
         if (nd) {
             epicsCallback *cb = nd->cb;
 
-            if (epicsAtomicGetSizeT(&mySet->sleepers) &&
-                (more || !readyEmpty(mySet) || epicsAtomicGetPtrT(&mySet->inbox)))
+            if (CB_GET_SIZE(&mySet->sleepers) &&
+                (more || !readyEmpty(mySet) || CB_GET_PTR(&mySet->inbox)))
                 pokeSleeper(mySet);
             (*cb->callback)(cb);
-            epicsAtomicSetIntT(&me->busy, 0);
+            CB_SET_INT_RELEASE(&me->busy, 0);
             nd->next = done;
             done = nd;
             if (!doneLast) doneLast = nd;
@@ -572,7 +592,7 @@ static void callbackTask(void *arg)
             }
         }
         if (more) continue;
-        epicsAtomicSetIntT(&me->busy, 0);
+        CB_SET_INT_RELEASE(&me->busy, 0);
         if (ran) {
             nodeFreeChain(mySet, done, doneLast);
             done = doneLast = NULL;
@@ -592,11 +612,11 @@ static void callbackTask(void *arg)
             size_t sleeping = CB_STATE(++epoch, CB_SLEEPING);
             epicsAtomicSetSizeT(&me->state, sleeping);
             for (;;) {
-                size_t m = epicsAtomicGetSizeT(&mySet->sleepers);
+                size_t m = CB_GET_SIZE(&mySet->sleepers);
                 if (epicsAtomicCmpAndSwapSizeT(&mySet->sleepers, m, m | mybit) == m) break;
             }
             epicsAtomicDecrIntT(&mySet->nAwake);
-            if (epicsAtomicGetPtrT(&mySet->inbox) == NULL && readyEmpty(mySet))
+            if (CB_GET_PTR(&mySet->inbox) == NULL && readyEmpty(mySet))
                 epicsEventMustWait(me->wake);
             if (epicsAtomicCmpAndSwapSizeT(&me->state, sleeping,
                     CB_STATE(epoch, CB_AWAKE)) == sleeping)
@@ -777,14 +797,14 @@ int callbackRequest(epicsCallback *pcallback)
     }
     node->cb = pcallback;
     n = epicsAtomicIncrIntT(&mySet->nQueued);
-    if (n > epicsAtomicGetIntT(&mySet->maxQueued))
+    if (n > CB_GET_INT(&mySet->maxQueued))
         epicsAtomicSetIntT(&mySet->maxQueued, n);
 
     {
         cbNode *old;
         int awake;
         do {
-            old = epicsAtomicGetPtrT(&mySet->inbox);
+            old = CB_GET_PTR(&mySet->inbox);
             node->next = old;
         } while (epicsAtomicCmpAndSwapPtrT(&mySet->inbox, old, node) != old);
 
@@ -799,21 +819,21 @@ int callbackRequest(epicsCallback *pcallback)
          * claimer stopped between the claim and its increment lets the
          * claimed worker run and sleep first, so the count can read
          * below zero; anything non-positive means nobody is counted. */
-        awake = epicsAtomicGetIntT(&mySet->nAwake);
+        awake = CB_GET_INT(&mySet->nAwake);
         if (awake <= 0)
             pokeSleeper(mySet);
         else if (old == NULL && awake < mySet->threadsConfigured
-                 && epicsAtomicGetSizeT(&mySet->sleepers) && !anyReady(mySet))
+                 && CB_GET_SIZE(&mySet->sleepers) && !anyReady(mySet))
             pokeSleeper(mySet);
         else if (awake == 1 && mySet->threadsConfigured > 1) {
-            int b = epicsAtomicGetIntT(&mySet->batches);
-            if (b != epicsAtomicGetIntT(&mySet->lastBatches)) {
+            int b = CB_GET_INT(&mySet->batches);
+            if (b != CB_GET_INT(&mySet->lastBatches)) {
                 epicsAtomicSetIntT(&mySet->lastBatches, b);
                 epicsAtomicSetSizeT(&mySet->staleSince, 0);
             }
             else {
                 size_t now = (size_t)(epicsMonotonicGet() >> 10) | 1;
-                size_t since = epicsAtomicGetSizeT(&mySet->staleSince);
+                size_t since = CB_GET_SIZE(&mySet->staleSince);
                 if (since == 0)
                     epicsAtomicSetSizeT(&mySet->staleSince, now);
                 else if (now - since >= CB_STALE_US) {

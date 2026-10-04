@@ -133,6 +133,28 @@ static void hookRecords(void)
     }
 }
 
+/* After iocPause() no new pass starts, but one may be in flight: a pass
+ * is complete when every PHAS has started and finished the same number
+ * of passes as PHAS 0. On a slow target a pass can take seconds. */
+static void waitPassComplete(void)
+{
+    int i, k;
+
+    for (i = 0; i < 600; i++) {
+        int passes = epicsAtomicGetIntT(&started[0]) / nrec[0];
+
+        for (k = 0; k < NPHASE; k++) {
+            if (epicsAtomicGetIntT(&started[k]) != nrec[k] * passes ||
+                epicsAtomicGetIntT(&done[k]) != nrec[k] * passes)
+                break;
+        }
+        if (k == NPHASE)
+            return;
+        epicsThreadSleep(0.05);
+    }
+    testDiag("pass still in flight after 30 s");
+}
+
 /* helpers < 0: leave the scan system unconfigured (no helpers) */
 static void runWith(int helpers, int reserved, double seconds)
 {
@@ -172,9 +194,9 @@ static void runWith(int helpers, int reserved, double seconds)
     epicsThreadSleep(seconds);
 
     /* iocShutdown marks records PACT while a pass may still be running,
-     * so pause first and let the pass in progress finish */
+     * so pause first and wait for the pass in progress to finish */
     testOk1(iocPause() == 0);
-    epicsThreadSleep(0.5);
+    waitPassComplete();
 
     /* the scan threads are idle now; atomic reads for the sanitizer's sake */
     passes = epicsAtomicGetIntT(&started[0]) / nrec[0];

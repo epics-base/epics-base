@@ -1243,7 +1243,7 @@ static long asHagAddHost(HAG *phag,const char *host)
         if(aToIPAddr(host, 0, &addr)) {
             static const char unresolved[] = "unresolved:";
 
-            errlogPrintf("ACF: Unable to resolve host '%s'\n", host);
+            errlogPrintf(ERL_ERROR ": ACF: Unable to resolve host '%s'.  Ignoring.\n", host);
 
             phagname = asCalloc(1, sizeof(*phagname) + sizeof(unresolved)-1+strlen(host));
             strcpy(phagname->host, unresolved);

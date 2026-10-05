@@ -304,8 +304,15 @@ int scanParallelThreads(int count, int reserve)
     }
     if (count < 0)
         count = epicsThreadGetCPUs() + count;
-    else if (count == 0)
+    else if (count == 0) {
+        /* the default leaves one CPU to the leaders; on a single CPU a
+         * helper could only take turns with them */
+        int cpus = epicsThreadGetCPUs() - 1;
+
         count = scanParallelThreadsDefault;
+        if (count > cpus)
+            count = cpus;
+    }
     if (count < 0) count = 0;
     if (count > (int)SP_MAX_HELPERS) {
         fprintf(stderr, "scanParallelThreads: clamping %d to %d\n",
@@ -978,11 +985,12 @@ static void periodicTask(void *arg)
                     "\tTo fix this, move some records to a slower scan rate%s\n",
                     ppsl->name, ppsl->period + overtime / overruns,
                     ppsl->period + over_min, ppsl->period + over_max, overruns,
-                    nHelpers == 0 ?
+                    nHelpers ?
                         ",\n\tor add helper threads with scanParallelThreads()"
-                        " before iocInit." :
+                        " or scanRateThreads() before iocInit." :
+                    epicsThreadGetCPUs() > 1 ?
                         ",\n\tor add helper threads with scanParallelThreads()"
-                        " or scanRateThreads() before iocInit.");
+                        " before iocInit." : ".");
 
                 reported = now;
                 if (report_delay < (OVERRUN_REPORT_MAX / 2))

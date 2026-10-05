@@ -117,7 +117,8 @@ DBCORE_API void scanOnceQueueShow(const int reset);
  * that has work. Records of a higher PHAS start only after every record
  * of a lower PHAS has finished, as in a sequential pass.
  *
- * @param count If zero, use the scanParallelThreadsDefault global.
+ * @param count If zero, use the scanParallelThreadsDefault global,
+ *              capped at one less than the number of CPUs.
  *              If positive, exact number of helper threads to create.
  *              If negative, leave this many CPUs without a helper.
  * @param reserve Keep this many helpers off the slower rates: at most

@@ -163,12 +163,27 @@ static void waitPassComplete(void)
     testDiag("pass still in flight after 30 s");
 }
 
-/* helpers < 0: leave the scan system unconfigured (no helpers);
- * fastT / slowT: dedicated helpers for the fast and the slow rate */
+/* the helper threads that exist, by name */
+static int countHelperThreads(void)
+{
+    char name[32];
+    int n = 0;
+
+    for (;;) {
+        sprintf(name, "scanHelper%d", n);
+        if (!epicsThreadGetId(name))
+            return n;
+        n++;
+    }
+}
+
+/* helpers < 0: leave the scan system unconfigured (no helpers), 0: the
+ * default count; fastT / slowT: dedicated helpers for the fast and the
+ * slow rate */
 static void runWith(int helpers, int reserved, int fastT, int slowT,
     double seconds)
 {
-    int k, passes, nslow, nthreads, cap;
+    int k, passes, nslow, nthreads, cap, pool, nhelpers;
 
     if (helpers < 0)
         testDiag("no scanParallelThreads() for %.1f s", seconds);
@@ -207,6 +222,14 @@ static void runWith(int helpers, int reserved, int fastT, int slowT,
 
     testOk(scanParallelThreads(helpers, reserved) != 0,
         "scanParallelThreads refused after iocInit");
+    /* the default is scanParallelThreadsDefault, but never more than
+     * CPUs - 1: a single CPU gets no pool at all */
+    pool = helpers < 0 ? 0 : helpers > 0 ? helpers : scanParallelThreadsDefault;
+    if (helpers == 0 && pool > epicsThreadGetCPUs() - 1)
+        pool = epicsThreadGetCPUs() - 1;
+    nhelpers = countHelperThreads();
+    testOk(nhelpers == pool + fastT + slowT, "%d helper threads, expected %d",
+        nhelpers, pool + fastT + slowT);
     testOk(scanRateThreads("1 second", 1) != 0,
         "scanRateThreads refused after iocInit");
 
@@ -242,17 +265,17 @@ static void runWith(int helpers, int reserved, int fastT, int slowT,
     testOk(nslow >= NSLOW, "slow list ran: %d", nslow);
     /* pool helpers on the slow list: reserve 0 means the default of one
      * kept free, negative none; dedicated slow helpers on top */
-    cap = helpers < 0 ? 0 :
-        helpers - (reserved == 0 ? 1 : reserved < 0 ? 0 : reserved);
+    cap = reserved == 0 ? 1 : reserved < 0 ? 0 : reserved;
+    cap = pool > cap ? pool - cap : 0;
     cap += slowT;
     testOk(epicsAtomicGetIntT(&slowHelpersMax) <= cap,
         "at most %d helpers on the slow list at once: %d", cap,
         epicsAtomicGetIntT(&slowHelpersMax));
-    if (helpers >= 0 || fastT)
+    if (pool || fastT)
         testOk(nthreads > 1, "helpers took part: %d threads", nthreads);
     else
         testOk(nthreads == 1, "leader alone: %d threads", nthreads);
-    if (fastT && helpers < 0)
+    if (fastT && !pool)
         testOk(nthreads == fastT + 1, "exactly the dedicated helpers: %d",
             nthreads);
     else
@@ -264,7 +287,7 @@ static void runWith(int helpers, int reserved, int fastT, int slowT,
 
 MAIN(dbScanParallelTest)
 {
-    testPlan(5 * 19);
+    testPlan(6 * 20);
     tidLock = epicsMutexMustCreate();
     /* the pool setting also outlives iocShutdown(): unconfigured first */
     runWith(-1, 0, 0, 0, 2.0);
@@ -272,6 +295,7 @@ MAIN(dbScanParallelTest)
     runWith(2, 0, 0, 0, 2.0);
     runWith(2, -1, 1, 1, 2.0);
     runWith(8, 6, 0, 0, 3.0);
+    runWith(0, 0, 0, 0, 2.0);
     epicsMutexDestroy(tidLock);
     return testDone();
 }

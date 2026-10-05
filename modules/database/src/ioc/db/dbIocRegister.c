@@ -491,10 +491,10 @@ static const iocshArg * const scanParallelThreadsArgs[2] =
     {&scanParallelThreadsArg0,&scanParallelThreadsArg1};
 static const iocshFuncDef scanParallelThreadsFuncDef = {"scanParallelThreads",2,scanParallelThreadsArgs,
                                                         "Configure helper threads shared by all periodic scan rates.\n"
-                                                        "0 uses scanParallelThreadsDefault, a negative count\n"
-                                                        "leaves that many CPUs without a helper. The second\n"
-                                                        "argument keeps that many helpers off the slower rates\n"
-                                                        "(0: one, negative: none).\n"};
+                                                        "0 uses scanParallelThreadsDefault (at most CPUs - 1),\n"
+                                                        "a negative count leaves that many CPUs without a\n"
+                                                        "helper. The second argument keeps that many helpers\n"
+                                                        "off the slower rates (0: one, negative: none).\n"};
 static void scanParallelThreadsCallFunc(const iocshArgBuf *args)
 {
     iocshSetError(scanParallelThreads(args[0].ival, args[1].ival));

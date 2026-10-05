@@ -164,7 +164,7 @@ typedef struct scan_helper {
 #define SP_MAX_HELPERS (8 * sizeof(size_t))
 #define SP_MAX_PERIODS SP_MAX_HELPERS
 #define SP_ALL (~(size_t)0)
-int scanParallelThreadsDefault = 2;
+int scanParallelThreadsDefault = 8;
 epicsExportAddress(int, scanParallelThreadsDefault);
 static int nHelpersConfigured = 0;
 static int nReserveConfigured = 0;
@@ -975,9 +975,14 @@ static void periodicTask(void *arg)
                 errlogPrintf("\ndbScan " ERL_WARNING " from '%s' scan thread:\n"
                     "\tScan processing averages %.3f seconds (%.3f .. %.3f).\n"
                     "\tOver-runs have now happened %u times in a row.\n"
-                    "\tTo fix this, move some records to a slower scan rate.\n",
+                    "\tTo fix this, move some records to a slower scan rate%s\n",
                     ppsl->name, ppsl->period + overtime / overruns,
-                    ppsl->period + over_min, ppsl->period + over_max, overruns);
+                    ppsl->period + over_min, ppsl->period + over_max, overruns,
+                    nHelpers == 0 ?
+                        ",\n\tor add helper threads with scanParallelThreads()"
+                        " before iocInit." :
+                        ",\n\tor add helper threads with scanParallelThreads()"
+                        " or scanRateThreads() before iocInit.");
 
                 reported = now;
                 if (report_delay < (OVERRUN_REPORT_MAX / 2))

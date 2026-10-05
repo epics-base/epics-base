@@ -30,6 +30,7 @@ variable(dbTemplateMaxVars,int)
 
 # Default number of parallel callback threads
 variable(callbackParallelThreadsDefault,int)
+variable(scanParallelThreadsDefault,int)
 
 # Real-time operation
 variable(dbThreadRealtimeLock,int)

@@ -39,8 +39,8 @@ static int started[NPHASE];     /* atomic */
 static int done[NPHASE];        /* atomic */
 static int violations;          /* atomic */
 static int slowStarted;         /* atomic */
-static int reserve;             /* helpers reserved for the fast list */
-static int reservedOnSlow;      /* atomic */
+static int slowHelpersNow;      /* atomic: helpers inside a slow record */
+static int slowHelpersMax;      /* atomic */
 
 static epicsMutexId tidLock;
 static epicsThreadId tids[MAXTHREADS];
@@ -88,15 +88,23 @@ static void fastProc(xRecord *prec)
 
 static void slowProc(xRecord *prec)
 {
-    int idx;
+    int helper = strncmp(epicsThreadGetNameSelf(), "scanHelper", 10) == 0;
 
     epicsAtomicIncrIntT(&slowStarted);
-    if (sscanf(epicsThreadGetNameSelf(), "scanHelper%d", &idx) == 1 &&
-        idx < reserve) {
-        epicsAtomicIncrIntT(&reservedOnSlow);
-        testDiag("%s processed by reserved helper %d", prec->name, idx);
+    if (helper) {
+        int now = epicsAtomicIncrIntT(&slowHelpersNow);
+        int max = epicsAtomicGetIntT(&slowHelpersMax);
+
+        while (now > max) {
+            int seen = epicsAtomicCmpAndSwapIntT(&slowHelpersMax, max, now);
+
+            if (seen == max) break;
+            max = seen;
+        }
     }
     epicsThreadSleep(0.005);
+    if (helper)
+        epicsAtomicDecrIntT(&slowHelpersNow);
 }
 
 static void loadRecords(void)
@@ -158,7 +166,7 @@ static void waitPassComplete(void)
 /* helpers < 0: leave the scan system unconfigured (no helpers) */
 static void runWith(int helpers, int reserved, double seconds)
 {
-    int k, passes, nslow, nthreads;
+    int k, passes, nslow, nthreads, cap;
 
     if (helpers < 0)
         testDiag("no scanParallelThreads() for %.1f s", seconds);
@@ -169,8 +177,8 @@ static void runWith(int helpers, int reserved, double seconds)
     memset(done, 0, sizeof done);
     violations = 0;
     slowStarted = 0;
-    reserve = reserved;
-    reservedOnSlow = 0;
+    slowHelpersNow = 0;
+    slowHelpersMax = 0;
     ntids = 0;
 
     testdbPrepare();
@@ -221,9 +229,12 @@ static void runWith(int helpers, int reserved, double seconds)
         testOk(d == s, "PHAS %d done %d of %d started", k, d, s);
     }
     testOk(nslow >= NSLOW, "slow list ran: %d", nslow);
-    testOk(epicsAtomicGetIntT(&reservedOnSlow) == 0,
-        "reserved helpers on the slow list: %d",
-        epicsAtomicGetIntT(&reservedOnSlow));
+    /* reserve 0 means the default of one, negative none */
+    cap = helpers < 0 ? 0 :
+        helpers - (reserved == 0 ? 1 : reserved < 0 ? 0 : reserved);
+    testOk(epicsAtomicGetIntT(&slowHelpersMax) <= cap,
+        "at most %d helpers on the slow list at once: %d", cap,
+        epicsAtomicGetIntT(&slowHelpersMax));
     if (helpers >= 0)
         testOk(nthreads > 1, "helpers took part: %d threads", nthreads);
     else
@@ -239,7 +250,7 @@ MAIN(dbScanParallelTest)
     tidLock = epicsMutexMustCreate();
     runWith(-1, 0, 2.0);
     runWith(2, 0, 2.0);
-    runWith(8, 3, 3.0);
+    runWith(8, 6, 3.0);
     epicsMutexDestroy(tidLock);
     return testDone();
 }

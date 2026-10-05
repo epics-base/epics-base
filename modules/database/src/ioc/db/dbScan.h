@@ -120,10 +120,13 @@ DBCORE_API void scanOnceQueueShow(const int reset);
  * @param count If zero, use the scanParallelThreadsDefault global.
  *              If positive, exact number of helper threads to create.
  *              If negative, leave this many CPUs without a helper.
- * @param reserve This many of the helpers serve only the fastest rate
- *              that has records at iocInit(), so its passes are never
- *              left to the rate's own thread while every helper is
- *              inside a long record of a slower rate. Clamped to count.
+ * @param reserve Keep this many helpers off the slower rates: at most
+ *              count - reserve helpers process records of a rate other
+ *              than the fastest one with records at iocInit() at the
+ *              same time, so a pass of that rate never finds every
+ *              helper inside a long record of a slower rate. Zero
+ *              selects the default of one, negative keeps none free.
+ *              Clamped to count.
  * @return zero on success, non-zero if called after iocInit().
  *
  * @pre Must be called before iocInit()

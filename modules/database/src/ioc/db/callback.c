@@ -818,7 +818,10 @@ int callbackRequest(epicsCallback *pcallback)
          * stopped, so wake a sleeper now. nAwake lags its claim CAS: a
          * claimer stopped between the claim and its increment lets the
          * claimed worker run and sleep first, so the count can read
-         * below zero; anything non-positive means nobody is counted. */
+         * below zero; anything non-positive means nobody is counted.
+         * The stale check reads the clock, floating point on vxWorks,
+         * so an interrupt context leaves it to the next request made
+         * from a thread. */
         awake = CB_GET_INT(&mySet->nAwake);
         if (awake <= 0)
             pokeSleeper(mySet);
@@ -831,7 +834,7 @@ int callbackRequest(epicsCallback *pcallback)
                 epicsAtomicSetIntT(&mySet->lastBatches, b);
                 epicsAtomicSetSizeT(&mySet->staleSince, 0);
             }
-            else {
+            else if (!epicsInterruptIsInterruptContext()) {
                 size_t now = (size_t)(epicsMonotonicGet() >> 10) | 1;
                 size_t since = CB_GET_SIZE(&mySet->staleSince);
                 if (since == 0)

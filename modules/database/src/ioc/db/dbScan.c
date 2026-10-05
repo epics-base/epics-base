@@ -143,27 +143,39 @@ static epicsThreadId *periodicTaskId;    /* array of thread ids */
  * publishes before it looks at helperSleepers, so one of them sees the
  * other. Leaders never depend on helpers for progress.
  *
- * At most slowCap helpers run slots of a rate other than the fastest
- * one with records at the same time, so a short pass of the fastest
- * rate never finds every helper inside a long record of a slower rate.
- * Any helper may take the slow work; which ones stay free varies.
+ * At most slowCap pool helpers run slots of a rate other than the
+ * fastest one with records at the same time, so a short pass of the
+ * fastest rate never finds every helper inside a long record of a
+ * slower rate. Any helper may take the slow work; which ones stay
+ * free varies.
+ *
+ * A helper configured with scanRateThreads() serves one period only,
+ * at that period's priority, so the period's passes always get the
+ * same workers: the deterministic choice for an RT IOC. Both kinds
+ * may exist at once.
  */
 typedef struct scan_helper {
     epicsEventId        wake;
     epicsThreadId       tid;        /* written by the spawner, read at stop */
     unsigned            idx;
+    size_t              serves;     /* bitmask of period indices */
 } scan_helper;
 
 #define SP_MAX_HELPERS (8 * sizeof(size_t))
+#define SP_MAX_PERIODS SP_MAX_HELPERS
+#define SP_ALL (~(size_t)0)
 int scanParallelThreadsDefault = 2;
 epicsExportAddress(int, scanParallelThreadsDefault);
 static int nHelpersConfigured = 0;
 static int nReserveConfigured = 0;
+static int nRateConfigured[SP_MAX_PERIODS];  /* dedicated, per period */
 static int nHelpers = 0;
 static scan_helper *helpers;
+static size_t periodHelpers[SP_MAX_PERIODS]; /* helper indices serving it */
+static int nDedicated[SP_MAX_PERIODS];       /* serving only this period */
 static int fastPeriod = -1;      /* period index kept a free helper */
-static int slowCap;              /* helpers allowed on other periods */
-static int slowBusy;             /* atomic: helpers on other periods */
+static int slowCap;              /* pool helpers allowed on other periods */
+static int slowBusy;             /* atomic: pool helpers on other periods */
 static size_t helpWanted;        /* atomic bitmask of period indices */
 static size_t helperSleepers;    /* atomic bitmask of helper indices */
 static int helperShutdown;       /* atomic */
@@ -311,6 +323,34 @@ int scanParallelThreads(int count, int reserve)
     }
     nHelpersConfigured = count;
     nReserveConfigured = reserve;
+    return 0;
+}
+
+int scanRateThreads(const char *rate, int count)
+{
+    dbMenu *pmenu;
+    int i;
+
+    if (papPeriodic) {
+        fprintf(stderr, "scanRateThreads: scan system already initialized\n");
+        return -1;
+    }
+    pmenu = pdbbase ? dbFindMenu(pdbbase, "menuScan") : NULL;
+    if (!pmenu) {
+        fprintf(stderr, "scanRateThreads: menuScan not present, load a .dbd first\n");
+        return -1;
+    }
+    for (i = SCAN_1ST_PERIODIC; i < pmenu->nChoice; i++) {
+        if (rate && strcmp(rate, pmenu->papChoiceValue[i]) == 0)
+            break;
+    }
+    if (i >= pmenu->nChoice || i - SCAN_1ST_PERIODIC >= (int)SP_MAX_PERIODS) {
+        fprintf(stderr, "scanRateThreads: '%s' is not a periodic SCAN rate\n",
+            rate ? rate : "");
+        return -1;
+    }
+    if (count < 0) count = 0;
+    nRateConfigured[i - SCAN_1ST_PERIODIC] = count;
     return 0;
 }
 
@@ -1114,12 +1154,14 @@ static size_t claimSlot(periodic_scan_list *ppsl)
     }
 }
 
-/* Run slots of the published group until none is left or, for a
- * helper, until a faster period wants help. Finished slots are
- * subtracted from outstanding once, on the way out. */
-static void runSlots(periodic_scan_list *ppsl, int helper)
+/* Run slots of the published group until none is left or until a
+ * faster period the caller serves wants help (serves is 0 for the
+ * leader). Finished slots are subtracted from outstanding once, on
+ * the way out. */
+static void runSlots(periodic_scan_list *ppsl, size_t serves)
 {
-    size_t faster = ~(((size_t)2 << (ppsl->scan - SCAN_1ST_PERIODIC)) - 1);
+    size_t faster = serves &
+        ~(((size_t)2 << (ppsl->scan - SCAN_1ST_PERIODIC)) - 1);
     size_t slot;
     int n = 0;
 
@@ -1134,17 +1176,17 @@ static void runSlots(periodic_scan_list *ppsl, int helper)
             dbProcess(prec);
         dbScanUnlock(prec);
         n++;
-        if (helper && (epicsAtomicGetSizeT(&helpWanted) & faster))
+        if (faster && (epicsAtomicGetSizeT(&helpWanted) & faster))
             break;
     }
     if (n && epicsAtomicAddIntT(&ppsl->outstanding, -n) == 0)
         epicsEventSignal(ppsl->doneEvent);
 }
 
-static void wakeHelpers(size_t want)
+static void wakeHelpers(size_t want, size_t eligible)
 {
     while (want) {
-        size_t m = epicsAtomicGetSizeT(&helperSleepers);
+        size_t m = epicsAtomicGetSizeT(&helperSleepers) & eligible;
         size_t bit;
 
         if (!m) return;
@@ -1225,16 +1267,18 @@ static void periodicPass(periodic_scan_list *ppsl)
             size_t want = end - start - 1;
 
             if (ind != fastPeriod) {
-                /* only as many as may still take slow work */
+                /* the dedicated ones, plus as many pool helpers as
+                 * may still take slow work */
                 int room = slowCap - epicsAtomicGetIntT(&slowBusy);
 
-                if (room <= 0)
-                    want = 0;
-                else if (want > (size_t)room)
+                if (room < 0)
+                    room = 0;
+                room += nDedicated[ind];
+                if (want > (size_t)room)
                     want = room;
             }
             maskSet(&helpWanted, mybit);
-            wakeHelpers(want);
+            wakeHelpers(want, periodHelpers[ind]);
         }
 
         runSlots(ppsl, 0);
@@ -1250,13 +1294,14 @@ static void helperTask(void *arg)
 {
     scan_helper *me = (scan_helper *)arg;
     size_t mybit = (size_t)1 << me->idx;
+    int pool = me->serves == SP_ALL;
     unsigned prio = epicsThreadGetPrioritySelf();
 
     taskwdInsert(0, NULL, NULL);
     epicsEventSignal(startStopEvent);
 
     while (!epicsAtomicGetIntT(&helperShutdown)) {
-        size_t wanted = epicsAtomicGetSizeT(&helpWanted);
+        size_t wanted = epicsAtomicGetSizeT(&helpWanted) & me->serves;
         int announced = 0;
         int i;
 
@@ -1270,9 +1315,9 @@ static void helperTask(void *arg)
                 if (SP_IDX(epicsAtomicGetSizeT(&ppsl->cursor)) >=
                     SP_IDX(epicsAtomicGetSizeT(&ppsl->limit)))
                     continue;
-                if (i != fastPeriod &&
+                if (pool && i != fastPeriod &&
                     epicsAtomicIncrIntT(&slowBusy) > slowCap) {
-                    /* enough helpers on slow work; stay free */
+                    /* enough pool helpers on slow work; stay free */
                     epicsAtomicDecrIntT(&slowBusy);
                     continue;
                 }
@@ -1282,15 +1327,15 @@ static void helperTask(void *arg)
                     prio = ppsl->prio;
                     epicsThreadSetPriority(epicsThreadGetIdSelf(), prio);
                 }
-                runSlots(ppsl, 1);
-                if (i != fastPeriod)
+                runSlots(ppsl, me->serves);
+                if (pool && i != fastPeriod)
                     epicsAtomicDecrIntT(&slowBusy);
                 goto next;
             }
             if (announced) break;
             maskSet(&helperSleepers, mybit);
             announced = 1;
-            wanted = epicsAtomicGetSizeT(&helpWanted);
+            wanted = epicsAtomicGetSizeT(&helpWanted) & me->serves;
         }
         epicsEventMustWait(me->wake);
 next:   ;
@@ -1301,16 +1346,28 @@ next:   ;
 
 static void spawnHelpers(void)
 {
-    int i;
+    int i, p, nPool = nHelpersConfigured, nRate = 0;
 
-    nHelpers = nHelpersConfigured;
+    for (p = 0; p < nPeriodic && p < (int)SP_MAX_PERIODS; p++)
+        nRate += nRateConfigured[p];
+    nHelpers = nPool + nRate;
     if (!nHelpers) return;
-    if (nPeriodic > (int)SP_MAX_HELPERS) {
+    if (nPeriodic > (int)SP_MAX_PERIODS) {
         errlogPrintf("scanParallelThreads: %d scan rates exceed the %d the "
             "helper pool can serve, running without helpers\n",
-            nPeriodic, (int)SP_MAX_HELPERS);
+            nPeriodic, (int)SP_MAX_PERIODS);
         nHelpers = 0;
         return;
+    }
+    if (nHelpers > (int)SP_MAX_HELPERS) {
+        errlogPrintf("scanParallelThreads: %d helpers exceed %d, "
+            "dropping pool helpers\n", nHelpers, (int)SP_MAX_HELPERS);
+        nPool = SP_MAX_HELPERS > nRate ? (int)SP_MAX_HELPERS - nRate : 0;
+        nHelpers = nPool + nRate;
+        if (nHelpers > (int)SP_MAX_HELPERS) {
+            nHelpers = 0;
+            return;
+        }
     }
     /* keep helpers free for the fastest rate with records, or for the
      * fastest rate at all when no list has any yet */
@@ -1321,20 +1378,42 @@ static void spawnHelpers(void)
             break;
         }
     }
-    slowCap = nHelpers - nReserveConfigured;
+    slowCap = nPool - nReserveConfigured;
+    if (slowCap < 0) slowCap = 0;
 
     helpers = dbCalloc(nHelpers, sizeof(scan_helper));
     epicsAtomicSetIntT(&helperShutdown, 0);
     epicsAtomicSetIntT(&slowBusy, 0);
     epicsAtomicSetSizeT(&helpWanted, 0);
     epicsAtomicSetSizeT(&helperSleepers, 0);
+    memset(periodHelpers, 0, sizeof periodHelpers);
+    memset(nDedicated, 0, sizeof nDedicated);
+
+    /* dedicated helpers first, so a leader waking by lowest index
+     * reaches its own before the pool */
+    for (i = 0, p = 0; p < nPeriodic; p++) {
+        int k;
+
+        nDedicated[p] = nRateConfigured[p];
+        for (k = 0; k < nRateConfigured[p]; k++, i++) {
+            helpers[i].serves = (size_t)1 << p;
+            periodHelpers[p] |= (size_t)1 << i;
+        }
+    }
+    for (; i < nHelpers; i++) {
+        helpers[i].serves = SP_ALL;
+        for (p = 0; p < nPeriodic; p++)
+            periodHelpers[p] |= (size_t)1 << i;
+    }
 
     for (i = 0; i < nHelpers; i++) {
         epicsThreadOpts opts = EPICS_THREAD_OPTS_INIT;
         char name[32];
 
         opts.joinable = 1;
-        opts.priority = epicsThreadPriorityScanLow;
+        opts.priority = helpers[i].serves == SP_ALL ?
+            epicsThreadPriorityScanLow :
+            papPeriodic[lowBit(helpers[i].serves)]->prio;
         opts.stackSize = epicsThreadStackBig;
         helpers[i].idx = i;
         helpers[i].wake = epicsEventMustCreate(epicsEventEmpty);

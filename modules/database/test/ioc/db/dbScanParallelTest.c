@@ -163,8 +163,10 @@ static void waitPassComplete(void)
     testDiag("pass still in flight after 30 s");
 }
 
-/* helpers < 0: leave the scan system unconfigured (no helpers) */
-static void runWith(int helpers, int reserved, double seconds)
+/* helpers < 0: leave the scan system unconfigured (no helpers);
+ * fastT / slowT: dedicated helpers for the fast and the slow rate */
+static void runWith(int helpers, int reserved, int fastT, int slowT,
+    double seconds)
 {
     int k, passes, nslow, nthreads, cap;
 
@@ -173,6 +175,9 @@ static void runWith(int helpers, int reserved, double seconds)
     else
         testDiag("scanParallelThreads(%d, %d) for %.1f s", helpers, reserved,
             seconds);
+    if (fastT || slowT)
+        testDiag("scanRateThreads: %d for the fast, %d for the slow rate",
+            fastT, slowT);
     memset(started, 0, sizeof started);
     memset(done, 0, sizeof done);
     violations = 0;
@@ -191,6 +196,10 @@ static void runWith(int helpers, int reserved, double seconds)
         testOk1(scanParallelThreads(helpers, reserved) == 0);
     else
         testSkip(1, "unconfigured");
+    /* always set both, as the setting outlives iocShutdown() */
+    testOk1(scanRateThreads(".1 second", fastT) == 0);
+    testOk1(scanRateThreads("1 second", slowT) == 0);
+    testOk1(scanRateThreads("sometimes", 1) != 0);
 
     eltc(0);
     testIocInitOk();
@@ -198,6 +207,8 @@ static void runWith(int helpers, int reserved, double seconds)
 
     testOk(scanParallelThreads(helpers, reserved) != 0,
         "scanParallelThreads refused after iocInit");
+    testOk(scanRateThreads("1 second", 1) != 0,
+        "scanRateThreads refused after iocInit");
 
     epicsThreadSleep(seconds);
 
@@ -229,16 +240,23 @@ static void runWith(int helpers, int reserved, double seconds)
         testOk(d == s, "PHAS %d done %d of %d started", k, d, s);
     }
     testOk(nslow >= NSLOW, "slow list ran: %d", nslow);
-    /* reserve 0 means the default of one, negative none */
+    /* pool helpers on the slow list: reserve 0 means the default of one
+     * kept free, negative none; dedicated slow helpers on top */
     cap = helpers < 0 ? 0 :
         helpers - (reserved == 0 ? 1 : reserved < 0 ? 0 : reserved);
+    cap += slowT;
     testOk(epicsAtomicGetIntT(&slowHelpersMax) <= cap,
         "at most %d helpers on the slow list at once: %d", cap,
         epicsAtomicGetIntT(&slowHelpersMax));
-    if (helpers >= 0)
+    if (helpers >= 0 || fastT)
         testOk(nthreads > 1, "helpers took part: %d threads", nthreads);
     else
         testOk(nthreads == 1, "leader alone: %d threads", nthreads);
+    if (fastT && helpers < 0)
+        testOk(nthreads == fastT + 1, "exactly the dedicated helpers: %d",
+            nthreads);
+    else
+        testSkip(1, "pool present");
 
     testIocShutdownOk();
     testdbCleanup();
@@ -246,11 +264,14 @@ static void runWith(int helpers, int reserved, double seconds)
 
 MAIN(dbScanParallelTest)
 {
-    testPlan(3 * 14);
+    testPlan(5 * 19);
     tidLock = epicsMutexMustCreate();
-    runWith(-1, 0, 2.0);
-    runWith(2, 0, 2.0);
-    runWith(8, 6, 3.0);
+    /* the pool setting also outlives iocShutdown(): unconfigured first */
+    runWith(-1, 0, 0, 0, 2.0);
+    runWith(-1, 0, 3, 2, 2.0);
+    runWith(2, 0, 0, 0, 2.0);
+    runWith(2, -1, 1, 1, 2.0);
+    runWith(8, 6, 0, 0, 3.0);
     epicsMutexDestroy(tidLock);
     return testDone();
 }

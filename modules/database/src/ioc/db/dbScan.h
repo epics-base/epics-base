@@ -132,6 +132,20 @@ DBCORE_API void scanOnceQueueShow(const int reset);
  * @pre Must be called before iocInit()
  */
 DBCORE_API int scanParallelThreads(int count, int reserve);
+/** @brief Add helper threads that serve one periodic SCAN rate only.
+ *
+ * Unlike the pool of scanParallelThreads(), these helpers process
+ * records of the given rate alone, at that rate's thread priority, so
+ * each of its passes is shared by the same number of threads. May be
+ * combined with a pool.
+ *
+ * @param rate A periodic menuScan choice string, e.g. ".1 second".
+ * @param count Number of helper threads for that rate.
+ * @return zero on success, non-zero for an unknown rate or after iocInit().
+ *
+ * @pre Must be called after loading the .dbd and before iocInit()
+ */
+DBCORE_API int scanRateThreads(const char *rate, int count);
 /** Helper count used by scanParallelThreads(0); also an iocsh variable */
 DBCORE_API extern int scanParallelThreadsDefault;
 

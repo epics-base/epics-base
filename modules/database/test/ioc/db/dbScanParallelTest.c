@@ -23,6 +23,7 @@
 
 #include "dbUnitTest.h"
 #include "testMain.h"
+#include "menuScan.h"
 #include "xRecord.h"
 
 void dbTestIoc_registerRecordDeviceDriver(struct dbBase *);
@@ -177,6 +178,32 @@ static int countHelperThreads(void)
     }
 }
 
+/* Idle helpers sleep at the priority a wake-up needs: dedicated ones at
+ * their rate's, pool helpers at the fastest rate's. The dedicated
+ * helpers come first, slow rate before fast, then the pool. */
+static int helpersAtWrongPriority(int nhelpers, int fastT, int slowT)
+{
+    unsigned base = epicsThreadPriorityScanLow - SCAN_1ST_PERIODIC;
+    char name[32];
+    int i, wrong = 0;
+
+    for (i = 0; i < nhelpers; i++) {
+        unsigned expect = i < slowT ? base + menuScan1_second :
+            i < slowT + fastT ? base + menuScan_1_second :
+            base + menuScan_NUM_CHOICES - 1;
+        unsigned got;
+
+        sprintf(name, "scanHelper%d", i);
+        got = epicsThreadGetPriority(epicsThreadGetId(name));
+        if (got != expect) {
+            testDiag("%s sleeps at priority %u, expected %u", name, got,
+                expect);
+            wrong++;
+        }
+    }
+    return wrong;
+}
+
 /* helpers < 0: leave the scan system unconfigured (no helpers), 0: the
  * default count; fastT / slowT: dedicated helpers for the fast and the
  * slow rate */
@@ -239,6 +266,10 @@ static void runWith(int helpers, int reserved, int fastT, int slowT,
      * so pause first and wait for the pass in progress to finish */
     testOk1(iocPause() == 0);
     waitPassComplete();
+    /* the helpers have returned to sleep once their last slot is done */
+    epicsThreadSleep(0.1);
+    testOk(helpersAtWrongPriority(nhelpers, fastT, slowT) == 0,
+        "idle helpers sleep at their wake-up priority");
 
     /* the scan threads are idle now; atomic reads for the sanitizer's sake */
     passes = epicsAtomicGetIntT(&started[0]) / nrec[0];
@@ -287,7 +318,7 @@ static void runWith(int helpers, int reserved, int fastT, int slowT,
 
 MAIN(dbScanParallelTest)
 {
-    testPlan(6 * 20);
+    testPlan(6 * 21);
     tidLock = epicsMutexMustCreate();
     /* the pool setting also outlives iocShutdown(): unconfigured first */
     runWith(-1, 0, 0, 0, 2.0);

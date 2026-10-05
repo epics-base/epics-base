@@ -1308,7 +1308,12 @@ static void helperTask(void *arg)
     scan_helper *me = (scan_helper *)arg;
     size_t mybit = (size_t)1 << me->idx;
     int pool = me->serves == SP_ALL;
-    unsigned prio = epicsThreadGetPrioritySelf();
+    /* a helper sleeps at the priority it was created with: a pool
+     * helper at the fastest rate's, so that on a machine with every
+     * CPU busy it still preempts a slower leader the moment it is
+     * woken, and lowers itself once it knows which rate it serves */
+    unsigned sleepPrio = epicsThreadGetPrioritySelf();
+    unsigned prio = sleepPrio;
 
     taskwdInsert(0, NULL, NULL);
     epicsEventSignal(startStopEvent);
@@ -1349,6 +1354,10 @@ static void helperTask(void *arg)
             maskSet(&helperSleepers, mybit);
             announced = 1;
             wanted = epicsAtomicGetSizeT(&helpWanted) & me->serves;
+        }
+        if (prio != sleepPrio) {
+            prio = sleepPrio;
+            epicsThreadSetPriority(epicsThreadGetIdSelf(), prio);
         }
         epicsEventMustWait(me->wake);
 next:   ;
@@ -1425,7 +1434,7 @@ static void spawnHelpers(void)
 
         opts.joinable = 1;
         opts.priority = helpers[i].serves == SP_ALL ?
-            epicsThreadPriorityScanLow :
+            papPeriodic[nPeriodic - 1]->prio :
             papPeriodic[lowBit(helpers[i].serves)]->prio;
         opts.stackSize = epicsThreadStackBig;
         helpers[i].idx = i;

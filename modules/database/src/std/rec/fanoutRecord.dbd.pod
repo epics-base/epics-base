@@ -90,9 +90,9 @@ If bit 2 is set, LNK2 is processed, etc.
 
 =back
 
-I<(If not set, the SHFT field is -1 so bits from SELN are shifted left by 1)>
+If not set, the SHFT field is set to -1, so bits from SELN are shifted left by 1.
 
-=head4 B<Note about SHFT and OFFS fields>
+=head4 Note about SHFT and OFFS fields
 
 The first versions of the fanout record had LNK fields starting with index ONE
 (LNK1). The fanout record now supports 16 links, starting from index ZERO (LNK0).

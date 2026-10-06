@@ -7,7 +7,9 @@
 /* Periodic scanning with helper threads must keep the PHAS order a
  * sequential pass gives: every record of a lower PHAS has finished
  * before any record of a higher PHAS starts, and no record of the next
- * pass starts before the current pass is complete.
+ * pass starts before the current pass is complete. Records put on a
+ * list after iocInit() join the passes, and a record taken off the
+ * list by an earlier record of the same pass is not processed.
  */
 
 #include <stdio.h>
@@ -15,6 +17,7 @@
 
 #include "dbAccess.h"
 #include "dbScan.h"
+#include "dbStaticLib.h"
 #include "epicsAtomic.h"
 #include "epicsMutex.h"
 #include "epicsThread.h"
@@ -42,6 +45,8 @@ static int violations;          /* atomic */
 static int slowStarted;         /* atomic */
 static int slowHelpersNow;      /* atomic: helpers inside a slow record */
 static int slowHelpersMax;      /* atomic */
+static int switched;            /* atomic: the switcher record ran */
+static int victimRuns;          /* atomic */
 
 static epicsMutexId tidLock;
 static epicsThreadId tids[MAXTHREADS];
@@ -108,14 +113,43 @@ static void slowProc(xRecord *prec)
         epicsAtomicDecrIntT(&slowHelpersNow);
 }
 
-static void loadRecords(void)
+static long putScan(const char *name, const char *scan)
+{
+    char field[48];
+    DBADDR addr;
+    long status;
+
+    sprintf(field, "%s.SCAN", name);
+    status = dbNameToAddr(field, &addr);
+    if (!status)
+        status = dbPutField(&addr, DBR_STRING, scan, 1);
+    return status;
+}
+
+/* PHAS 0 of the fast list; the first time it runs it takes the victim,
+ * PHAS 2 of the same list and so still ahead in this pass, off the list */
+static void switchProc(xRecord *prec)
+{
+    if (epicsAtomicIncrIntT(&switched) == 1 && putScan("victim", "Passive"))
+        testDiag("switcher: putting victim.SCAN failed");
+}
+
+static void victimProc(xRecord *prec)
+{
+    epicsAtomicIncrIntT(&victimRuns);
+}
+
+/* the last `late` records of PHAS 0 are loaded Passive and put on the
+ * fast list after iocBuild(), when the scan lists already exist */
+static void loadRecords(int late)
 {
     char subs[64];
     int k, i;
 
     for (k = 0; k < NPHASE; k++) {
         for (i = 0; i < nrec[k]; i++) {
-            sprintf(subs, "NAME=fast%d_%d,SCAN=.1 second,PHAS=%d", k, i, k);
+            sprintf(subs, "NAME=fast%d_%d,SCAN=%s,PHAS=%d", k, i,
+                k == 0 && i >= nrec[0] - late ? "Passive" : ".1 second", k);
             testdbReadDatabase("dbScanParallelTest.db", NULL, subs);
         }
     }
@@ -123,6 +157,10 @@ static void loadRecords(void)
         sprintf(subs, "NAME=slow%d,SCAN=1 second,PHAS=0", i);
         testdbReadDatabase("dbScanParallelTest.db", NULL, subs);
     }
+    testdbReadDatabase("dbScanParallelTest.db", NULL,
+        "NAME=switcher,SCAN=.1 second,PHAS=0");
+    testdbReadDatabase("dbScanParallelTest.db", NULL,
+        "NAME=victim,SCAN=.1 second,PHAS=2");
 }
 
 static void hookRecords(void)
@@ -140,6 +178,8 @@ static void hookRecords(void)
         sprintf(name, "slow%d", i);
         ((xRecord *)testdbRecordPtr(name))->clbk = slowProc;
     }
+    ((xRecord *)testdbRecordPtr("switcher"))->clbk = switchProc;
+    ((xRecord *)testdbRecordPtr("victim"))->clbk = victimProc;
 }
 
 /* After iocPause() no new pass starts, but one may be in flight: a pass
@@ -206,9 +246,10 @@ static int helpersAtWrongPriority(int nhelpers, int fastT, int slowT)
 
 /* helpers < 0: leave the scan system unconfigured (no helpers), 0: the
  * default count; fastT / slowT: dedicated helpers for the fast and the
- * slow rate */
+ * slow rate; late: PHAS 0 records added to the fast list after
+ * iocBuild() */
 static void runWith(int helpers, int reserved, int fastT, int slowT,
-    double seconds)
+    double seconds, int late)
 {
     int i, k, passes, nslow, nthreads, cap, pool, nhelpers;
 
@@ -220,18 +261,22 @@ static void runWith(int helpers, int reserved, int fastT, int slowT,
     if (fastT || slowT)
         testDiag("scanRateThreads: %d for the fast, %d for the slow rate",
             fastT, slowT);
+    if (late)
+        testDiag("%d records of PHAS 0 put on the list after iocBuild", late);
     memset(started, 0, sizeof started);
     memset(done, 0, sizeof done);
     violations = 0;
     slowStarted = 0;
     slowHelpersNow = 0;
     slowHelpersMax = 0;
+    switched = 0;
+    victimRuns = 0;
     ntids = 0;
 
     testdbPrepare();
     testdbReadDatabase("dbTestIoc.dbd", NULL, NULL);
     dbTestIoc_registerRecordDeviceDriver(pdbbase);
-    loadRecords();
+    loadRecords(late);
     hookRecords();
 
     if (helpers >= 0)
@@ -244,8 +289,25 @@ static void runWith(int helpers, int reserved, int fastT, int slowT,
     testOk1(scanRateThreads("sometimes", 1) != 0);
 
     eltc(0);
-    testIocInitOk();
+    testOk1(iocBuildIsolated() == 0);
     eltc(1);
+    /* the lists exist and the helpers are sized for them: a SCAN change
+     * now goes through the same growth as one at run time, with the
+     * records in place before the first pass counts them */
+    if (late) {
+        char name[32];
+        int failed = 0;
+
+        for (i = nrec[0] - late; i < nrec[0]; i++) {
+            sprintf(name, "fast0_%d", i);
+            if (putScan(name, ".1 second"))
+                failed++;
+        }
+        testOk(failed == 0, "%d late records put on the fast list", late);
+    }
+    else
+        testSkip(1, "no late records");
+    testOk1(iocRun() == 0);
 
     testOk(scanParallelThreads(helpers, reserved) != 0,
         "scanParallelThreads refused after iocInit");
@@ -312,22 +374,31 @@ static void runWith(int helpers, int reserved, int fastT, int slowT,
             nthreads);
     else
         testSkip(1, "pool present");
+    /* the victim was on the list when the pass began and taken off it
+     * by the switcher before its PHAS came up, so it never ran */
+    testOk(epicsAtomicGetIntT(&switched) >= 1, "switcher ran %d times",
+        epicsAtomicGetIntT(&switched));
+    testOk(epicsAtomicGetIntT(&victimRuns) == 0,
+        "victim taken off the list mid-pass ran %d times",
+        epicsAtomicGetIntT(&victimRuns));
 
-    testIocShutdownOk();
+    testOk1(iocShutdown() == 0);
     testdbCleanup();
 }
 
 MAIN(dbScanParallelTest)
 {
-    testPlan(6 * 21);
+    testPlan(8 * 27);
     tidLock = epicsMutexMustCreate();
     /* the pool setting also outlives iocShutdown(): unconfigured first */
-    runWith(-1, 0, 0, 0, 2.0);
-    runWith(-1, 0, 3, 2, 2.0);
-    runWith(2, 0, 0, 0, 2.0);
-    runWith(2, -1, 1, 1, 2.0);
-    runWith(8, 6, 0, 0, 3.0);
-    runWith(0, 0, 0, 0, 2.0);
+    runWith(-1, 0, 0, 0, 2.0, 0);
+    runWith(-1, 0, 3, 2, 2.0, 0);
+    runWith(-1, 0, 3, 2, 2.0, 20);
+    runWith(2, 0, 0, 0, 2.0, 0);
+    runWith(2, 0, 0, 0, 2.0, 20);
+    runWith(2, -1, 1, 1, 2.0, 0);
+    runWith(8, 6, 0, 0, 3.0, 0);
+    runWith(0, 0, 0, 0, 2.0, 0);
     epicsMutexDestroy(tidLock);
     return testDone();
 }

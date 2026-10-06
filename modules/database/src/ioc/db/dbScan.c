@@ -90,15 +90,17 @@ typedef struct scan_element{
 #define OVERRUN_REPORT_DELAY 10.0   /* Time between initial reports */
 #define OVERRUN_REPORT_MAX 3600.0   /* Maximum time between reports */
 
-/* A periodic pass works on a snapshot of the scan list, taken in PHAS
- * order at the start of the pass. The leader (the period's own thread)
- * publishes one PHAS group at a time and takes slots from it like any
- * helper; a slot is claimed by a CAS on `cursor`, and claims stop at
- * `limit`. Both words carry the pass generation in their high bits so
- * a stale limit from the previous pass can never be paired with the
- * new cursor. Within a pass the limit only grows, group by group, after
- * `outstanding` for the previous group has reached zero, which is what
- * keeps a higher PHAS from starting before a lower one has finished.
+/* A rate that helpers serve works on a snapshot of its scan list, taken
+ * in PHAS order at the start of the pass; a rate without helpers walks
+ * its list with scanList() as it always has. The leader (the period's
+ * own thread) publishes one PHAS group at a time and takes slots from
+ * it like any helper; a slot is claimed by a CAS on `cursor`, and
+ * claims stop at `limit`. Both words carry the pass generation in
+ * their high bits so a stale limit from the previous pass can never be
+ * paired with the new cursor. Within a pass the limit only grows, group
+ * by group, after `outstanding` for the previous group has reached
+ * zero, which is what keeps a higher PHAS from starting before a lower
+ * one has finished.
  */
 typedef struct scan_slot {
     struct dbCommon     *prec;
@@ -124,6 +126,8 @@ typedef struct periodic_scan_list {
     scan_slot           *snap;       /* snapshot of scan_list, PHAS order */
     size_t              snapCap;
     size_t              snapLen;
+    scan_slot           *snapNext;   /* larger buffer queued by addToList */
+    size_t              snapNextCap;
     size_t              cursor;      /* atomic SP_PACK(gen, next slot) */
     size_t              limit;       /* atomic SP_PACK(gen, end of group) */
     int                 outstanding; /* atomic: slots of the group not done */
@@ -1094,6 +1098,7 @@ static void deletePeriodic(void)
         epicsEventDestroy(ppsl->doneEvent);
         epicsMutexDestroy(ppsl->scan_list.lock);
         free(ppsl->snap);
+        free(ppsl->snapNext);
         free(ppsl);
     }
 
@@ -1210,20 +1215,28 @@ static void wakeHelpers(size_t want, size_t eligible)
     }
 }
 
-static void snapshotList(periodic_scan_list *ppsl)
+/* Copy the list into the snapshot under its lock. The leader never
+ * allocates: when the list outgrew the buffer, addToList() queued a
+ * larger one, which is taken over here. Returns non-zero if the list
+ * still does not fit, i.e. records were added faster than the passes
+ * came; the leader then walks the list itself this once. */
+static int snapshotList(periodic_scan_list *ppsl)
 {
     scan_list *psl = &ppsl->scan_list;
     scan_element *pse;
     size_t n, i = 0;
 
-    for (;;) {
-        epicsMutexMustLock(psl->lock);
-        n = ellCount(&psl->list);
-        if (n <= ppsl->snapCap) break;
-        epicsMutexUnlock(psl->lock);
+    epicsMutexMustLock(psl->lock);
+    if (ppsl->snapNext) {
         free(ppsl->snap);
-        ppsl->snapCap = n + n / 2 + 8;
-        ppsl->snap = dbCalloc(ppsl->snapCap, sizeof(scan_slot));
+        ppsl->snap = ppsl->snapNext;
+        ppsl->snapCap = ppsl->snapNextCap;
+        ppsl->snapNext = NULL;
+    }
+    n = ellCount(&psl->list);
+    if (n > ppsl->snapCap || n > SP_IDX_MASK) {
+        epicsMutexUnlock(psl->lock);
+        return -1;
     }
     for (pse = (scan_element *)ellFirst(&psl->list); pse;
          pse = (scan_element *)ellNext(&pse->node)) {
@@ -1233,34 +1246,26 @@ static void snapshotList(periodic_scan_list *ppsl)
     }
     ppsl->snapLen = i;
     epicsMutexUnlock(psl->lock);
+    return 0;
 }
 
-/* One pass over the period's records, PHAS group by PHAS group. The
- * leader takes slots itself, so with no helpers this is the old
- * sequential walk over a snapshot. A record added to the list during
- * the pass waits for the next one. */
+ /* One pass over the period's records. A rate no helper serves walks
+ * its live list with scanList(), unchanged. With helpers the pass works
+ * on a snapshot, PHAS group by PHAS group, the leader taking slots like
+ * a helper; a record added to the list during the pass waits for the
+ * next one. */
 static void periodicPass(periodic_scan_list *ppsl)
 {
     size_t gen, start = 0;
     int ind = ppsl->scan - SCAN_1ST_PERIODIC;
     size_t mybit = (size_t)1 << ind;
 
-    snapshotList(ppsl);
-    if (ppsl->snapLen == 0)
-        return;
-    if (ppsl->snapLen > SP_IDX_MASK) {
-        /* more records than a slot index holds (32-bit only): the
-         * leader walks the snapshot alone */
-        for (start = 0; start < ppsl->snapLen; start++) {
-            struct dbCommon *prec = ppsl->snap[start].prec;
-
-            dbScanLock(prec);
-            if (prec->scan == ppsl->scan)
-                dbProcess(prec);
-            dbScanUnlock(prec);
-        }
+    if (!nHelpers || !periodHelpers[ind] || snapshotList(ppsl)) {
+        scanList(&ppsl->scan_list);
         return;
     }
+    if (ppsl->snapLen == 0)
+        return;
     gen = (SP_GEN(epicsAtomicGetSizeT(&ppsl->cursor)) + 1) & SP_GEN(SP_NONE);
 
     while (start < ppsl->snapLen) {
@@ -1276,7 +1281,7 @@ static void periodicPass(periodic_scan_list *ppsl)
         epicsAtomicSetSizeT(&ppsl->limit, SP_PACK(gen, end));
         if (start == 0)
             epicsAtomicSetSizeT(&ppsl->cursor, SP_PACK(gen, 0));
-        if (nHelpers && end - start > 1) {
+        if (end - start > 1) {
             size_t want = end - start - 1;
 
             if (ind != fastPeriod) {
@@ -1297,8 +1302,7 @@ static void periodicPass(periodic_scan_list *ppsl)
         runSlots(ppsl, 0);
         while (epicsAtomicGetIntT(&ppsl->outstanding) != 0)
             epicsEventWait(ppsl->doneEvent);
-        if (nHelpers)
-            maskClear(&helpWanted, mybit);
+        maskClear(&helpWanted, mybit);
         start = end;
     }
 }
@@ -1426,6 +1430,19 @@ static void spawnHelpers(void)
         helpers[i].serves = SP_ALL;
         for (p = 0; p < nPeriodic; p++)
             periodHelpers[p] |= (size_t)1 << i;
+    }
+
+    /* snapshot buffers for the rates the helpers serve, sized here with
+     * room to grow so the leaders never allocate */
+    for (p = 0; p < nPeriodic; p++) {
+        periodic_scan_list *ppsl = papPeriodic[p];
+        size_t n;
+
+        if (!periodHelpers[p]) continue;
+        n = ellCount(&ppsl->scan_list.list);
+        free(ppsl->snap);
+        ppsl->snapCap = n + n / 2 + 8;
+        ppsl->snap = dbCalloc(ppsl->snapCap, sizeof(scan_slot));
     }
 
     for (i = 0; i < nHelpers; i++) {
@@ -1583,6 +1600,17 @@ static void buildScanLists(void)
     }
 }
 
+static periodic_scan_list *periodicOf(scan_list *psl)
+{
+    int i;
+
+    for (i = 0; i < nPeriodic; i++) {
+        if (papPeriodic[i] && &papPeriodic[i]->scan_list == psl)
+            return papPeriodic[i];
+    }
+    return NULL;
+}
+
 static void addToList(struct dbCommon *precord, scan_list *psl)
 {
     scan_element *pse, *ptemp;
@@ -1602,6 +1630,20 @@ static void addToList(struct dbCommon *precord, scan_list *psl)
     }
     ellInsert(&psl->list, (ptemp ? &ptemp->node : NULL), &pse->node);
     psl->modified = TRUE;
+    if (nHelpers) {
+        /* a periodic list helpers serve: queue a larger snapshot buffer
+         * here, on the caller's thread, for the leader's next pass */
+        periodic_scan_list *ppsl = periodicOf(psl);
+        size_t n = ellCount(&psl->list);
+
+        if (ppsl && periodHelpers[ppsl->scan - SCAN_1ST_PERIODIC] &&
+            n > ppsl->snapCap &&
+            (!ppsl->snapNext || n > ppsl->snapNextCap)) {
+            free(ppsl->snapNext);
+            ppsl->snapNextCap = n + n / 2 + 8;
+            ppsl->snapNext = dbCalloc(ppsl->snapNextCap, sizeof(scan_slot));
+        }
+    }
     epicsMutexUnlock(psl->lock);
 }
 

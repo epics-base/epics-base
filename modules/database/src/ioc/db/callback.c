@@ -493,7 +493,7 @@ static int takeSleeperBit(cbQueueSet *mySet, unsigned i)
  * worst wakes its next sleep once for nothing. */
 static void triggerAndClaim(cbQueueSet *mySet, cbWorker *w, size_t s)
 {
-    epicsEventMustTrigger(w->wake);
+    epicsEventSignal(w->wake);
     if (epicsAtomicCmpAndSwapSizeT(&w->state, s, CB_STATE(CB_EPOCH(s), CB_CLAIMED)) != s)
         return;
     epicsAtomicIncrIntT(&mySet->nAwake);

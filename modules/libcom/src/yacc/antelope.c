@@ -34,9 +34,9 @@ char *verbose_file_name;
 FILE *action_file;      /*  a temp file, used to save actions associated    */
                         /*  with rules until the parser is written          */
 FILE *code_file;        /*  y.code.c (used when the -r option is specified) */
-FILE *defines_file;     /*  y.tab.h                                         */
+FILE *defines_file;     /*  y.h                                         */
 FILE *input_file;       /*  the input file                                  */
-FILE *output_file;      /*  y.tab.c                                         */
+FILE *output_file;      /*  y.c                                         */
 FILE *text_file;        /*  a temp file, used to save text until all        */
                         /*  symbols have been defined                       */
 FILE *union_file;       /*  a temp file, used to save the union             */

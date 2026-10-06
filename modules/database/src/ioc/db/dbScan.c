@@ -1217,9 +1217,9 @@ static void wakeHelpers(size_t want, size_t eligible)
 
 /* Copy the list into the snapshot under its lock. The leader never
  * allocates: when the list outgrew the buffer, addToList() queued a
- * larger one, which is taken over here. Returns non-zero if the list
- * still does not fit, i.e. records were added faster than the passes
- * came; the leader then walks the list itself this once. */
+ * larger one, which is taken over here, so the list always fits.
+ * Returns non-zero only when it holds more records than a slot index
+ * can address (32-bit builds); the leader then walks the list. */
 static int snapshotList(periodic_scan_list *ppsl)
 {
     scan_list *psl = &ppsl->scan_list;

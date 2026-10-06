@@ -210,7 +210,7 @@ static int helpersAtWrongPriority(int nhelpers, int fastT, int slowT)
 static void runWith(int helpers, int reserved, int fastT, int slowT,
     double seconds)
 {
-    int k, passes, nslow, nthreads, cap, pool, nhelpers;
+    int i, k, passes, nslow, nthreads, cap, pool, nhelpers;
 
     if (helpers < 0)
         testDiag("no scanParallelThreads() for %.1f s", seconds);
@@ -267,7 +267,8 @@ static void runWith(int helpers, int reserved, int fastT, int slowT,
     testOk1(iocPause() == 0);
     waitPassComplete();
     /* the helpers have returned to sleep once their last slot is done */
-    epicsThreadSleep(0.1);
+    for (i = 0; i < 100 && helpersAtWrongPriority(nhelpers, fastT, slowT); i++)
+        epicsThreadSleep(0.05);
     testOk(helpersAtWrongPriority(nhelpers, fastT, slowT) == 0,
         "idle helpers sleep at their wake-up priority");
 

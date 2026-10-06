@@ -238,6 +238,45 @@ jobs:
       if: ${{ always() }}
       run: python .ci/cue.py -T 5M test-results
 
+  install_location:
+    name: "Ub-24 gcc install location"
+    runs-on: ubuntu-24.04
+    env:
+      CMP: gcc
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - name: Automatic core dumper analysis
+        uses: mdavidsaver/ci-core-dumper@master
+      - name: "apt-get install"
+        run: |
+          sudo apt-get update
+          sudo apt-get -y install qemu-system-x86 g++-mingw-w64-x86-64 gdb
+        if: runner.os == 'Linux'
+      - name: Prepare and compile dependencies
+        run: python .ci/cue.py prepare
+      - name: Update CONFIG_SITE.local to set INSTALL_LOCATION
+        run: |
+          cat <<EOF > configure/CONFIG_SITE.local
+          INSTALL_LOCATION=/tmp/epics
+          EOF
+      - name: Build main module
+        run: python .ci/cue.py build
+      - name: Run main module tests
+        run: python .ci/cue.py -T 60M test
+      - name: Upload tapfiles Artifact
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: tapfiles ${{ matrix.name }}
+          path: "**/O.*/*.tap"
+          if-no-files-found: ignore
+      - name: Collect and show test results
+        if: ${{ always() }}
+        run: python .ci/cue.py -T 5M test-results
+
   docker:
     name: ${{ matrix.name }}
     runs-on: ubuntu-latest

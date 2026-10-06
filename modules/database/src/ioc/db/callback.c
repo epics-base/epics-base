@@ -993,3 +993,29 @@ void testSyncCallback(void)
 
     testDiag("Complete testSyncCallback()");
 }
+
+/* for tests: whether every worker sleeps with nothing queued, running
+ * or still counted in use */
+int testCallbackIdle(void)
+{
+    int i, j;
+
+    for (i = 0; i < NUM_CALLBACK_PRIORITIES; i++) {
+        cbQueueSet *mySet = &callbackQueue[i];
+        size_t all = mySet->threadsConfigured == (int)CB_MAX_WORKERS ?
+            (size_t)-1 : ((size_t)1 << mySet->threadsConfigured) - 1;
+
+        if (epicsAtomicGetPtrT(&mySet->inbox) || !readyEmpty(mySet) ||
+            epicsAtomicGetIntT(&mySet->nQueued) ||
+            epicsAtomicGetIntT(&mySet->nAwake) ||
+            epicsAtomicGetSizeT(&mySet->sleepers) != all)
+            return 0;
+        for (j = 0; j < mySet->threadsConfigured; j++) {
+            cbWorker *w = &mySet->workers[j];
+            if (CB_ST(epicsAtomicGetSizeT(&w->state)) != CB_SLEEPING ||
+                epicsAtomicGetIntT(&w->busy))
+                return 0;
+        }
+    }
+    return 1;
+}

@@ -102,6 +102,11 @@ callbackOverflowTest_SRCS += callbackOverflowTest.c
 testHarness_SRCS += callbackOverflowTest.c
 TESTS += callbackOverflowTest
 
+TESTPROD_HOST += callbackStressTest
+callbackStressTest_SRCS += callbackStressTest.c
+testHarness_SRCS += callbackStressTest.c
+TESTS += callbackStressTest
+
 TESTPROD_HOST += dbStateTest
 dbStateTest_SRCS += dbStateTest.c
 testHarness_SRCS += dbStateTest.c

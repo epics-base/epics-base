@@ -24,11 +24,11 @@ buildInstall : $(INSTALL_IDLS)
 
 $(INSTALL_IDL)/%: %
 	@echo "Installing idl program $@"
-	@$(INSTALL_IDLFILE) -d -m 644 $< $(INSTALL_IDL)
+	$(INSTALL_IDLFILE) -d -m 644 $< $(INSTALL_IDL)
 
 $(INSTALL_IDL)/%: ../%
 	@echo "Installing idl program $@"
-	@$(INSTALL_IDLFILE) -d -m 644 $< $(INSTALL_IDL)
+	$(INSTALL_IDLFILE) -d -m 644 $< $(INSTALL_IDL)
 
 endif
 endif

@@ -60,5 +60,5 @@ CLEANS += epics-base-$(T_A).pc@
 include $(TOP)/configure/RULES
 
 epics-base-$(T_A).pc@: ../epics-base-arch.pc@
-	@$(RM) $@
-	@$(CP) $< $@
+	$(RM) $@
+	$(CP) $< $@

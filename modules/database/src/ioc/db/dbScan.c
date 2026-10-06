@@ -1331,14 +1331,16 @@ static void helperTask(void *arg)
         for (;;) {
             for (i = nPeriodic - 1; i >= 0; i--) {
                 periodic_scan_list *ppsl;
+                /* slow work for the slowBusy count; decided once, so
+                 * the increment and its decrement always pair */
+                int slow = pool && i != fastPeriod;
 
                 if (!(wanted & ((size_t)1 << i))) continue;
                 ppsl = papPeriodic[i];
                 if (SP_IDX(epicsAtomicGetSizeT(&ppsl->cursor)) >=
                     SP_IDX(epicsAtomicGetSizeT(&ppsl->limit)))
                     continue;
-                if (pool && i != fastPeriod &&
-                    epicsAtomicIncrIntT(&slowBusy) > slowCap) {
+                if (slow && epicsAtomicIncrIntT(&slowBusy) > slowCap) {
                     /* enough pool helpers on slow work; stay free */
                     epicsAtomicDecrIntT(&slowBusy);
                     continue;
@@ -1350,7 +1352,7 @@ static void helperTask(void *arg)
                     epicsThreadSetPriority(epicsThreadGetIdSelf(), prio);
                 }
                 runSlots(ppsl, me->serves);
-                if (pool && i != fastPeriod)
+                if (slow)
                     epicsAtomicDecrIntT(&slowBusy);
                 goto next;
             }

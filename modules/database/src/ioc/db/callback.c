@@ -294,7 +294,7 @@ void callbackQueueShow(const int reset)
             "iocInit before using this command.\n");
     } else {
         int prio;
-        printf("PRIORITY  HIGH-WATER MARK  ITEMS IN Q  Q SIZE  %% USED  Q OVERFLOWS\n");
+        printf("PRIORITY  HIGH-WATER MARK      IN USE  Q SIZE  %% USED  Q OVERFLOWS\n");
         for (prio = 0; prio < NUM_CALLBACK_PRIORITIES; prio++) {
             double qusage = 100.0 * stats.numUsed[prio] / stats.size;
             printf("%8s  %15d  %10d  %6d  %6.1f  %11d\n",

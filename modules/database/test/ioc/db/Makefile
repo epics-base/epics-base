@@ -92,6 +92,11 @@ callbackParallelTest_SRCS += callbackParallelTest.c
 testHarness_SRCS += callbackParallelTest.c
 TESTS += callbackParallelTest
 
+TESTPROD_HOST += callbackScalingTest
+callbackScalingTest_SRCS += callbackScalingTest.c
+testHarness_SRCS += callbackScalingTest.c
+TESTS += callbackScalingTest
+
 TESTPROD_HOST += dbStateTest
 dbStateTest_SRCS += dbStateTest.c
 testHarness_SRCS += dbStateTest.c

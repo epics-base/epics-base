@@ -30,6 +30,17 @@
 #include "epicsUnitTest.h"
 #include "testMain.h"
 
+#ifdef __rtems__
+#  include <rtems/score/cpuopts.h>
+#endif
+#if defined(__RTEMS_MAJOR__) && __RTEMS_MAJOR__>=5
+/* libCom internal (osdPosixMutexPriv.h) */
+extern "C" int osdPosixRealtimeScheduling(void);
+#  define TEST_RT_SCHEDULING 1
+#else
+#  define TEST_RT_SCHEDULING 0
+#endif
+
 typedef struct info {
     int        threadnum;
     epicsMutexId mutex;
@@ -247,7 +258,11 @@ MAIN(epicsMutexTest)
     epicsMutexId mutex;
     int status;
 
-    testPlan(5 + nthreads * nrounds);
+    testPlan(5 + nthreads * nrounds + TEST_RT_SCHEDULING);
+
+#if TEST_RT_SCHEDULING
+    testOk(osdPosixRealtimeScheduling(), "RTEMS mutexes use priority inheritance");
+#endif
 
     verifyTryLock ();
 

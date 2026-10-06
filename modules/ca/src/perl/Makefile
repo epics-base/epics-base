@@ -8,6 +8,8 @@
 TOP = ../../../..
 include $(TOP)/configure/CONFIG
 
+# Perl module installation also depends on the CA library.
+ifneq ($(filter Command Ioc,$(VALID_BUILDS)),)
 ifdef T_A
   PERL_VERSION = $(shell $(PERL) ../perlConfig.pl version)
   PERL_ARCHNAME = $(shell $(PERL) ../perlConfig.pl archname)
@@ -64,6 +66,8 @@ endif
 endif
 endif
 endif
+
+endif # Command or Ioc
 
 Cap5_SRCS = Cap5.xs
 Cap5_LIBS = ca Com

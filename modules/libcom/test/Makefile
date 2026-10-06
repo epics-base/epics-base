@@ -22,19 +22,19 @@ PROD_SRCS_RTEMS += rtemsTestData.c
 ifeq ($(EPICS_HOST_ARCH),$(T_A))
 # skip except for host arch due to custom .plt
 
-TESTPROD_HOST += epicsUnitTestTest
+TESTPROD_CMD += epicsUnitTestTest
 epicsUnitTestTest_SRCS += epicsUnitTestTest.c
 # Not much point running this on vxWorks or RTEMS...
 TESTS += epicsUnitTestTest
 
 endif
 
-TESTPROD_HOST += epicsTypesTest
+TESTPROD_CMD += epicsTypesTest
 epicsTypesTest_SRCS += epicsTypesTest.cpp
 testHarness_SRCS += epicsTypesTest.cpp
 TESTS += epicsTypesTest
 
-TESTPROD_HOST += epicsInlineTest
+TESTPROD_CMD += epicsInlineTest
 epicsInlineTest_SRCS += epicsInlineTest1.c
 epicsInlineTest_SRCS += epicsInlineTest2.c
 epicsInlineTest_SRCS += epicsInlineTest3.cpp
@@ -42,177 +42,177 @@ epicsInlineTest_SRCS += epicsInlineTest4.cpp
 testHarness_SRCS += $(epicsInlineTest_SRCS)
 TESTS += epicsInlineTest
 
-TESTPROD_HOST += epicsCalcTest
+TESTPROD_CMD += epicsCalcTest
 epicsCalcTest_SRCS += epicsCalcTest.cpp
 testHarness_SRCS += epicsCalcTest.cpp
 TESTS += epicsCalcTest
 
-TESTPROD_HOST += epicsAlgorithmTest
+TESTPROD_CMD += epicsAlgorithmTest
 epicsAlgorithmTest_SRCS += epicsAlgorithmTest.cpp
 testHarness_SRCS += epicsAlgorithmTest.cpp
 TESTS += epicsAlgorithmTest
 
-TESTPROD_HOST += epicsMathTest
+TESTPROD_CMD += epicsMathTest
 epicsMathTest_SRCS += epicsMathTest.c
 testHarness_SRCS += epicsMathTest.c
 TESTS += epicsMathTest
 
-TESTPROD_HOST += epicsMMIOTest
+TESTPROD_CMD += epicsMMIOTest
 epicsMMIOTest_SRCS += epicsMMIOTest.c
 testHarness_SRCS += epicsMMIOTest.c
 TESTS += epicsMMIOTest
 
-TESTPROD_HOST += epicsEllTest
+TESTPROD_CMD += epicsEllTest
 epicsEllTest_SRCS += epicsEllTest.c
 testHarness_SRCS += epicsEllTest.c
 TESTS += epicsEllTest
 
-TESTPROD_HOST += epicsEnvTest
+TESTPROD_CMD += epicsEnvTest
 epicsEnvTest_SRCS += epicsEnvTest.c
 testHarness_SRCS += epicsEnvTest.c
 TESTS += epicsEnvTest
 
-TESTPROD_HOST += epicsEnvUnsetTest
+TESTPROD_CMD += epicsEnvUnsetTest
 epicsEnvUnsetTest_SRCS += epicsEnvUnsetTest.c
 testHarness_SRCS += epicsEnvUnsetTest.c
 TESTS += epicsEnvUnsetTest
 
-TESTPROD_HOST += epicsErrlogTest
+TESTPROD_CMD += epicsErrlogTest
 epicsErrlogTest_SRCS += epicsErrlogTest.c
 testHarness_SRCS += epicsErrlogTest.c
 TESTS += epicsErrlogTest
 
-TESTPROD_HOST += epicsStdioTest
+TESTPROD_CMD += epicsStdioTest
 epicsStdioTest_SRCS += epicsStdioTest.c
 testHarness_SRCS += epicsStdioTest.c
 TESTS += epicsStdioTest
 
-TESTPROD_HOST += epicsStdlibTest
+TESTPROD_CMD += epicsStdlibTest
 epicsStdlibTest_SRCS += epicsStdlibTest.c
 testHarness_SRCS += epicsStdlibTest.c
 TESTS += epicsStdlibTest
 
-TESTPROD_HOST += epicsSockResolveTest
+TESTPROD_CMD += epicsSockResolveTest
 epicsSockResolveTest_SRCS += epicsSockResolveTest.c
 testHarness_SRCS += epicsSockResolveTest.c
 TESTS += epicsSockResolveTest
 
-TESTPROD_HOST += epicsStringTest
+TESTPROD_CMD += epicsStringTest
 epicsStringTest_SRCS += epicsStringTest.c
 testHarness_SRCS += epicsStringTest.c
 TESTS += epicsStringTest
 
-TESTPROD_HOST += epicsTimeTest
+TESTPROD_CMD += epicsTimeTest
 epicsTimeTest_SRCS += epicsTimeTest.cpp
 testHarness_SRCS += epicsTimeTest.cpp
 TESTS += epicsTimeTest
 
-TESTPROD_HOST += epicsTimeZoneTest
+TESTPROD_CMD += epicsTimeZoneTest
 epicsTimeZoneTest_SRCS += epicsTimeZoneTest.c
 libComTestHarness_SRCS_RTEMS += epicsTimeZoneTest.c
 TESTS += epicsTimeZoneTest
 
-TESTPROD_HOST += epicsThreadTest
+TESTPROD_CMD += epicsThreadTest
 epicsThreadTest_SRCS += epicsThreadTest.cpp
 testHarness_SRCS += epicsThreadTest.cpp
 TESTS += epicsThreadTest
 
-TESTPROD_HOST += epicsThreadClassTest
+TESTPROD_CMD += epicsThreadClassTest
 epicsThreadClassTest_SRCS += epicsThreadClassTest.cpp
 testHarness_SRCS += epicsThreadClassTest.cpp
 TESTS += epicsThreadClassTest
 
-TESTPROD_HOST += epicsThreadOnceTest
+TESTPROD_CMD += epicsThreadOnceTest
 epicsThreadOnceTest_SRCS += epicsThreadOnceTest.c
 testHarness_SRCS += epicsThreadOnceTest.c
 TESTS += epicsThreadOnceTest
 
-TESTPROD_HOST += epicsThreadPriorityTest
+TESTPROD_CMD += epicsThreadPriorityTest
 epicsThreadPriorityTest_SRCS += epicsThreadPriorityTest.cpp
 testHarness_SRCS += epicsThreadPriorityTest.cpp
 TESTS += epicsThreadPriorityTest
 
-TESTPROD_HOST += epicsThreadPrivateTest
+TESTPROD_CMD += epicsThreadPrivateTest
 epicsThreadPrivateTest_SRCS += epicsThreadPrivateTest.cpp
 testHarness_SRCS += epicsThreadPrivateTest.cpp
 TESTS += epicsThreadPrivateTest
 
-TESTPROD_HOST += epicsThreadHooksTest
+TESTPROD_CMD += epicsThreadHooksTest
 epicsThreadHooksTest_SRCS += epicsThreadHooksTest.c
 testHarness_SRCS += epicsThreadHooksTest.c
 TESTS += epicsThreadHooksTest
 
-TESTPROD_HOST += epicsThreadPoolTest
+TESTPROD_CMD += epicsThreadPoolTest
 epicsThreadPoolTest_SRCS += epicsThreadPoolTest.c
 testHarness_SRCS += epicsThreadPoolTest.c
 TESTS += epicsThreadPoolTest
 
-TESTPROD_HOST += initHookTest
+TESTPROD_CMD += initHookTest
 initHookTest_SRCS += initHookTest.c
 testHarness_SRCS += initHookTest.c
 TESTS += initHookTest
 
-TESTPROD_HOST += epicsExitTest
+TESTPROD_CMD += epicsExitTest
 epicsExitTest_SRCS += epicsExitTest.c
 testHarness_SRCS += epicsExitTest.c
 TESTS += epicsExitTest
 
-TESTPROD_HOST += epicsTimerTest
+TESTPROD_CMD += epicsTimerTest
 epicsTimerTest_SRCS += epicsTimerTest.cpp
 testHarness_SRCS += epicsTimerTest.cpp
 TESTS += epicsTimerTest
 
-TESTPROD_HOST += ringPointerTest
+TESTPROD_CMD += ringPointerTest
 ringPointerTest_SRCS += ringPointerTest.c
 testHarness_SRCS += ringPointerTest.c
 TESTS += ringPointerTest
 
-TESTPROD_HOST += ringBytesTest
+TESTPROD_CMD += ringBytesTest
 ringBytesTest_SRCS += ringBytesTest.c
 testHarness_SRCS += ringBytesTest.c
 TESTS += ringBytesTest
 
-TESTPROD_HOST += epicsEventTest
+TESTPROD_CMD += epicsEventTest
 epicsEventTest_SRCS += epicsEventTest.cpp
 testHarness_SRCS += epicsEventTest.cpp
 TESTS += epicsEventTest
 
-TESTPROD_HOST += epicsMutexTest
+TESTPROD_CMD += epicsMutexTest
 epicsMutexTest_SRCS += epicsMutexTest.cpp
 testHarness_SRCS += epicsMutexTest.cpp
 TESTS += epicsMutexTest
 
-TESTPROD_HOST += epicsSpinTest
+TESTPROD_CMD += epicsSpinTest
 epicsSpinTest_SRCS += epicsSpinTest.c
 testHarness_SRCS += epicsSpinTest.c
 TESTS += epicsSpinTest
 
-TESTPROD_HOST += epicsAtomicTest
+TESTPROD_CMD += epicsAtomicTest
 epicsAtomicTest_SRCS += epicsAtomicTest.cpp
 testHarness_SRCS += epicsAtomicTest.cpp
 TESTS += epicsAtomicTest
 
-TESTPROD_HOST += macDefExpandTest
+TESTPROD_CMD += macDefExpandTest
 macDefExpandTest_SRCS += macDefExpandTest.c
 testHarness_SRCS += macDefExpandTest.c
 TESTS += macDefExpandTest
 
-TESTPROD_HOST += cvtFastTest
+TESTPROD_CMD += cvtFastTest
 cvtFastTest_SRCS += cvtFastTest.cpp
 testHarness_SRCS += cvtFastTest.cpp
 TESTS += cvtFastTest
 
-TESTPROD_HOST += macLibTest
+TESTPROD_CMD += macLibTest
 macLibTest_SRCS += macLibTest.c
 testHarness_SRCS += macLibTest.c
 TESTS += macLibTest
 
-TESTPROD_HOST += aslibtest
+TESTPROD_CMD += aslibtest
 aslibtest_SRCS += aslibtest.c
 testHarness_SRCS += aslibtest.c
 TESTS += aslibtest
 
-TESTPROD_HOST += fdManagerTest
+TESTPROD_CMD += fdManagerTest
 fdManagerTest_SRCS += fdManagerTest.cpp
 testHarness_SRCS += fdManagerTest.cpp
 TESTS += fdManagerTest
@@ -220,24 +220,24 @@ TESTS += fdManagerTest
 # Perl module tests:
 TESTS += macLib
 
-TESTPROD_HOST += taskwdTest
+TESTPROD_CMD += taskwdTest
 taskwdTest_SRCS += taskwdTest.c
 testHarness_SRCS += taskwdTest.c
 TESTS += taskwdTest
 
-TESTPROD_HOST += blockingSockTest
+TESTPROD_CMD += blockingSockTest
 blockingSockTest_SRCS += blockingSockTest.cpp
 testHarness_SRCS += blockingSockTest.cpp
 TESTS += blockingSockTest
 
-TESTPROD_HOST += epicsMessageQueueTest
+TESTPROD_CMD += epicsMessageQueueTest
 epicsMessageQueueTest_SRCS += epicsMessageQueueTest.cpp
 testHarness_SRCS += epicsMessageQueueTest.cpp
 TESTS += epicsMessageQueueTest
 
 # we need to build this with debug symbols in all configurations
 # otherwise the test will not be able to lookup names and so fail
-TESTPROD_HOST += epicsStackTraceTest
+TESTPROD_CMD += epicsStackTraceTest
 epicsStackTraceTest_SRCS += epicsStackTraceTest.c
 ifneq ($(findstring mingw,$(T_A)),)
 epicsStackTraceTest_CFLAGS_WIN32 += -g -O0
@@ -249,22 +249,22 @@ endif
 testHarness_SRCS += epicsStackTraceTest.c
 TESTS += epicsStackTraceTest
 
-TESTPROD_HOST += ipAddrToAsciiTest
+TESTPROD_CMD += ipAddrToAsciiTest
 ipAddrToAsciiTest_SRCS += ipAddrToAsciiTest.cpp
 testHarness_SRCS += ipAddrToAsciiTest.cpp
 TESTS += ipAddrToAsciiTest
 
-TESTPROD_HOST += osiSockTest
+TESTPROD_CMD += osiSockTest
 osiSockTest_SRCS += osiSockTest.c
 testHarness_SRCS += osiSockTest.c
 TESTS += osiSockTest
 
-TESTPROD_HOST += afterIocRunningTest
+TESTPROD_CMD += afterIocRunningTest
 afterIocRunningTest_SRCS += afterIocRunningTest.cpp
 TESTS += afterIocRunningTest
 testHarness_SRCS += afterIocRunningTest.cpp
 
-TESTPROD_HOST += testexecname
+TESTPROD_CMD += testexecname
 testexecname_SRCS += testexecname.c
 # no point in including in testHarness.  Not implemented for RTEMS/vxWorks.
 TESTS += testexecname
@@ -272,19 +272,19 @@ TESTS += testexecname
 ifeq ($(BUILD_CLASS),HOST)
 ifneq ($(OS_CLASS),WIN32)
 # This test can only be run on a build host, and is broken on Windows
-TESTPROD_HOST += yajl_test
+TESTPROD_CMD += yajl_test
 yajl_test_SRCS += yajl_test.c
 TESTS += yajlTest
 endif
 endif
 
-TESTPROD_HOST += iocshTest
+TESTPROD_CMD += iocshTest
 iocshTest_SRCS += iocshTest.cpp
 TESTS += iocshTest
 TESTFILES += $(wildcard ../iocshTest*.cmd)
 TESTFILES += ../iocshTestHelpFunction1 ../iocshTestHelpFunctions
 
-TESTPROD_HOST += epicsLoadTest
+TESTPROD_CMD += epicsLoadTest
 epicsLoadTest_SRCS += epicsLoadTest.cpp
 # test linked against static libCom?
 epicsLoadTest_CPPFLAGS_STATIC_YES = -DLINKING_STATIC
@@ -306,9 +306,9 @@ PROD_RTEMS += libComTestHarness
 TESTSPEC_vxWorks = libComTestHarness.munch; epicsRunLibComTests
 TESTSPEC_RTEMS = libComTestHarness.boot; epicsRunLibComTests
 
-TESTSCRIPTS_HOST += $(TESTS:%=%.t)
+TESTSCRIPTS_CMD += $(TESTS:%=%.t)
 ifneq ($(filter $(T_A),$(CROSS_COMPILER_RUNTEST_ARCHS)),)
-TESTPROD += $(TESTPROD_HOST)
+TESTPROD += $(TESTPROD_CMD)
 TESTSCRIPTS += $(filter-out epicsUnitTestTest.t, $(TESTS:%=%.t))
 endif
 
@@ -316,29 +316,29 @@ endif
 # The following are not test programs, they measure performance.
 # They should not be added to TESTS or to epicsRunLibComTests.c
 
-TESTPROD_HOST += epicsThreadPerform
+TESTPROD_CMD += epicsThreadPerform
 epicsThreadPerform_SRCS += epicsThreadPerform.cpp
 testHarness_SRCS += epicsThreadPerform.cpp
 
-TESTPROD_HOST += epicsMaxThreads
+TESTPROD_CMD += epicsMaxThreads
 epicsMaxThreads_SRCS += epicsMaxThreads.c
 testHarness_SRCS += epicsMaxThreads.c
 
-TESTPROD_HOST += buckTest
+TESTPROD_CMD += buckTest
 buckTest_SRCS += buckTest.c
 testHarness_SRCS += buckTest.c
 
-TESTPROD_HOST += epicsAtomicPerform
+TESTPROD_CMD += epicsAtomicPerform
 epicsAtomicPerform_SRCS += epicsAtomicPerform.cpp
 testHarness_SRCS += epicsAtomicPerform.cpp
 
-TESTPROD_HOST += cvtFastPerform
+TESTPROD_CMD += cvtFastPerform
 cvtFastPerform_SRCS += cvtFastPerform.cpp
 testHarness_SRCS += cvtFastPerform.cpp
 
 ifeq ($(OS_CLASS),Linux)
 ifeq ($(USE_POSIX_THREAD_PRIORITY_SCHEDULING),YES)
-TESTPROD_HOST += nonEpicsThreadPriorityTest
+TESTPROD_CMD += nonEpicsThreadPriorityTest
 nonEpicsThreadPriorityTest_SRCS += nonEpicsThreadPriorityTest.cpp
 nonEpicsThreadPriorityTest_SYS_LIBS += $(POSIX_LDLIBS:-l%=%)
 testHarness_SRCS += nonEpicsThreadPriorityTest.cpp
@@ -348,7 +348,7 @@ endif
 endif
 
 ifneq ($(filter READLINE EPICS,$(COMMANDLINE_LIBRARY)),)
-TESTPROD_HOST += readlineTest
+TESTPROD_CMD += readlineTest
 readlineTest_SRCS += readlineTest.c
 TESTS += readlineTest
 TESTFILES += ../multiline-input.txt ../multiline-expect.txt

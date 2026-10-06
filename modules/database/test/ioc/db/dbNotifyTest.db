@@ -2,5 +2,6 @@ record(x, "passive") {
 }
 
 record(x, "scanned") {
-    field(SCAN, "10 second")
+    field(SCAN, "Event")
+    field(EVNT, "neverTriggered")
 }

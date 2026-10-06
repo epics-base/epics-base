@@ -76,7 +76,9 @@ typedef void    (*CALLBACKFUNC)(struct callbackPvt*);
 typedef struct callbackQueueStats {
     /** Maxiumum depth of queues */
     int size;
-    /** Current number of elements on each queue */
+    /** Entries in use on each queue: queued, running, or already run
+     * and not yet returned by the worker, which returns them in
+     * batches. The queue is full when all size entries are in use. */
     int numUsed[NUM_CALLBACK_PRIORITIES];
     /** Maximum numUsed seen so far (from init or reset)  */
     int maxUsed[NUM_CALLBACK_PRIORITIES];

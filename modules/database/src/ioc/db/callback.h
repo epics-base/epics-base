@@ -207,7 +207,7 @@ DBCORE_API void callbackQueueShow(const int reset);
  * always rounding the number of created threads down.
  * In any case, at least one worker thread will always run, and at most
  * 64 per priority (32 on a 32-bit target); a larger count is reduced to
- * that with a message at callbackInit().
+ * that with a message.
  *
  * An empty prio name or the special value "*" will modify all priorities.
  * Otherwise, only the named priority is modified.

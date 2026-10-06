@@ -317,6 +317,11 @@ int callbackParallelThreads(int count, const char *prio)
     else if (count == 0)
         count = callbackParallelThreadsDefault;
     if (count < 1) count = 1;
+    if (count > (int)CB_MAX_WORKERS) {
+        fprintf(stderr, "callbackParallelThreads: %d threads requested, "
+            "using the limit of %d\n", count, (int)CB_MAX_WORKERS);
+        count = CB_MAX_WORKERS;
+    }
 
     if (!prio || *prio == 0 || strcmp(prio, "*") == 0) {
         int i;
@@ -723,12 +728,6 @@ void callbackInit(void)
 
         if (callbackQueue[i].threadsConfigured == 0)
             callbackQueue[i].threadsConfigured = callbackThreadsDefault;
-        if (callbackQueue[i].threadsConfigured > (int)CB_MAX_WORKERS) {
-            errlogPrintf("callbackInit: %d %s threads requested, using the limit of %d\n",
-                callbackQueue[i].threadsConfigured, threadNamePrefix[i],
-                (int)CB_MAX_WORKERS);
-            callbackQueue[i].threadsConfigured = CB_MAX_WORKERS;
-        }
 
         callbackQueue[i].workersRaw = callocMustSucceed(1,
             callbackQueue[i].threadsConfigured * sizeof(*callbackQueue[i].workers) + CB_WORKER_ALIGN,

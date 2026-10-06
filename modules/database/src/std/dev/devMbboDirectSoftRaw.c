@@ -33,7 +33,7 @@ static long init_record(dbCommon *pcommon)
     return 2; /* Don't convert */
 }
 
-static long write_mbbo(mbboDirectRecord *prec)
+static long write_mbboDirect(mbboDirectRecord *prec)
 {
     epicsUInt32 data;
 
@@ -45,6 +45,6 @@ static long write_mbbo(mbboDirectRecord *prec)
 /* Create the dset for devMbboDirectSoftRaw */
 mbbodirectdset devMbboDirectSoftRaw = {
     {5, NULL, NULL, init_record, NULL},
-    write_mbbo
+    write_mbboDirect
 };
 epicsExportAddress(dset, devMbboDirectSoftRaw);

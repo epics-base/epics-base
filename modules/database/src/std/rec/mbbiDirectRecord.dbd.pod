@@ -87,7 +87,7 @@ Parameters> for more on the record name (NAME) and description (DESC) fields.
     %struct mbbiDirectRecord;
     %typedef struct mbbidirectdset {
     %    dset common; /* init_record returns: (-1,0) => (failure, success)*/
-    %    long (*read_mbbi)(struct mbbiDirectRecord *prec); /* (0, 2) => (success, success no convert)*/
+    %    long (*read_mbbiDirect)(struct mbbiDirectRecord *prec); /* (0, 2) => (success, success no convert)*/
     %} mbbidirectdset;
     %#define HAS_mbbidirectdset
     %
@@ -591,7 +591,7 @@ read_mbbiDirect calls recGblGetLinkValue to read the current value of VAL.
 
 See L<Input Records> for a further explanation.
 
-If the return status of recGblGetLinkValue is zero, then read_mbbi sets UDF to
+If the return status of recGblGetLinkValue is zero, then read_mbbiDirect sets UDF to
 FALSE. The status of recGblGetLinkValue is returned.
 
 =head4 Raw Soft Channel

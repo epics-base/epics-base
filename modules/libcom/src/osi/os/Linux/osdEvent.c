@@ -17,6 +17,7 @@
 #include <linux/futex.h>
 #include <sys/syscall.h>
 
+#include "epicsAtomic.h"
 #include "epicsEvent.h"
 #include "errlog.h"
 
@@ -57,8 +58,8 @@ LIBCOM_API epicsEventStatus epicsEventTrigger(epicsEventId pevent)
      * already full: the thread that filled it may be stopped between
      * its exchange and its futex_wake, and the waiter must not depend
      * on that thread running again */
-    __atomic_exchange_n(&pevent->state, 1, __ATOMIC_SEQ_CST);
-    if (__atomic_load_n(&pevent->waiters, __ATOMIC_SEQ_CST) > 0)
+    epicsAtomicSetIntT(&pevent->state, 1);
+    if (epicsAtomicGetIntT(&pevent->waiters) > 0)
         futex(&pevent->state, FUTEX_WAKE_PRIVATE, 1, NULL);
     return epicsEventOK;
 }
@@ -66,9 +67,7 @@ LIBCOM_API epicsEventStatus epicsEventTrigger(epicsEventId pevent)
 /* consume the event if full */
 static int take(epicsEventId pevent)
 {
-    int full = 1;
-    return __atomic_compare_exchange_n(&pevent->state, &full, 0, 0,
-        __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
+    return epicsAtomicCmpAndSwapIntT(&pevent->state, 1, 0) == 1;
 }
 
 /* deadline NULL: wait forever */
@@ -78,7 +77,7 @@ static epicsEventStatus waitUntil(epicsEventId pevent, const struct futexTimespe
 
     if (take(pevent))
         return epicsEventOK;
-    __atomic_add_fetch(&pevent->waiters, 1, __ATOMIC_SEQ_CST);
+    epicsAtomicIncrIntT(&pevent->waiters);
     while (!take(pevent)) {
         if (futex(&pevent->state, FUTEX_WAIT_BITSET_PRIVATE, 0, deadline) < 0) {
             if (errno == ETIMEDOUT) {
@@ -92,7 +91,7 @@ static epicsEventStatus waitUntil(epicsEventId pevent, const struct futexTimespe
             }
         }
     }
-    __atomic_sub_fetch(&pevent->waiters, 1, __ATOMIC_SEQ_CST);
+    epicsAtomicDecrIntT(&pevent->waiters);
     return result;
 }
 

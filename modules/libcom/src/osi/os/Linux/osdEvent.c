@@ -25,7 +25,14 @@ struct epicsEventOSD {
     int waiters;    /* threads in or about to enter futex_wait */
 };
 
-static long futex(int *uaddr, int op, int val, const struct timespec *to)
+/* the layout SYS_futex reads on this ABI: {long, long} is
+ * __kernel_timespec on LP64 and old_timespec32 on 32-bit. The libc
+ * struct timespec differs where time_t is 64-bit on a 32-bit target
+ * (musl, glibc with _TIME_BITS=64). The deadline is CLOCK_MONOTONIC,
+ * so tv_sec is uptime and fits a 32-bit long. */
+struct futexTimespec { long tv_sec; long tv_nsec; };
+
+static long futex(int *uaddr, int op, int val, const struct futexTimespec *to)
 {
     return syscall(SYS_futex, uaddr, op, val, to, NULL, FUTEX_BITSET_MATCH_ANY);
 }
@@ -65,7 +72,7 @@ static int take(epicsEventId pevent)
 }
 
 /* deadline NULL: wait forever */
-static epicsEventStatus waitUntil(epicsEventId pevent, const struct timespec *deadline)
+static epicsEventStatus waitUntil(epicsEventId pevent, const struct futexTimespec *deadline)
 {
     epicsEventStatus result = epicsEventOK;
 
@@ -97,14 +104,15 @@ LIBCOM_API epicsEventStatus epicsEventWait(epicsEventId pevent)
 LIBCOM_API epicsEventStatus epicsEventWaitWithTimeout(epicsEventId pevent,
     double timeout)
 {
-    struct timespec deadline;
+    struct timespec now;
+    struct futexTimespec deadline;
 
     if (timeout <= 0.0)
         return take(pevent) ? epicsEventOK : epicsEventWaitTimeout;
-    clock_gettime(CLOCK_MONOTONIC, &deadline);
+    clock_gettime(CLOCK_MONOTONIC, &now);
     if (timeout > 3600.0 * 24 * 365) timeout = 3600.0 * 24 * 365;
-    deadline.tv_sec += (time_t)timeout;
-    deadline.tv_nsec += (long)((timeout - (time_t)timeout) * 1e9);
+    deadline.tv_sec = (long)now.tv_sec + (long)timeout;
+    deadline.tv_nsec = now.tv_nsec + (long)((timeout - (long)timeout) * 1e9);
     if (deadline.tv_nsec >= 1000000000L) {
         deadline.tv_nsec -= 1000000000L;
         deadline.tv_sec++;

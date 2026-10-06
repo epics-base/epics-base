@@ -18,25 +18,56 @@
 #include "epicsInterrupt.h"
 #include "epicsThread.h"
 
+#if defined(RTEMS_SMP)
+#include <rtems/sysinit.h>
+#include <epicsSpin.h>
+#endif /* RTEMS_SMP */
+
 #define INTERRUPT_CONTEXT_MESSAGE_QUEUE_COUNT    100
 
 static rtems_id interruptContextMessageQueue;
 
+/*
+ * SMP does not support interrupt disable and enable because
+ * interrupts are local to a processor. RTEMS provides locks to use
+ * with SMP however they do not fit the existing EPICS API as there is
+ * no way to hold and return a lock context.
+ *
+ * Use an EPICS spinlock and create it before the POSIX init thread
+ * runs.
+ */
+#if defined(RTEMS_SMP)
+static epicsSpinId isr_lock;
+static void create_isr_lock(void) {
+    isr_lock = epicsSpinMustCreate();
+}
+RTEMS_SYSINIT_ITEM(
+    create_isr_lock, RTEMS_SYSINIT_POSIX_USER_THREADS, RTEMS_SYSINIT_ORDER_FIRST);
+#endif /* RTEMS_SMP */
+
 int
 epicsInterruptLock (void)
 {
+#if defined(RTEMS_SMP)
+    epicsSpinLock (isr_lock);
+    return 0;
+#else  /* RTEMS_SMP */
     rtems_interrupt_level level;
-
     rtems_interrupt_disable (level);
     return level;
+#endif /* RTEMS_SMP */
 }
 
 void
 epicsInterruptUnlock (int key)
 {
+#if defined(RTEMS_SMP)
+    (void) key;
+    epicsSpinUnlock (isr_lock);
+#else /* RTEMS_SMP */
     rtems_interrupt_level level = key;
-
     rtems_interrupt_enable (level);
+#endif /* RTEMS_SMP */
 }
 
 int

@@ -175,8 +175,7 @@ DBCORE_API void callbackRequestProcessCallbackDelayed(
     epicsCallback *pCallback, int Priority, void *pRec, double seconds);
 /** Set callback queue depth
  *
- * @param size A positive integer below 2^32-1, or below 65535 on a
- *             32-bit target
+ * @param size A positive integer, at most 2^24-1 on a 32-bit target
  * @return -1 if too late to change depth or size is out of range
  *
  * @pre Must be called before iocInit()

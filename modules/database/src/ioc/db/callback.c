@@ -149,17 +149,17 @@ typedef struct cbNode {
     struct cbNode *next;
 } cbNode;
 
-/* free list head: node index + ABA tag packed in one size_t */
-#if SIZE_MAX > 0xFFFFFFFFu
-#  define CB_IDX_BITS 32
-#else
-#  define CB_IDX_BITS 16
-#endif
-#define CB_IDX_MASK   (((size_t)1 << CB_IDX_BITS) - 1)
-#define CB_IDX_NONE   CB_IDX_MASK
-#define CB_PACK(i, t) ((size_t)(i) | ((size_t)(t) << CB_IDX_BITS))
-#define CB_IDX(h)     ((h) & CB_IDX_MASK)
-#define CB_TAG(h)     ((h) >> CB_IDX_BITS)
+/* free list and ready stack heads: node index in the low bits, ABA tag
+ * above, packed in one size_t. callbackInit() gives the index the bits
+ * the queue size needs and the tag the rest, at least CB_TAG_MIN_BITS,
+ * so the tag wraps only after 2^tagBits pops during one stalled CAS.
+ * CB_NEXT_HEAD is head h with the tag incremented and index i: setting
+ * the index bits and adding 1 carries into the tag. */
+#define CB_TAG_MIN_BITS 8
+#define CB_MAX_QUEUE  (((size_t)1 << (8 * sizeof(size_t) - CB_TAG_MIN_BITS)) - 1)
+#define CB_IDX_NONE(q)        ((q)->idxMask)
+#define CB_IDX(q, h)          ((h) & (q)->idxMask)
+#define CB_NEXT_HEAD(q, h, i) ((((h) | (q)->idxMask) + 1) | (size_t)(i))
 
 typedef CB_ALIGN_PRE struct cbWorker {
     epicsEventId wake;
@@ -177,7 +177,7 @@ typedef CB_ALIGN_PRE struct cbWorker {
 typedef CB_ALIGN_PRE struct cbQueueSet {
     EpicsAtomicPtrT inbox;  /* cbNode*, newest first */
     char pad0[CB_WORKER_ALIGN - sizeof(EpicsAtomicPtrT)];
-    size_t freeHead;        /* atomic, CB_PACK(index, tag) */
+    size_t freeHead;        /* atomic, index | tag << index bits */
     char pad1[CB_WORKER_ALIGN - sizeof(size_t)];
     int nQueued;            /* atomic: nodes taken but not yet run */
     int maxQueued;          /* atomic, racy high-water mark */
@@ -188,7 +188,7 @@ typedef CB_ALIGN_PRE struct cbQueueSet {
     size_t staleSince;      /* atomic: when (us) a requester first saw that
                              * value behind a backlog, 0 if none */
     char pad2[CB_WORKER_ALIGN - 5 * sizeof(int) - sizeof(size_t)];
-    size_t ready;           /* atomic, CB_PACK(index, tag): nodes taken
+    size_t ready;           /* atomic, packed like freeHead: nodes taken
                              * from the inbox, oldest first */
     char pad3[CB_WORKER_ALIGN - sizeof(size_t)];
     size_t sleepers;        /* atomic bitmask hint: SLEEPING workers nobody
@@ -198,6 +198,7 @@ typedef CB_ALIGN_PRE struct cbQueueSet {
                              * lags the claim CAS, so it can read below 0 */
     char pad4[CB_WORKER_ALIGN - sizeof(size_t) - sizeof(int)];
     cbNode *pool;
+    size_t idxMask;         /* index bits of a packed head, all ones */
     int shutdown; // use atomic
     int threadsConfigured;
     int threadsRunning;
@@ -247,9 +248,9 @@ int callbackSetQueueSize(int size)
         fprintf(stderr, "Queue size must be positive\n");
         return -1;
     }
-    if ((size_t)size >= CB_IDX_NONE) {
-        fprintf(stderr, "Queue size must be below %lu\n",
-            (unsigned long)CB_IDX_NONE);
+    if ((size_t)size > CB_MAX_QUEUE) {
+        fprintf(stderr, "Queue size must be at most %lu\n",
+            (unsigned long)CB_MAX_QUEUE);
         return -1;
     }
     if (epicsAtomicGetIntT(&cbState)!=cbInit) {
@@ -365,13 +366,14 @@ static cbNode *nodeAlloc(cbQueueSet *mySet)
 {
     for (;;) {
         size_t h = CB_GET_SIZE(&mySet->freeHead);
-        size_t i = CB_IDX(h);
+        size_t i = CB_IDX(mySet, h);
         cbNode *n;
         size_t nx;
-        if (i == CB_IDX_NONE) return NULL;
+        if (i == CB_IDX_NONE(mySet)) return NULL;
         n = &mySet->pool[i];
-        nx = n->next ? (size_t)(n->next - mySet->pool) : CB_IDX_NONE;
-        if (epicsAtomicCmpAndSwapSizeT(&mySet->freeHead, h, CB_PACK(nx, CB_TAG(h) + 1)) == h)
+        nx = n->next ? (size_t)(n->next - mySet->pool) : CB_IDX_NONE(mySet);
+        if (epicsAtomicCmpAndSwapSizeT(&mySet->freeHead, h,
+                CB_NEXT_HEAD(mySet, h, nx)) == h)
             return n;
     }
 }
@@ -380,10 +382,10 @@ static void nodeFreeChain(cbQueueSet *mySet, cbNode *first, cbNode *last)
 {
     for (;;) {
         size_t h = CB_GET_SIZE(&mySet->freeHead);
-        size_t i = CB_IDX(h);
-        last->next = (i == CB_IDX_NONE) ? NULL : &mySet->pool[i];
+        size_t i = CB_IDX(mySet, h);
+        last->next = (i == CB_IDX_NONE(mySet)) ? NULL : &mySet->pool[i];
         if (epicsAtomicCmpAndSwapSizeT(&mySet->freeHead, h,
-                CB_PACK(first - mySet->pool, CB_TAG(h) + 1)) == h)
+                CB_NEXT_HEAD(mySet, h, first - mySet->pool)) == h)
             return;
     }
 }
@@ -394,9 +396,9 @@ static void readyPush(cbQueueSet *mySet, cbNode *first, cbNode *last, size_t *ph
 {
     size_t h = *ph;
     for (;;) {
-        size_t i = CB_IDX(h), cur, nh;
-        last->next = (i == CB_IDX_NONE) ? NULL : &mySet->pool[i];
-        nh = CB_PACK(first - mySet->pool, CB_TAG(h) + 1);
+        size_t i = CB_IDX(mySet, h), cur, nh;
+        last->next = (i == CB_IDX_NONE(mySet)) ? NULL : &mySet->pool[i];
+        nh = CB_NEXT_HEAD(mySet, h, first - mySet->pool);
         cur = epicsAtomicCmpAndSwapSizeT(&mySet->ready, h, nh);
         if (cur == h) { *ph = nh; return; }
         h = cur;
@@ -413,20 +415,20 @@ static void readyPush(cbQueueSet *mySet, cbNode *first, cbNode *last, size_t *ph
 static cbNode *readyTake(cbQueueSet *mySet, size_t *ph, int *more)
 {
     size_t h = *ph;
-    if (CB_IDX(h) == CB_IDX_NONE)
+    if (CB_IDX(mySet, h) == CB_IDX_NONE(mySet))
         h = CB_GET_SIZE(&mySet->ready);
     for (;;) {
-        size_t i = CB_IDX(h), nx, cur, nh;
+        size_t i = CB_IDX(mySet, h), nx, cur, nh;
         cbNode *n;
-        if (i == CB_IDX_NONE) { *ph = h; *more = 0; return NULL; }
+        if (i == CB_IDX_NONE(mySet)) { *ph = h; *more = 0; return NULL; }
         n = &mySet->pool[i];
-        nx = n->next ? (size_t)(n->next - mySet->pool) : CB_IDX_NONE;
-        nh = CB_PACK(nx, CB_TAG(h) + 1);
+        nx = n->next ? (size_t)(n->next - mySet->pool) : CB_IDX_NONE(mySet);
+        nh = CB_NEXT_HEAD(mySet, h, nx);
         cur = epicsAtomicCmpAndSwapSizeT(&mySet->ready, h, nh);
         if (cur == h) {
             n->next = NULL;
             *ph = nh;
-            *more = nx != CB_IDX_NONE;
+            *more = nx != CB_IDX_NONE(mySet);
             return n;
         }
         h = cur;
@@ -435,7 +437,7 @@ static cbNode *readyTake(cbQueueSet *mySet, size_t *ph, int *more)
 
 static int readyEmpty(cbQueueSet *mySet)
 {
-    return CB_IDX(CB_GET_SIZE(&mySet->ready)) == CB_IDX_NONE;
+    return CB_IDX(mySet, CB_GET_SIZE(&mySet->ready)) == CB_IDX_NONE(mySet);
 }
 
 /* take the whole inbox and reverse it to oldest first; *plast is its
@@ -560,7 +562,7 @@ static void callbackTask(void *arg)
     cbQueueSet *mySet = &callbackQueue[me->idx >> 8];
     size_t mybit = (size_t)1 << (me->idx & 0xff);
     size_t epoch = 0;
-    size_t ready = CB_PACK(CB_IDX_NONE, 0);   /* the stack head as last seen */
+    size_t ready = CB_IDX_NONE(mySet);  /* the stack head as last seen */
     cbNode *done = NULL, *doneLast = NULL;  /* ran, not yet returned to the pool */
     int ran = 0;
 
@@ -629,7 +631,7 @@ static void callbackTask(void *arg)
             else
                 epicsAtomicSetSizeT(&me->state, CB_STATE(epoch, CB_AWAKE));
             takeSleeperBit(mySet, me->idx & 0xff);
-            ready = CB_PACK(CB_IDX_NONE, 0);
+            ready = CB_IDX_NONE(mySet);
         }
     }
     if (ran) {
@@ -714,12 +716,15 @@ void callbackInit(void)
         {
             cbQueueSet *q = &callbackQueue[i];
             int k;
+            q->idxMask = 1;
+            while (q->idxMask < (size_t)callbackQueueSize)
+                q->idxMask = q->idxMask * 2 + 1;
             q->pool = callocMustSucceed(callbackQueueSize, sizeof(*q->pool), "callbackInit");
             for (k = 0; k < callbackQueueSize - 1; k++)
                 q->pool[k].next = &q->pool[k + 1];
             q->pool[callbackQueueSize - 1].next = NULL;
-            q->freeHead = CB_PACK(0, 0);
-            q->ready = CB_PACK(CB_IDX_NONE, 0);
+            q->freeHead = 0;
+            q->ready = CB_IDX_NONE(q);
         }
         callbackQueue[i].inbox = NULL;
         callbackQueue[i].nQueued = 0;

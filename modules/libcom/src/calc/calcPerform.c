@@ -35,7 +35,7 @@ static int cond_search(const char **ppinst, int match);
 #endif
 
 /* Turn off global optimization for 64-bit MSVC builds */
-#if defined(_WIN32) && defined(_M_X64) && !defined(_MINGW)
+#if defined(_WIN64) && !defined(_MINGW)
 #  pragma optimize("g", off)
 #endif
 
@@ -422,7 +422,7 @@ LIBCOM_API long
     return 0;
 }
 
-#if defined(_WIN32) && defined(_M_X64) && !defined(_MINGW)
+#if defined(_WIN64) && !defined(_MINGW)
 #  pragma optimize("", on)
 #endif
 

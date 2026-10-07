@@ -210,6 +210,21 @@ jobs:
             cmp: gcc
             configuration: default
 
+          - name: "Win11 (aarch64)"
+            os: windows-11-arm
+            cmp: vs2022
+            configuration: default
+
+          - name: "Win11 (aarch64), debug"
+            os: windows-11-arm
+            cmp: vs2022
+            configuration: debug
+
+          - name: "Win11 (aarch64), static"
+            os: windows-11-arm
+            cmp: vs2022
+            configuration: static
+
     steps:
     - uses: actions/checkout@v6
       with:

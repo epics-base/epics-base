@@ -17,8 +17,6 @@
 #ifndef epicsAtomicCD_h
 #define epicsAtomicCD_h
 
-#include "epicsAssert.h"
-
 #ifndef _MSC_VER
 #   error this header file is only for use with with the Microsoft Compiler
 #endif
@@ -27,33 +25,19 @@
 
 #define EPICS_ATOMIC_CMPLR_NAME "MSVC-INTRINSIC"
 
-#include <intrin.h>
+// Avoid including old winsock.h automatically with windows.h
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <windows.h>
 
-#if defined ( _M_IX86 )
-#   pragma warning( push )
-#   pragma warning( disable : 4793 )
-    EPICS_ATOMIC_INLINE void epicsAtomicMemoryBarrier (void)
-    {
-        long fence;
-        __asm { xchg fence, eax }
-    }
-#   pragma warning( pop )
-#elif defined ( _M_X64 )
+EPICS_ATOMIC_INLINE void epicsAtomicMemoryBarrier (void)
+{
+    MemoryBarrier();
+}
+
+#if defined ( _WIN64 )
 #   define MS_ATOMIC_64
-#   pragma intrinsic ( __faststorefence )
-    EPICS_ATOMIC_INLINE void epicsAtomicMemoryBarrier (void)
-    {
-        __faststorefence ();
-    }
-#elif defined ( _M_IA64 )
-#   define MS_ATOMIC_64
-#   pragma intrinsic ( __mf )
-    EPICS_ATOMIC_INLINE void epicsAtomicMemoryBarrier (void)
-    {
-        __mf ();
-    }
-#else
-#   error unexpected target architecture, msvc version of epicsAtomicCD.h
 #endif
 
 /*

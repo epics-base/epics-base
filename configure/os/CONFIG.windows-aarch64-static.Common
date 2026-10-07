@@ -1,0 +1,9 @@
+# CONFIG.windows-aarch64-static.Common
+#
+# Definitions for windows-aarch64-static host archs
+# Override these definitions in CONFIG_SITE.windows-aarch64-static.Common
+#-------------------------------------------------------
+
+#Include definitions common to windows-aarch64 hosts
+include $(CONFIG)/os/CONFIG.windows-aarch64.Common
+

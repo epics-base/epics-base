@@ -51,6 +51,8 @@ PERL_SCRIPTS += useManifestTool.pl
 PERL_SCRIPTS += genVersionHeader.pl
 
 PERL_SCRIPTS += makeRPath.py
+PERL_SCRIPTS += generate_module_version.py
+PERL_SCRIPTS += generate_anchor_symbols.py
 
 HTMLS = style.css
 HTMLS += EPICS/Getopts.html

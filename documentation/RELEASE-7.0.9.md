@@ -60,7 +60,7 @@ field actually changed.
 
 There are two changes to `msi` included here.
 
-`msi` now treats files included by .template or .substutiions files in a more
+`msi` now treats files included by .template or .substitutions files in a more
 consistent way: for relative paths, it will always look relative to the current
 working directory if no `-I` flags are passed, and if they are passed then it
 will search for the _relative_ path from each of those flags. That is, the

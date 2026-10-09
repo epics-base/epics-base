@@ -9,6 +9,9 @@ RTEMS_BSP = pc386
 RTEMS_TARGET_CPU = i386
 GNU_TARGET = i386-rtems
 
+# LibBSD domain page memory in Megabytes (MB)
+ARCH_DEP_CFLAGS += -DRTEMS_BSD_DOMAIN_PAGE_MBUFS_SIZE_MB=64
+
 MUNCH_SUFFIX = .boot
 define MUNCH_CMD
 	$(RM) $*.bin

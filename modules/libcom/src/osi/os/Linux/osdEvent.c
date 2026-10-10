@@ -1,0 +1,131 @@
+/* osi/os/Linux/osdEvent.c
+ *
+ * epicsEvent on a futex: no mutex, so no owner to inherit from and no
+ * priority-inheritance hand-off between epicsEventTrigger() and a woken
+ * epicsEventWait(). state is 0 (empty) or 1 (full); waiters counts
+ * threads that may be blocked in futex_wait, so a trigger with no waiter
+ * is a single atomic exchange.
+ */
+
+#include <stddef.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <errno.h>
+#include <time.h>
+#include <unistd.h>
+#include <linux/futex.h>
+#include <sys/syscall.h>
+
+#include "epicsAtomic.h"
+#include "epicsEvent.h"
+#include "errlog.h"
+
+struct epicsEventOSD {
+    int state;      /* 0 empty, 1 full */
+    int waiters;    /* threads in or about to enter futex_wait */
+};
+
+/* the layout SYS_futex reads on this ABI: {long, long} is
+ * __kernel_timespec on LP64 and old_timespec32 on 32-bit. The libc
+ * struct timespec differs where time_t is 64-bit on a 32-bit target
+ * (musl, glibc with _TIME_BITS=64). The deadline is CLOCK_MONOTONIC,
+ * so tv_sec is uptime and fits a 32-bit long. */
+struct futexTimespec { long tv_sec; long tv_nsec; };
+
+static long futex(int *uaddr, int op, int val, const struct futexTimespec *to)
+{
+    return syscall(SYS_futex, uaddr, op, val, to, NULL, FUTEX_BITSET_MATCH_ANY);
+}
+
+LIBCOM_API epicsEventId epicsEventCreate(epicsEventInitialState init)
+{
+    epicsEventId pevent = calloc(1, sizeof(*pevent));
+
+    if (pevent)
+        pevent->state = (init == epicsEventFull);
+    return pevent;
+}
+
+LIBCOM_API void epicsEventDestroy(epicsEventId pevent)
+{
+    free(pevent);
+}
+
+LIBCOM_API epicsEventStatus epicsEventTrigger(epicsEventId pevent)
+{
+    /* wake whenever a waiter is registered, even if the event was
+     * already full: the thread that filled it may be stopped between
+     * its exchange and its futex_wake, and the waiter must not depend
+     * on that thread running again */
+    epicsAtomicSetIntT(&pevent->state, 1);
+    if (epicsAtomicGetIntT(&pevent->waiters) > 0)
+        futex(&pevent->state, FUTEX_WAKE_PRIVATE, 1, NULL);
+    return epicsEventOK;
+}
+
+/* consume the event if full */
+static int take(epicsEventId pevent)
+{
+    return epicsAtomicCmpAndSwapIntT(&pevent->state, 1, 0) == 1;
+}
+
+/* deadline NULL: wait forever */
+static epicsEventStatus waitUntil(epicsEventId pevent, const struct futexTimespec *deadline)
+{
+    epicsEventStatus result = epicsEventOK;
+
+    if (take(pevent))
+        return epicsEventOK;
+    epicsAtomicIncrIntT(&pevent->waiters);
+    while (!take(pevent)) {
+        if (futex(&pevent->state, FUTEX_WAIT_BITSET_PRIVATE, 0, deadline) < 0) {
+            if (errno == ETIMEDOUT) {
+                result = take(pevent) ? epicsEventOK : epicsEventWaitTimeout;
+                break;
+            }
+            if (errno != EAGAIN && errno != EINTR) {
+                errlogPrintf("epicsEventWait: futex_wait failed: %s\n", strerror(errno));
+                result = epicsEventError;
+                break;
+            }
+        }
+    }
+    epicsAtomicDecrIntT(&pevent->waiters);
+    return result;
+}
+
+LIBCOM_API epicsEventStatus epicsEventWait(epicsEventId pevent)
+{
+    return waitUntil(pevent, NULL);
+}
+
+LIBCOM_API epicsEventStatus epicsEventWaitWithTimeout(epicsEventId pevent,
+    double timeout)
+{
+    struct timespec now;
+    struct futexTimespec deadline;
+
+    if (timeout <= 0.0)
+        return take(pevent) ? epicsEventOK : epicsEventWaitTimeout;
+    clock_gettime(CLOCK_MONOTONIC, &now);
+    if (timeout > 3600.0 * 24 * 365) timeout = 3600.0 * 24 * 365;
+    deadline.tv_sec = (long)now.tv_sec + (long)timeout;
+    deadline.tv_nsec = now.tv_nsec + (long)((timeout - (long)timeout) * 1e9);
+    if (deadline.tv_nsec >= 1000000000L) {
+        deadline.tv_nsec -= 1000000000L;
+        deadline.tv_sec++;
+    }
+    return waitUntil(pevent, &deadline);
+}
+
+LIBCOM_API epicsEventStatus epicsEventTryWait(epicsEventId pevent)
+{
+    return take(pevent) ? epicsEventOK : epicsEventWaitTimeout;
+}
+
+LIBCOM_API void epicsEventShow(epicsEventId pevent, unsigned int level)
+{
+    printf("epicsEvent %p: %s, %d waiters\n", pevent,
+        pevent->state ? "full" : "empty", pevent->waiters);
+}

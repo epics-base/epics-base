@@ -1,0 +1,4 @@
+record(x, "$(NAME)") {
+    field(SCAN, "$(SCAN)")
+    field(PHAS, "$(PHAS)")
+}

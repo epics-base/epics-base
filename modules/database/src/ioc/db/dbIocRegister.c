@@ -484,6 +484,35 @@ static const iocshFuncDef scanpiolFuncDef = {"scanpiol",0,0,
                                              "Print info for records with SCAN = \"I/O Intr\".\n"};
 static void scanpiolCallFunc(const iocshArgBuf *args) { iocshSetError(scanpiol());}
 
+/* scanParallelThreads */
+static const iocshArg scanParallelThreadsArg0 = { "no of threads",iocshArgInt};
+static const iocshArg scanParallelThreadsArg1 = { "kept off slower rates",iocshArgInt};
+static const iocshArg * const scanParallelThreadsArgs[2] =
+    {&scanParallelThreadsArg0,&scanParallelThreadsArg1};
+static const iocshFuncDef scanParallelThreadsFuncDef = {"scanParallelThreads",2,scanParallelThreadsArgs,
+                                                        "Configure helper threads shared by all periodic scan rates.\n"
+                                                        "0 uses scanParallelThreadsDefault (at most CPUs - 1),\n"
+                                                        "a negative count leaves that many CPUs without a\n"
+                                                        "helper. The second argument keeps that many helpers\n"
+                                                        "off the slower rates (0: one, negative: none).\n"};
+static void scanParallelThreadsCallFunc(const iocshArgBuf *args)
+{
+    iocshSetError(scanParallelThreads(args[0].ival, args[1].ival));
+}
+
+/* scanRateThreads */
+static const iocshArg scanRateThreadsArg0 = { "SCAN rate",iocshArgString};
+static const iocshArg scanRateThreadsArg1 = { "no of threads",iocshArgInt};
+static const iocshArg * const scanRateThreadsArgs[2] =
+    {&scanRateThreadsArg0,&scanRateThreadsArg1};
+static const iocshFuncDef scanRateThreadsFuncDef = {"scanRateThreads",2,scanRateThreadsArgs,
+                                                    "Add helper threads that process records of one\n"
+                                                    "periodic SCAN rate only, at that rate's priority.\n"};
+static void scanRateThreadsCallFunc(const iocshArgBuf *args)
+{
+    iocshSetError(scanRateThreads(args[0].sval, args[1].ival));
+}
+
 /* callbackSetQueueSize */
 static const iocshArg callbackSetQueueSizeArg0 = { "bufsize",iocshArgInt};
 static const iocshArg * const callbackSetQueueSizeArgs[1] =
@@ -648,6 +677,8 @@ void dbIocRegister(void)
     iocshRegister(&dbLockShowLockedFuncDef,dbLockShowLockedCallFunc);
 
     iocshRegister(&scanOnceSetQueueSizeFuncDef,scanOnceSetQueueSizeCallFunc);
+    iocshRegister(&scanParallelThreadsFuncDef,scanParallelThreadsCallFunc);
+    iocshRegister(&scanRateThreadsFuncDef,scanRateThreadsCallFunc);
     iocshRegister(&scanOnceQueueShowFuncDef,scanOnceQueueShowCallFunc);
     iocshRegister(&scanpplFuncDef,scanpplCallFunc);
     iocshRegister(&scanpelFuncDef,scanpelCallFunc);

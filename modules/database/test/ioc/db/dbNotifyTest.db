@@ -1,0 +1,7 @@
+record(x, "passive") {
+}
+
+record(x, "scanned") {
+    field(SCAN, "Event")
+    field(EVNT, "neverTriggered")
+}

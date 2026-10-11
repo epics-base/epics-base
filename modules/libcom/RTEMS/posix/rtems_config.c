@@ -156,8 +156,6 @@ extern void *POSIX_Init(void *argument);
 #include <rtems/shellconfig.h>
 
 #define RTEMS_BSD_CONFIG_BSP_CONFIG
-#define RTEMS_BSD_CONFIG_SERVICE_TELNETD
-#define RTEMS_BSD_CONFIG_TELNETD_STACK_SIZE (16 * 1024)
 #define RTEMS_BSD_CONFIG_SERVICE_FTPD
 #define RTEMS_BSD_CONFIG_FIREWALL_PF
 #else // __RTEMS_MAJOR__ > 4

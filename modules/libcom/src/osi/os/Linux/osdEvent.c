@@ -2,9 +2,10 @@
  *
  * epicsEvent on a futex: no mutex, so no owner to inherit from and no
  * priority-inheritance hand-off between epicsEventTrigger() and a woken
- * epicsEventWait(). state is 0 (empty) or 1 (full); waiters counts
- * threads that may be blocked in futex_wait, so a trigger with no waiter
- * is a single atomic exchange.
+ * epicsEventWait(). state is 0 (empty), 2 (full, wake owed) or 1 (full,
+ * woken); waiters counts threads that may be blocked in futex_wait, so
+ * a trigger with no waiter makes no system call, and neither does one
+ * that finds the event full and woken.
  */
 
 #include <stddef.h>
@@ -22,7 +23,7 @@
 #include "errlog.h"
 
 struct epicsEventOSD {
-    int state;      /* 0 empty, 1 full */
+    int state;      /* 0 empty, 2 full and wake owed, 1 full and woken */
     int waiters;    /* threads in or about to enter futex_wait */
 };
 
@@ -54,20 +55,35 @@ LIBCOM_API void epicsEventDestroy(epicsEventId pevent)
 
 LIBCOM_API epicsEventStatus epicsEventTrigger(epicsEventId pevent)
 {
-    /* wake whenever a waiter is registered, even if the event was
-     * already full: the thread that filled it may be stopped between
-     * its exchange and its futex_wake, and the waiter must not depend
-     * on that thread running again */
-    epicsAtomicSetIntT(&pevent->state, 1);
+    /* one wake per fill: a waiter blocks only on an empty event, so a
+     * full and woken one has nobody left to wake and a trigger that
+     * finds it costs no system call. The wake stays owed until it is
+     * made, so a thread stopped between its fill and its futex_wake
+     * leaves the wake to the next trigger and the waiter does not
+     * depend on that thread running again. */
+    for (;;) {
+        int s = epicsAtomicGetIntT(&pevent->state);
+        if (s == 1)
+            return epicsEventOK;
+        if (epicsAtomicCmpAndSwapIntT(&pevent->state, s, 2) == s)
+            break;
+    }
     if (epicsAtomicGetIntT(&pevent->waiters) > 0)
         futex(&pevent->state, FUTEX_WAKE_PRIVATE, 1, NULL);
+    epicsAtomicCmpAndSwapIntT(&pevent->state, 2, 1);
     return epicsEventOK;
 }
 
 /* consume the event if full */
 static int take(epicsEventId pevent)
 {
-    return epicsAtomicCmpAndSwapIntT(&pevent->state, 1, 0) == 1;
+    for (;;) {
+        int s = epicsAtomicGetIntT(&pevent->state);
+        if (s == 0)
+            return 0;
+        if (epicsAtomicCmpAndSwapIntT(&pevent->state, s, 0) == s)
+            return 1;
+    }
 }
 
 /* deadline NULL: wait forever */

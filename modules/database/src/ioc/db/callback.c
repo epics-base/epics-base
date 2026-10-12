@@ -51,34 +51,16 @@
 
 static int callbackQueueSize = 2000;
 
-/* Requests take a node from a lock-free pool of callbackQueueSize
- * nodes (the pool running out is the "buffer full" error) and push it
- * onto a LIFO inbox with one CAS; nothing on the request path has an
- * owner, so a preempted requester never blocks a worker. Workers pop
- * one node at a time from a shared ready stack; the worker that finds
- * it empty takes the whole inbox with one CAS, reverses it to FIFO,
- * runs the first node and pushes the rest onto the stack, so a
- * callback that blocks holds back no other. The stack head is a pool
- * index with an ABA tag, like the free list's.
- *
- * Each worker has its own event and a state word (AWAKE, SLEEPING or
- * CLAIMED, tagged with the sleep epoch). A waker triggers the event
- * first and claims the worker by CAS second, so a thread stopped
- * between the two leaves nothing others wait for, and a claim never
- * lands on a later sleep. A sleeping worker's bit in sleepers is a
- * hint, taken by CAS by whoever wants that sleeper; nAwake counts the
- * workers not sleeping, and a waker that finds no bit while nAwake
- * says one sleeps scans the state words instead.
- *
- * A requester wakes a worker when none is awake, or when one sleeps
- * while every awake one is busy: a worker marks itself busy before
- * each callback and only then looks at the queue and the sleepers, so
- * either the request sees the mark or the worker sees the request and
- * wakes a sleeper for it. Only a request that found the inbox empty
- * owes that check, as one already there has a worker on its way whose
- * take-all covers both. One rescue remains for a worker preempted
- * where it cannot migrate: when a single worker is counted awake and
- * none made progress for CB_STALE_US, the requester wakes another.
+/* Lock-free: requests push onto an inbox, workers pop one node at a
+ * time from a shared ready stack. No path has an owner, so a stopped
+ * thread holds back only its own callback. Three orderings make the
+ * wakeups safe without one:
+ * - trigger the sleeper's event first, claim its state word second;
+ * - a worker sets busy before reading the queue, a request pushes
+ *   before reading busy, so one of them sees the other and wakes a
+ *   sleeper if every awake worker is busy;
+ * - a single awake worker with no progress for CB_STALE_US is stopped
+ *   where it cannot migrate, so the requester wakes another.
  */
 #ifndef CB_FREE_EVERY
 #define CB_FREE_EVERY 16   /* callbacks run between pool returns and progress updates */

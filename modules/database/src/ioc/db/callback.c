@@ -115,8 +115,14 @@ static unsigned cbLowBit(size_t m)
 
 /* each worker, and each shared word of a queue, on its own pair of
  * cache lines: adjacent-line prefetch would otherwise drag a line the
- * other side writes per callback along with one this side only reads */
-#define CB_WORKER_ALIGN 128
+ * other side writes per callback along with one this side only reads.
+ * A false-sharing distance, not a correctness assumption: a longer
+ * line only costs speed.  gcc 12+ knows the target's own distance. */
+#if defined(__GCC_DESTRUCTIVE_SIZE) && __GCC_DESTRUCTIVE_SIZE > 128
+#  define CB_WORKER_ALIGN __GCC_DESTRUCTIVE_SIZE
+#else
+#  define CB_WORKER_ALIGN 128
+#endif
 #if defined(_MSC_VER)
 #  define CB_ALIGN_PRE  __declspec(align(CB_WORKER_ALIGN))
 #  define CB_ALIGN_POST

@@ -371,6 +371,15 @@ $(MODNAME): %$(MODEXT): %$(EXE)
 	@$(MKDIR) $(dir $@)
 	$(CONVERTRELEASE) -T $(TOP) $@
 
+ifeq (WIN32,$(OS_CLASS))
+install: $(INSTALL_BIN)/dllPath.bat
+$(INSTALL_BIN)/dllPath.bat: \
+    $(wildcard $(TOP)/configure/RELEASE*) \
+    $(wildcard $(TOP)/configure/CONFIG_SITE*)
+	$(CONVERTRELEASE) -a $(T_A) -T $(TOP) -t $(IOCS_APPL_TOP) dllPath.bat
+	$(INSTALL) -d dllPath.bat $(INSTALL_BIN)
+endif
+
 #---------------------------------------------------------------
 # Automated testing
 
@@ -480,6 +489,14 @@ $(INSTALL_BIN)/%: ../os/$(OS_CLASS)/%
 $(INSTALL_BIN)/%: %
 	$(ECHO) "Installing created executable $@"
 	@$(INSTALL_PRODUCT) -d -m $(BIN_PERMISSIONS) $< $(INSTALL_BIN)
+ifeq (WIN32,$(OS_CLASS))
+ifeq (NO,$(STATIC_BUILD))
+	echo "@ECHO OFF" > $(basename $(INSTALL_BIN)/$*).bat
+	echo "setlocal" >> $(basename $(INSTALL_BIN)/$*).bat
+	echo "CALL %~dp0dllPath.bat" >> $(basename $(INSTALL_BIN)/$*).bat
+	echo "%~dp0$* %*" >> $(basename $(INSTALL_BIN)/$*).bat
+endif
+endif
 
 $(INSTALL_BIN)/%: ../%
 	$(ECHO) "Installing script $@"

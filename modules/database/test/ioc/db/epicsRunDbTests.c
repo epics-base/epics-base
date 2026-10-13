@@ -23,6 +23,7 @@ int callbackParallelTest(void);
 int dbStateTest(void);
 int dbServerTest(void);
 int dbCaStatsTest(void);
+int dbEventTest(void);
 int dbShutdownTest(void);
 int dbScanTest(void);
 int dbNotifyTest(void);
@@ -47,6 +48,7 @@ void epicsRunDbTests(void)
     runTest(dbStateTest);
     runTest(dbServerTest);
     runTest(dbCaStatsTest);
+    runTest(dbEventTest);
     runTest(dbShutdownTest);
     runTest(dbScanTest);
     runTest(dbNotifyTest);

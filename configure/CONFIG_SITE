@@ -41,6 +41,8 @@
 #	windows-x64            (MS Visual C++ compiler used for host builds)
 #	windows-x64-mingw      (MinGW compiler used for host builds)
 #	windows-x64-static     (MS Visual C++ compiler used for host builds)
+#	windows-aarch64        (MS Visual C++ compiler used for host builds)
+#	windows-aarch64-static (MS Visual C++ compiler used for host builds)
 
 #  Debugging builds:
 #	linux-arm-debug        (GNU compiler used for host builds)
@@ -49,6 +51,7 @@
 #	solaris-sparc-debug    (sun compiler no optimization,-g for debugging info)
 #	win32-x86-debug        (MS Visual C++ compiler with debug option for host builds)
 #	windows-x64-debug      (MS Visual C++ compiler with debug option for host builds)
+#	windows-aarch64-debug  (MS Visual C++ compiler with debug option for host builds)
 
 
 #  Do not set EPICS_HOST_ARCH in this file. 

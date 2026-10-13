@@ -162,7 +162,7 @@ build environment and PATH for using EPICS. Sites would usually copy and/or modi
     unix.csh       C shell script to set path and env variables
     unix.sh        Bourne shell script to set path and env variables
     win32.bat      Bat file example to configure win32-x86 target
-    windows.bat    Bat file example to configure windows-x64 target
+    windows.bat    Bat file example to configure windows 64 bit targets
 ```
 
 #### `base/configure` directory

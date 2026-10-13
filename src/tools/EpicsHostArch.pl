@@ -102,6 +102,39 @@ HELP_MESSAGE() if !getopts('hg:') || $opt_h;
 #
 # Some examples from the Debian project:
 # - https://wiki.debian.org/Multiarch/Tuples
+
+# On windows arm64, Perl may actually run in x64 emulator mode.
+# Find out "real" architecture using Win32::API
+sub realWinArch {
+    # Do we have Win32::API? (fails for older Windows)
+    my $have_api = eval {
+        require Win32::API;
+        Win32::API->import();
+        1;
+    };
+    return 'x64' unless $have_api;
+
+    # Call IsWow64Process2 if we have it
+    my $isWow64Process2 = Win32::API->new(
+        'kernel32', 'IsWow64Process2', 'NPP', 'I'
+    ) or return 'x64';
+    my ($proc, $native) = (pack('v', 0), pack('v', 0));
+    $isWow64Process2->Call(-1, $proc, $native)
+        or return 'x64';
+    my $arch = unpack('v', $native);
+
+    # Architecture code mapping
+    my %ARCH = (
+        0x014c => "x86",
+        0x8664 => "x64",
+        0xaa64 => "aarch64",
+        0x01c0 => "arm",
+    );
+
+    # Return known architecture or hex code
+    return $ARCH{$arch} // sprintf("0x%04x", $arch);
+}
+
 sub toEpicsArch {
     my $arch = shift;
     for ($arch) {
@@ -110,7 +143,7 @@ sub toEpicsArch {
         return 'linux-arm'      if m/^arm-linux/;
         return 'linux-aarch64'  if m/^aarch64-linux/;
         return 'linux-ppc64'    if m/^powerpc64-linux/;
-        return 'windows-x64'    if m/^MSWin32-x64/;
+        return 'windows-'.realWinArch() if m/^MSWin32-x64/;
         return 'win32-x86'      if m/^MSWin32-x86/;
         return "cygwin-x86_64"  if m/^x86_64-cygwin/;
         return "cygwin-x86"     if m/^i[3-6]86-cygwin/;

@@ -78,8 +78,10 @@ static int callbackQueueSize = 2000;
 #define CB_EPOCH(s)     ((s) >> 2)
 #define CB_MAX_WORKERS (8 * sizeof(size_t))
 
-/* index of the lowest set bit of a non-zero mask */
-#if defined(__GNUC__)
+/* index of the lowest set bit of a non-zero mask; __builtin_ctzll
+ * exists since gcc 3.4 */
+#if (defined(__GNUC__) && __GNUC__ * 100 + __GNUC_MINOR__ >= 304) \
+    || defined(__clang__)
 #  define CB_LOWBIT(m) ((unsigned)__builtin_ctzll(m))
 #else
 static unsigned cbLowBit(size_t m)

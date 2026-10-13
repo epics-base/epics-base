@@ -22,6 +22,7 @@ link        [A-U]
 
 %{
 #include "epicsStdlib.h"
+#include "epicsStdio.h"
 
 static ASINPUTFUNCPTR *my_yyinput;
 #undef YY_INPUT
@@ -54,7 +55,8 @@ INP{link} {
         char *end;
         if (epicsParseDouble((char *)yytext, &yylval.Float64, &end) ) {
             char message[40];
-            sprintf(message, "Error parsing Float64: %s", (char *)yytext);
+            epicsSnprintf(message, sizeof(message),
+                "Error parsing Float64: %s", (char *)yytext);
             yyerror(message);
         } else {
             return(tokenFLOAT64);
@@ -65,7 +67,8 @@ INP{link} {
         char *end;
         if (epicsParseInt64((char *)yytext, &yylval.Int64, 10, &end) ) {
             char message[40];
-            sprintf(message, "Error parsing Int64: %s", (char *)yytext);
+            epicsSnprintf(message, sizeof(message),
+                "Error parsing Int64: %s", (char *)yytext);
             yyerror(message);
         } else {
             return(tokenINT64);

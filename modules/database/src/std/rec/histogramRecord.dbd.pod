@@ -429,25 +429,25 @@ with C<after> set to 1.
   init_record(precord)
 
 This routine is called by the record support C<init_record()> routine. It makes
-sure that SGNL is a CONSTANT, PV_LINK, DB_LINK, or CA_LINK. It also retrieves a
-value for SVL from SGNL. If SGNL is none of the above, an error is generated.
+sure that SVL is a standard input link. It also reads SGNL from SVL. If SVL
+is not a standard input link, an error is generated.
 
 =head4 read_histogram
 
   read_histogram(*precord)
 
-This routine is called by the record support routines. It retrieves a value for
-SVL from SGNL.
+This routine is called by the record support routines. It reads SGNL from SVL.
 
 =head3 Device Support For Soft Records
 
-Only the device support module C<Soft Channel> is currently provided, though
-other device support modules may be provided at the user's site.
+Only the device support module C<Soft Channel> is currently provided,
+though other device support modules may be provided at the user's
+site.
 
-=head4 Soft Channel
+=head3 Soft Channel
 
-The C<Soft Channel> device support routine retrieves a value from SGNL. SGNL
-must be CONSTANT, PV_LINK, DB_LINK, or CA_LINK.
+The C<Soft Channel> device support routine reads SGNL from SVL. SVL
+must be a standard input link.
 
 =cut
 

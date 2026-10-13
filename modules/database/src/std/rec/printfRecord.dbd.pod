@@ -317,13 +317,30 @@ associated functionality is not required for this support layer.
 Most device supports also provide an C<init_record()> routine to configure the
 record instance and connect it to the hardware or driver support layer.
 
-=head2 Device Support for Soft Records
+=head3 Device Support For Soft Records
 
-A soft device support module Soft Channel is provided for writing values to
-other records  or other software components.
+Three device support modules are provided for writing values from
+records that have no hardware-specific device support attached.
 
-Device support for DTYP C<stdio> is provided for writing values to the stdout,
-stderr, or errlog streams. C<INST_IO> addressing C<@stdout>, C<@stderr> or
-C<@errlog> is used on the OUT link field to select the desired stream.
+=head3 Soft Channel
+
+This module writes the formatted output through the record's OUT link.
+
+C<write_printf()> calls C<dbPutLink()> to write the value. The OUT
+link is a standard output link.
+
+=head3 Async Soft Channel
+
+This module is like the previous except that it writes the formatted
+output using asynchronous processing that does not complete until the
+target record's processing has completed.
+
+=head3 stdio
+
+This module writes the formatted output, followed by a newline, to the
+standard output, standard error, or IOC error log. C<INST_IO>
+addressing C<@stdout>, C<@stderr>, or C<@errlog> is used on the OUT
+link to select the destination. See L<Built-in Device Support|devSoft/stdio>
+for details.
 
 =cut

@@ -320,13 +320,19 @@ Other: Error.
 
 =head3 Device Support For Soft Records
 
-A C<Soft Channel> device support module is available.
-The INP link field is used to fetch the soft-event name.
+A single soft device support module is provided for triggering events
+from records not attached to actual hardware.
 
-The C<read_event()> routine reads a string through INP and stores it in VAL,
-then looks up the named soft-event handle and sets EPVT.
+=head3 Soft Channel
 
-See L<Input Records|dbCommonInput/Input Records> for details on soft input.
+The C<Soft Channel> device support uses the INP link to fetch the
+soft-event name. The INP link is a standard input link.
+
+The C<read_event()> routine reads a string through INP and stores it
+in VAL, then looks up the named soft-event handle and sets EPVT.
+
+See L<Input Records|dbCommonInput/Input Records> for details on soft
+input.
 
 =cut
 

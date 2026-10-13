@@ -125,7 +125,14 @@ void dbInitLink(struct link *plink, short dbfType)
     if (dbfType == DBF_INLINK)
         plink->value.pv_link.pvlMask |= pvlOptInpNative;
 
-    int isLocal = dbChannelTest(plink->value.pv_link.pvname)==0;
+    int isLocal = 0;
+    {
+        dbChannel* chan = dbChannelCreate(plink->value.pv_link.pvname);
+        if(chan) {
+            isLocal = 1;
+            dbChannelDelete(chan);
+        }
+    }
 
     dbCaAddLinkCallbackOpt(NULL, plink, NULL, NULL, NULL, isLocal ? DBCA_CALLBACK_INIT_START : 0);
     if (dbfType == DBF_FWDLINK) {

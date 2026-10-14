@@ -54,6 +54,7 @@ device(stringout,CONSTANT,devSoSoftCallback,"Async Soft Channel")
 
 device(ai,      INST_IO,devTimestampAI,"Soft Timestamp")
 device(stringin,INST_IO,devTimestampSI,"Soft Timestamp")
+device(ai,      INST_IO,devTimePartAI ,"Soft Time Part")
 
 device(ai,      INST_IO,devAiGeneralTime,"General Time")
 device(bo,      INST_IO,devBoGeneralTime,"General Time")

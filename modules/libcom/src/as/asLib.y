@@ -81,7 +81,7 @@ non_rule_keyword: tokenASG
     | tokenINP
     {
         if(!!($$ = yystrdup("INPA")))
-            $$[3] += $1; /* 'A' + input number */
+            $$[3] += (char)$1; /* 'A' + input number */
     }
     ;
 
@@ -331,7 +331,16 @@ rule_hag_list_name: tokenSTRING
     ;
 %%
 
+#ifdef _WIN32
+#pragma warning( push )
+#pragma warning( disable:4244 )
+#endif
+
 #include "asLib_lex.c"
+
+#ifdef _WIN32
+#pragma warning( pop )
+#endif
 
 static int yyerror(char *str)
 {

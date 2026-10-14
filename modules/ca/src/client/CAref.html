@@ -3511,7 +3511,7 @@ ca_add_exception_event ( ca_exception_handler , 0 );</pre>
 
 <h3><code><a name="ca_add_fd_registration">ca_add_fd_registration()</a></code></h3>
 <pre>#include &lt;cadef.h&gt;
-int ca_add_fd_registration ( void ( USERFUNC * ) ( void *USERARG, int FD, int OPENED ), void * USERARG )</pre>
+int ca_add_fd_registration ( void ( USERFUNC * ) ( void *USERARG, SOCKET FD, int OPENED ), void * USERARG )</pre>
 
 <h4>Description</h4>
 
@@ -3537,7 +3537,7 @@ arguments.</p>
 
 <p>FD </p>
 
-<p>A file descriptor.</p>
+<p>A socket file descriptor.</p>
 
 <p>OPENED </p>
 

@@ -16,7 +16,7 @@
 #include "epicsAssert.h"
 #include "ellLib.h"
 
-static void ellMoveN(ELLLIST* pTo, ELLLIST* pFrom, int count )
+static void ellMoveN(ELLLIST* pTo, ELLLIST* pFrom, size_t count )
 {
     for(;count && ellCount(pFrom); count--) {
         ELLNODE *node = ellGet(pFrom);

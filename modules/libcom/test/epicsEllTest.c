@@ -241,7 +241,7 @@ void testSort(const input_t *inp, size_t ninp)
 
     testOk(ellCount(&list)==ninp, "output length %u == %u", (unsigned)ellCount(&list), (unsigned)ninp);
     if(ellCount(&list)==0) {
-        testSkip(ninp-1, "all items lost");
+        testSkip((int)(ninp-1), "all items lost");
     }
 
     {

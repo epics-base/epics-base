@@ -13,6 +13,12 @@ ARCH_DEP_CFLAGS += -DMY_DO_BOOTP=NULL
 ARCH_DEP_CXXFLAGS_5 = -std=c++98
 ARCH_DEP_CXXFLAGS += $(ARCH_DEP_CXXFLAGS_$(RTEMS_VERSION))
 
+# Workaround for bug in newlib (seen with RTEMS 6 GCC toolchain). _LDBL_EQ_DBL is defined by newlib.h,
+# but is determined at newlib configure time. The default -mcpu setting for m68k-rtems6-gcc supports long double,
+# so the define is excluded from newlib.h. Coldfire ISAs do not support long double, so this needs to be defined.
+# See: https://sourceware.org/bugzilla/show_bug.cgi?id=33750
+ARCH_DEP_CPPFLAGS += -D_LDBL_EQ_DBL=1
+
 MUNCH_SUFFIX = .boot
 define MUNCH_CMD
 	$(RTEMS_TOOLS)/bin/$(OBJCOPY_FOR_TARGET) -O binary -R .comment -S $< $@

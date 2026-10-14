@@ -1,0 +1,15 @@
+#
+# CONFIG.Common.RTEMS-xilinx_zynq_zedboard
+# Author: Chris Johns <chris@contemporary.software>
+#
+# All RTEMS targets use the same Makefile fragment
+#
+#EXE = .elf
+RTEMS_BSP = xilinx_zynqmp_lp64_zu3eg
+RTEMS_TARGET_CPU = aarch64
+GNU_TARGET = aarch64-rtems
+
+OP_SYS_LDLIBS += -Wl,--gc-sections
+ARCH_DEP_LDFLAGS = -L$(RTEMS_BASE)/$(GNU_TARGET)$(RTEMS_VERSION)/xilinx_zynqmp_lp64_zu3eg/lib/
+
+include $(CONFIG)/os/CONFIG.Common.RTEMS

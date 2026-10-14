@@ -93,12 +93,12 @@ static long rtemsDevWriteProbe (unsigned wordSize, volatile void *ptr, const voi
 
 static long rtemsDevConnectInterruptVME (
     unsigned vectorNumber,
-    void (*pFunction)(),
+    void (*pFunction)(void *),
     void  *parameter);
 
 static long rtemsDevDisconnectInterruptVME (
     unsigned vectorNumber,
-    void (*pFunction)()
+    void (*pFunction)(void *)
 );
 
 static long rtemsDevEnableInterruptLevelVME (unsigned level);
@@ -140,7 +140,7 @@ rtemsDevInit(void)
  */
 static long rtemsDevConnectInterruptVME (
     unsigned vectorNumber,
-    void (*pFunction)(),
+    void (*pFunction)(void *),
     void  *parameter)
 {
     int status;
@@ -151,7 +151,7 @@ static long rtemsDevConnectInterruptVME (
     }
     status = BSP_installVME_isr(
             vectorNumber,
-            pFunction,
+            (BSP_VME_ISR_t)pFunction,
             parameter);
     if (status) {
         return S_dev_vecInstlFail;
@@ -173,10 +173,10 @@ static long rtemsDevConnectInterruptVME (
  */
 static long rtemsDevDisconnectInterruptVME (
     unsigned vectorNumber,
-    void (*pFunction)()
+    void (*pFunction)(void *)
 )
 {
-    void (*psub)();
+    void (*psub)(void *);
     void  *arg;
     int status;
 
@@ -191,7 +191,7 @@ static long rtemsDevDisconnectInterruptVME (
 
     status = BSP_removeVME_isr(
         vectorNumber,
-        psub,
+        (BSP_VME_ISR_t)psub,
         arg) ||
      BSP_installVME_isr(
         vectorNumber,

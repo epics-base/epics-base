@@ -24,6 +24,8 @@ int  ClockTime_Report(int level);
 typedef void (* CLOCKTIME_SYNCHOOK)(int synchronized);
 
 extern CLOCKTIME_SYNCHOOK ClockTime_syncHook;
+#else
+#  error Unsupported OS
 #endif
 
 #ifdef __cplusplus

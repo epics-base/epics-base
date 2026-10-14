@@ -82,6 +82,7 @@
 #       RTEMS-mvme2700
 #       RTEMS-mvme3100
 #       RTEMS-mvme5500
+#       RTEMS-mvme5100          (RTEMS 7)
 #       RTEMS-pc386             (RTEMS 4)
 #       RTEMS-pc386-qemu        (RTEMS 4)
 #       RTEMS-pc686             (RTEMS 5)

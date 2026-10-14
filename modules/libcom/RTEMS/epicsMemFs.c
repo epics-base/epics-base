@@ -14,6 +14,7 @@
 #include <sys/types.h>
 #include <fcntl.h>
 
+#include "osiFileName.h"
 #include "epicsMemFs.h"
 
 #ifndef PATH_MAX
@@ -22,14 +23,13 @@
 
 int epicsMemFsLoad(const epicsMemFS *fs)
 {
-    char initdir[PATH_MAX];
+    char *startDir = NULL;
     const epicsMemFile * const *fileptr = fs->files;
 
-    if(getcwd(initdir, sizeof(initdir)-1)==NULL) {
-        perror("getcwd");
+    if((startDir = epicsGetCwd())==NULL) {
+        perror("epicsGetCwd");
         return errno;
     }
-    initdir[sizeof(initdir)-1] = '\0';
 
     for(;*fileptr; fileptr++) {
         const epicsMemFile *curfile = *fileptr;
@@ -40,9 +40,10 @@ int epicsMemFsLoad(const epicsMemFS *fs)
         /* jump back to the root each time,
          * slow but simple.
          */
-        if(chdir(initdir)) {
+        if(chdir(startDir)) {
             perror("chdir");
-            return errno;
+            free(startDir);
+            goto error;
         }
 
         printf("-> /");
@@ -58,17 +59,17 @@ int epicsMemFsLoad(const epicsMemFS *fs)
                 if(mkdir(*dir,0744)==-1) {
                     printf("\n");
                     perror("mkdir");
-                    return errno;
+                    goto error;
                 }
                 if(chdir(*dir)==-1) {
                     printf("\n");
                     perror("chdir2");
-                    return errno;
+                    goto error;
                 }
             } else if(ret==-1) {
                 printf("\n");
                 perror("chdir1");
-                return errno;
+                goto error;
             }
         }
 
@@ -85,7 +86,7 @@ int epicsMemFsLoad(const epicsMemFS *fs)
         if(fd==-1) {
             printf("\n");
             perror("open");
-            return errno;
+            goto error;
         }
 
         sofar = 0;
@@ -95,7 +96,7 @@ int epicsMemFsLoad(const epicsMemFS *fs)
             if(ret<=0) {
                 printf("\n");
                 perror("write");
-                return errno;
+                goto error;
             }
             sofar += ret;
         }
@@ -104,8 +105,11 @@ int epicsMemFsLoad(const epicsMemFS *fs)
         printf(" - ok\n");
     }
 
-    if(chdir(initdir))
+    if(chdir(startDir))
         perror("chdir");
 
     return 0;
+error:
+    free(startDir);
+    return errno;
 }

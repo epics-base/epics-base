@@ -131,3 +131,6 @@ ifdef T_A
   -include $(HOME)/configure/CONFIG_USER.$(EPICS_HOST_ARCH).$(T_A)
 endif
 
+#  Configure install location
+#
+include $(CONFIG)/CONFIG_INSTALL

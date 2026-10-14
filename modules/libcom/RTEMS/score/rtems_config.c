@@ -37,7 +37,16 @@
 #define CONFIGURE_USE_IMFS_AS_BASE_FILESYSTEM
 #define CONFIGURE_MAXIMUM_DRIVERS       8
 
+/*
+ * Override the microseconds per tick using
+ *
+ * OP_SYS_CFLAGS += -DCONFIGURE_MICROSECONDS_PER_TICK=1000
+ *
+ * in configure/CONFIG_SITE.local
+ */
+#ifndef CONFIGURE_MICROSECONDS_PER_TICK
 #define CONFIGURE_MICROSECONDS_PER_TICK 20000
+#endif
 
 #define CONFIGURE_INIT_TASK_PRIORITY    80
 

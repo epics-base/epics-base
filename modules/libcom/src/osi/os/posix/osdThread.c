@@ -313,27 +313,49 @@ int           low, try;
     return 0;
 }
 
-static void findPriorityRange(commonAttr *a_p)
+static priAvailable schedAvailable;
+
+/* Must not create mutexes: called from osdPosixMutexInit() */
+static void probeScheduling(void)
 {
-priAvailable arg;
 pthread_t    id;
 void         *dummy;
 int          status;
 
-    arg.policy = a_p->schedPolicy;
-    arg.ok = 0;
+    schedAvailable.policy = SCHED_FIFO;
+    schedAvailable.ok = 0;
 
-    status = pthread_create(&id, 0, find_pri_range, &arg);
+    status = pthread_create(&id, 0, find_pri_range, &schedAvailable);
     checkStatusOnceQuit(status, "pthread_create","epicsThreadInit");
 
     status = pthread_join(id, &dummy);
     checkStatusOnceQuit(status, "pthread_join","epicsThreadInit");
 
-    a_p->minPriority = arg.min_pri;
-    a_p->maxPriority = arg.max_pri;
-    a_p->usePolicy = arg.ok;
+    envGetBoolConfigParam(&EPICS_ALLOW_POSIX_THREAD_PRIORITY_SCHEDULING, &wantPrioScheduling);
+}
+
+static void findPriorityRange(commonAttr *a_p)
+{
+    osdPosixRealtimeScheduling();
+
+    a_p->minPriority = schedAvailable.min_pri;
+    a_p->maxPriority = schedAvailable.max_pri;
+    a_p->usePolicy = schedAvailable.ok;
 }
 #endif
+
+int osdPosixRealtimeScheduling(void)
+{
+#if defined(_POSIX_THREAD_PRIORITY_SCHEDULING) && _POSIX_THREAD_PRIORITY_SCHEDULING > 0
+    static pthread_once_t probeOnce = PTHREAD_ONCE_INIT;
+    int status = pthread_once(&probeOnce, probeScheduling);
+    checkStatusOnceQuit(status, "pthread_once", "osdPosixRealtimeScheduling");
+
+    return wantPrioScheduling && schedAvailable.ok;
+#else
+    return 0;
+#endif
+}
 
 /* 0 - In the process which loads libCom.
  * 1 - In a newly fork()'d child process
@@ -386,7 +408,6 @@ static void once(void)
     checkStatusOnce(status,"pthread_attr_getschedparam");
 
     findPriorityRange(pcommonAttr);
-    envGetBoolConfigParam(&EPICS_ALLOW_POSIX_THREAD_PRIORITY_SCHEDULING, &wantPrioScheduling);
 
     if(pcommonAttr->maxPriority == -1) {
         pcommonAttr->maxPriority = pcommonAttr->schedParam.sched_priority;

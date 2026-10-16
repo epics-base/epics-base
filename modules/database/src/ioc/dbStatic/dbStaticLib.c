@@ -827,12 +827,8 @@ long dbWriteRecordFP(
                 status = dbNextRecord(pdbentry);
                 continue;
             }
-            if(dbIsVisibleRecord(pdbentry))
-                fprintf(fp,"grecord(%s,\"%s\") {\n",
-                    dbGetRecordTypeName(pdbentry),dbGetRecordName(pdbentry));
-            else
-                fprintf(fp,"record(%s,\"%s\") {\n",
-                    dbGetRecordTypeName(pdbentry),dbGetRecordName(pdbentry));
+            fprintf(fp,"record(%s,\"%s\") {\n",
+                dbGetRecordTypeName(pdbentry),dbGetRecordName(pdbentry));
             status = dbFirstField(pdbentry,dctonly);
             while(!status) {
                 if (!dbIsDefaultValue(pdbentry) || level>0) {
@@ -1632,32 +1628,6 @@ char * dbGetRecordName(DBENTRY *pdbentry)
     if(!pdbRecordType) return NULL;
     if(!precnode) return NULL;
     return precnode->recordname;
-}
-
-long dbVisibleRecord(DBENTRY *pdbentry)
-{
-    dbRecordNode    *precnode = pdbentry->precnode;
-
-    if(!precnode) return(S_dbLib_recNotFound);
-    precnode->flags |= DBRN_FLAGS_VISIBLE;
-    return 0;
-}
-
-long dbInvisibleRecord(DBENTRY *pdbentry)
-{
-    dbRecordNode    *precnode = pdbentry->precnode;
-
-    if(!precnode) return(S_dbLib_recNotFound);
-    precnode->flags &= ~DBRN_FLAGS_VISIBLE;
-    return 0;
-}
-
-int dbIsVisibleRecord(DBENTRY *pdbentry)
-{
-    dbRecordNode    *precnode = pdbentry->precnode;
-
-    if(!precnode) return 0;
-    return precnode->flags & DBRN_FLAGS_VISIBLE ? 1 : 0;
 }
 
 long dbCreateAlias(DBENTRY *pdbentry, const char *alias)

@@ -1,9 +1,0 @@
-#  CONFIG.cygwin-x86_64.cygwin-x86_64
-#
-# Definitions for cygwin-x86_64 host - cygwin-x86_64 target builds
-# Sites may override these definitions in CONFIG_SITE.cygwin-x86_64.cygwin-x86_64
-#-------------------------------------------------------
-
-# Include common gnu compiler definitions
-include $(CONFIG)/os/CONFIG.cygwin-x86.cygwin-x86
-

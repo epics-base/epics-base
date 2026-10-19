@@ -1,4 +1,7 @@
 file t10-template.txt {
+}
+
+file t10-template.txt {
     {}
 }
 

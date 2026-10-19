@@ -115,17 +115,24 @@ void dbInitLink(struct link *plink, short dbfType)
     if (plink == &precord->tsel)
         TSEL_modified(plink);
 
+    int isLocal = 0;
     if (!(plink->value.pv_link.pvlMask & (pvlOptCA | pvlOptCP | pvlOptCPP))) {
         /* Make it a DB link if possible */
         if (!dbDbInitLink(plink, dbfType))
             return;
+        /* non-local CA link */
+
+    } else { // maybe local CA
+        dbChannel* chan = dbChannelCreate(plink->value.pv_link.pvname);
+        if (chan) {
+            isLocal = 1;
+            dbChannelDelete(chan);
+        }
     }
 
     /* Make it a CA link */
     if (dbfType == DBF_INLINK)
         plink->value.pv_link.pvlMask |= pvlOptInpNative;
-
-    int isLocal = dbChannelTest(plink->value.pv_link.pvname)==0;
 
     dbCaAddLinkCallbackOpt(NULL, plink, NULL, NULL, NULL, isLocal ? DBCA_CALLBACK_INIT_START : 0);
     if (dbfType == DBF_FWDLINK) {

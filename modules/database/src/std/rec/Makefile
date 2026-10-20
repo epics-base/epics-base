@@ -39,7 +39,6 @@ stdRecords += permissiveRecord
 stdRecords += printfRecord
 stdRecords += selRecord
 stdRecords += seqRecord
-stdRecords += stateRecord
 stdRecords += stringinRecord
 stdRecords += stringoutRecord
 stdRecords += subRecord

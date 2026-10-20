@@ -113,7 +113,6 @@ record_HEADERS += permissiveRecord
 record_HEADERS += printfRecord
 record_HEADERS += selRecord
 record_HEADERS += seqRecord
-record_HEADERS += stateRecord
 record_HEADERS += stringinRecord
 record_HEADERS += stringoutRecord
 record_HEADERS += subRecord

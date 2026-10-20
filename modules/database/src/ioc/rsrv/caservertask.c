@@ -798,6 +798,16 @@ static unsigned countChanListBytes (
     return bytes_reserved;
 }
 
+static void showChannel(struct channel_in_use *pciu, unsigned level)
+{
+    dbChannelShow(pciu->dbch, level, 8);
+    if (level >= 1u)
+        printf("%12s# on eventq=%d, access=%c%c\n", "",
+            ellCount(&pciu->eventq),
+            asCheckGet(pciu->asClientPVT) ? 'r' : '-',
+            rsrvCheckPut(pciu) ? 'w' : '-');
+}
+
 static void showChanList (
     struct client * client, unsigned level, ELLLIST * pList )
 {
@@ -805,15 +815,50 @@ static void showChanList (
     epicsMutexMustLock ( client->chanListLock );
     pciu = (struct channel_in_use *) pList->node.next;
     while ( pciu ){
-        dbChannelShow ( pciu->dbch, level, 8 );
-        if ( level >= 1u )
-            printf( "%12s# on eventq=%d, access=%c%c\n", "",
-                ellCount ( &pciu->eventq ),
-                asCheckGet ( pciu->asClientPVT ) ? 'r': '-',
-                rsrvCheckPut ( pciu ) ? 'w': '-' );
+        showChannel(pciu, level);
         pciu = ( struct channel_in_use * ) ellNext ( &pciu->node );
     }
     epicsMutexUnlock ( client->chanListLock );
+}
+
+static void showClientState(struct client *client)
+{
+    static const char * const state[] = {"up", "down"};
+    epicsTimeStamp current;
+    double send_delay;
+    double recv_delay;
+
+    epicsTimeGetCurrent(&current);
+    send_delay = epicsTimeDiffInSeconds(&current, &client->time_at_last_send);
+    recv_delay = epicsTimeDiffInSeconds(&current, &client->time_at_last_recv);
+
+    printf("\tTask Id = %p, Socket FD = %d\n", client->tid, (int)client->sock);
+    printf("\t%.2f secs since last send, %.2f secs since last receive\n",
+        send_delay, recv_delay);
+    printf("\tUnprocessed request bytes = %u, Undelivered response bytes = %u\n",
+        client->recv.cnt - client->recv.stk, client->send.stk);
+    printf("\tState = %s%s%s\n", state[client->disconnect ? 1 : 0],
+        client->send.type == mbtLargeTCP ? " jumbo-send-buf" : "",
+        client->recv.type == mbtLargeTCP ? " jumbo-recv-buf" : "");
+}
+
+static void showClientMemory(struct client *client)
+{
+    unsigned bytes_reserved = sizeof(struct client);
+
+    bytes_reserved += countChanListBytes(client, &client->chanList);
+    bytes_reserved += countChanListBytes(client, &client->chanPendingUpdateARList);
+    printf("\t%d bytes allocated\n", bytes_reserved);
+    printf("\tSend Lock:\n\t    ");
+    epicsMutexShow(client->lock, 1);
+    printf("\tPut Notify Lock:\n\t    ");
+    epicsMutexShow(client->putNotifyLock, 1);
+    printf("\tAddress Queue Lock:\n\t    ");
+    epicsMutexShow(client->chanListLock, 1);
+    printf("\tEvent Queue Lock:\n\t    ");
+    epicsMutexShow(client->eventqLock, 1);
+    printf("\tBlock Semaphore:\n\t    ");
+    epicsEventShow(client->blockSem, 1);
 }
 
 /*
@@ -849,56 +894,16 @@ static void log_one_client (struct client *client, unsigned level)
         client->priority,
         n, n == 1 ? "" : "s" );
 
-    if ( level >= 3u ) {
-        double         send_delay;
-        double         recv_delay;
-        char           *state[] = {"up", "down"};
-        epicsTimeStamp current;
-
-        epicsTimeGetCurrent(&current);
-        send_delay = epicsTimeDiffInSeconds(&current,&client->time_at_last_send);
-        recv_delay = epicsTimeDiffInSeconds(&current,&client->time_at_last_recv);
-
-        printf ("\tTask Id = %p, Socket FD = %d\n",
-            client->tid, (int)client->sock);
-        printf(
-        "\t%.2f secs since last send, %.2f secs since last receive\n",
-            send_delay, recv_delay);
-        printf(
-        "\tUnprocessed request bytes = %u, Undelivered response bytes = %u\n",
-            client->recv.cnt - client->recv.stk,
-            client->send.stk );
-        printf(
-        "\tState = %s%s%s\n",
-            state[client->disconnect?1:0],
-            client->send.type == mbtLargeTCP ? " jumbo-send-buf" : "",
-            client->recv.type == mbtLargeTCP ? " jumbo-recv-buf" : "");
-    }
+    if (level >= 3u)
+        showClientState(client);
 
     if ( level >= 1u ) {
         showChanList ( client, level - 1u, & client->chanList );
         showChanList ( client, level - 1u, & client->chanPendingUpdateARList );
     }
 
-    if ( level >= 4u ) {
-        unsigned bytes_reserved = sizeof(struct client);
-
-        bytes_reserved += countChanListBytes (
-                            client, & client->chanList );
-        bytes_reserved += countChanListBytes (
-                        client, & client->chanPendingUpdateARList );
-        printf( "\t%d bytes allocated\n", bytes_reserved);
-        printf( "\tSend Lock:\n\t    ");
-        epicsMutexShow(client->lock,1);
-        printf( "\tPut Notify Lock:\n\t    ");
-        epicsMutexShow (client->putNotifyLock,1);
-        printf( "\tAddress Queue Lock:\n\t    ");
-        epicsMutexShow (client->chanListLock,1);
-        printf( "\tEvent Queue Lock:\n\t    ");
-        epicsMutexShow (client->eventqLock,1);
-        printf( "\tBlock Semaphore:\n\t    ");
-        epicsEventShow (client->blockSem,1);
-    }
+    if (level >= 4u)
+        showClientMemory(client);
 }
 
 void casgrep(const char *pattern, unsigned level)
@@ -956,60 +961,21 @@ void casgrep(const char *pattern, unsigned level)
                         (struct channel_in_use *) list[i]->node.next;
 
                     while (pciu) {
-                        if (epicsStrGlobMatch(dbChannelName(pciu->dbch), pattern)) {
-                            dbChannelShow(pciu->dbch, level - 2u, 8);
-                            if (level >= 3u)
-                                printf("%12s# on eventq=%d, access=%c%c\n", "",
-                                    ellCount(&pciu->eventq),
-                                    asCheckGet(pciu->asClientPVT) ? 'r' : '-',
-                                    rsrvCheckPut(pciu) ? 'w' : '-');
-                        }
+                        if (epicsStrGlobMatch(dbChannelName(pciu->dbch), pattern))
+                            showChannel(pciu, level - 2u);
                         pciu = (struct channel_in_use *) ellNext(&pciu->node);
                     }
                 }
             }
 
-            if (level >= 4u) {
-                double send_delay;
-                double recv_delay;
-                const char * const state[] = {"up", "down"};
-                epicsTimeStamp current;
-
-                epicsTimeGetCurrent(&current);
-                send_delay = epicsTimeDiffInSeconds(&current, &client->time_at_last_send);
-                recv_delay = epicsTimeDiffInSeconds(&current, &client->time_at_last_recv);
-
-                printf("\tTask Id = %p, Socket FD = %d\n", client->tid, (int)client->sock);
-                printf("\t%.2f secs since last send, %.2f secs since last receive\n",
-                    send_delay, recv_delay);
-                printf("\tUnprocessed request bytes = %u, Undelivered response bytes = %u\n",
-                    client->recv.cnt - client->recv.stk, client->send.stk);
-                printf("\tState = %s%s%s\n", state[client->disconnect ? 1 : 0],
-                    client->send.type == mbtLargeTCP ? " jumbo-send-buf" : "",
-                    client->recv.type == mbtLargeTCP ? " jumbo-recv-buf" : "");
-            }
+            if (level >= 4u)
+                showClientState(client);
 
         }
         epicsMutexUnlock(client->chanListLock);
 
-        if (matches && level >= 5u) {
-            unsigned bytes_reserved = sizeof(struct client);
-
-            bytes_reserved += countChanListBytes(client, &client->chanList);
-            bytes_reserved += countChanListBytes(client,
-                &client->chanPendingUpdateARList);
-            printf("\t%d bytes allocated\n", bytes_reserved);
-            printf("\tSend Lock:\n\t    ");
-            epicsMutexShow(client->lock, 1);
-            printf("\tPut Notify Lock:\n\t    ");
-            epicsMutexShow(client->putNotifyLock, 1);
-            printf("\tAddress Queue Lock:\n\t    ");
-            epicsMutexShow(client->chanListLock, 1);
-            printf("\tEvent Queue Lock:\n\t    ");
-            epicsMutexShow(client->eventqLock, 1);
-            printf("\tBlock Semaphore:\n\t    ");
-            epicsEventShow(client->blockSem, 1);
-        }
+        if (matches && level >= 5u)
+            showClientMemory(client);
         client = (struct client *) ellNext(&client->node);
     }
     UNLOCK_CLIENTQ

@@ -58,7 +58,8 @@ static const char *fanout_receivers[] = {
 static calcRecord *receivers[NRECORDS];
 
 static void init_receiver_records(void) {
-    for (size_t i = 0; i < NRECORDS; ++i) {
+    int i;
+    for (i = 0; i < NRECORDS; ++i) {
         receivers[i] = (calcRecord *)testdbRecordPtr(fanout_receivers[i]);
         if (!receivers[i]) {
             testAbort("Record %s not found", fanout_receivers[i]);
@@ -67,7 +68,8 @@ static void init_receiver_records(void) {
 }
 
 static void snapshot(double values[NRECORDS]) {
-    for (size_t i = 0; i < NRECORDS; ++i) {
+    int i;
+    for (i = 0; i < NRECORDS; ++i) {
         values[i] = receivers[i]->val;
     }
 }
@@ -80,7 +82,8 @@ static void test_selm_all(void) {
     testdbPutFieldOk("test_fanout_record.SELM", DBF_STRING, "All");
     testdbPutFieldOk("test_fanout_record.PROC", DBF_LONG, 1);
 
-    for (size_t i = 0; i < NRECORDS; ++i) {
+    int i;
+    for (i = 0; i < NRECORDS; ++i) {
         testdbGetFieldEqual(fanout_receivers[i], DBF_DOUBLE, before[i] + 1);
     }
 }
@@ -100,7 +103,8 @@ static void test_selm_specified() {
     testdbPutFieldOk("test_fanout_record.PROC", DBF_LONG, 1);
 
     // Check that only test_fanout_out(seln+offs) changed
-    for (size_t i = 0; i < NRECORDS; ++i) {
+    int i;
+    for (i = 0; i < NRECORDS; ++i) {
         if (i == (seln + offs)) {
             testdbGetFieldEqual(fanout_receivers[i], DBF_DOUBLE, before[i] + 1);
         } else {
@@ -123,7 +127,8 @@ static void test_selm_specified_upper_invalid(void) {
     testdbPutFieldOk("test_fanout_record.PROC", DBF_LONG, 1);
 
     // Invalid index must not process any output link.
-    for (size_t i = 0; i < NRECORDS; ++i) {
+    int i;
+    for (i = 0; i < NRECORDS; ++i) {
         testdbGetFieldEqual(fanout_receivers[i], DBF_DOUBLE, before[i]);
     }
 
@@ -146,7 +151,8 @@ static void test_selm_specified_lower_invalid(void) {
     testdbPutFieldOk("test_fanout_record.PROC", DBF_LONG, 1);
 
     // Invalid index must not process any output link.
-    for (size_t i = 0; i < NRECORDS; ++i) {
+    int i;
+    for (i = 0; i < NRECORDS; ++i) {
         testdbGetFieldEqual(fanout_receivers[i], DBF_DOUBLE, before[i]);
     }
 
@@ -170,7 +176,8 @@ static void test_selm_mask() {
     testdbPutFieldOk("test_fanout_record.PROC", DBF_LONG, 1);
 
     // Check that only the masked links were processed
-    for (size_t i = 0; i < NRECORDS; ++i) {
+    int i;
+    for (i = 0; i < NRECORDS; ++i) {
         if (seln & (1 << i)) {
             testdbGetFieldEqual(fanout_receivers[i], DBF_DOUBLE, before[i] + 1);
         } else {
@@ -195,7 +202,8 @@ static void test_selm_mask_shift_left() {
 
     // Check that only the masked links were processed
     const epicsUInt16 expected_bits = seln << -shft;
-    for (size_t i = 0; i < NRECORDS; ++i) {
+    int i;
+    for (i = 0; i < NRECORDS; ++i) {
         if (expected_bits & (1 << i)) {
             testdbGetFieldEqual(fanout_receivers[i], DBF_DOUBLE, before[i] + 1);
         } else {
@@ -220,7 +228,8 @@ static void test_selm_mask_shift_right() {
 
     // Check that only the masked links were processed
     const epicsUInt16 expected_bits = seln >> shft;
-    for (size_t i = 0; i < NRECORDS; ++i) {
+    int i;
+    for (i = 0; i < NRECORDS; ++i) {
         if (expected_bits & (1 << i)) {
             testdbGetFieldEqual(fanout_receivers[i], DBF_DOUBLE, before[i] + 1);
         } else {
@@ -242,7 +251,8 @@ static void test_selm_mask_invalid_shift(epicsInt16 shft) {
     testdbPutFieldOk("test_fanout_record.PROC", DBF_LONG, 1);
 
     // An invalid shift must not process any output link
-    for (size_t i = 0; i < NRECORDS; ++i) {
+    int i;
+    for (i = 0; i < NRECORDS; ++i) {
         testdbGetFieldEqual(
             fanout_receivers[i], DBF_DOUBLE, before[i]);
     }
@@ -266,7 +276,8 @@ static void test_selm_mask_zero() {
     testdbPutFieldOk("test_fanout_record.PROC", DBF_LONG, 1);
 
     // Check that no links were processed
-    for (size_t i = 0; i < NRECORDS; ++i) {
+    int i;
+    for (i = 0; i < NRECORDS; ++i) {
         testdbGetFieldEqual(fanout_receivers[i], DBF_DOUBLE, before[i]);
     }
 }
@@ -289,7 +300,8 @@ MAIN(fanoutTest) {
 
     // Set LNK0-9,LNKA-F in the fanout record to point to each of the
     // calc records used for these tests
-    for (size_t i = 0; i < NRECORDS; ++i) {
+    int i;
+    for (i = 0; i < NRECORDS; ++i) {
         testdbPutFieldOk(fanout_record_LNK_fields[i], DBF_STRING, fanout_receivers[i]);
     }
 

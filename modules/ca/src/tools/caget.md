@@ -37,6 +37,10 @@ Asynchronous get (use ca_get_callback instead of ca_get).
 CA priority (0--99, default 0=lowest)
 :::
 
+::: {option} -i
+Print no values unless every PV connects.
+:::
+
 ### Format and data type options
 
 Default output format is `name value`

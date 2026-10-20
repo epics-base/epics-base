@@ -21,6 +21,7 @@
 
 #include "yajl_lex.h"
 #include "yajl_buf.h"
+#include "compilerDependencies.h"
 
 #ifdef YAJL_LEXER_DEBUG
 static const char *
@@ -694,7 +695,7 @@ yajl_lex_lex(yajl_lexer lexer, const unsigned char * jsonText,
             }
             case '\'':
                 if (!lexer->allowJson5) goto invalid;
-                /* Fall through... */
+                EPICS_FALLTHROUGH;
             case '"': {
                 tok = yajl_lex_string(lexer, jsonText, jsonTextLen, offset, c);
                 goto lexed;
@@ -820,7 +821,7 @@ yajl_tok yajl_lex_key(yajl_lexer lexer, const unsigned char * jsonText,
                 goto lexed;
             case '\'':
                 if (!lexer->allowJson5) goto invalid;
-                /* Fall through... */
+                EPICS_FALLTHROUGH;
             case '"': {
                 tok = yajl_lex_string(lexer, jsonText, jsonTextLen, offset, c);
                 goto lexed;

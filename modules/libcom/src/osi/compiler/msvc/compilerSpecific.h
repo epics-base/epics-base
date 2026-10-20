@@ -60,8 +60,4 @@
  */
 #define EPICS_NORETURN __declspec(noreturn)
 
-#ifndef EPICS_FALLTHROUGH
-#define EPICS_FALLTHROUGH
-#endif
-
 #endif  /* ifndef compilerSpecific_h */

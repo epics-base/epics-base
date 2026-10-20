@@ -29,6 +29,7 @@ int biTest(void);
 int printfTest(void);
 int aiTest(void);
 int fanoutTest(void);
+int subArrayTest(void);
 
 void epicsRunRecordTests(void)
 {
@@ -65,6 +66,8 @@ void epicsRunRecordTests(void)
     runTest(aiTest);
 
     runTest(fanoutTest);
+
+    runTest(subArrayTest);
 
     epicsExit(0);   /* Trigger test harness */
 }

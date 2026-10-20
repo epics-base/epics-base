@@ -121,6 +121,13 @@ testHarness_SRCS += fanoutTest.c
 TESTFILES += ../fanoutTest.db
 TESTS += fanoutTest
 
+TESTPROD_HOST += subArrayTest
+subArrayTest_SRCS += subArrayTest.c
+subArrayTest_SRCS += recTestIoc_registerRecordDeviceDriver.cpp
+testHarness_SRCS += subArrayTest.c
+TESTFILES += ../subArrayTest.db
+TESTS += subArrayTest
+
 TESTPROD_HOST += dfanoutTest
 dfanoutTest_SRCS += dfanoutTest.c
 dfanoutTest_SRCS += recTestIoc_registerRecordDeviceDriver.cpp

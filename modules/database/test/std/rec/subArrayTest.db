@@ -1,0 +1,12 @@
+record(waveform, "test_subarray_record_wf") {
+    field(NELM, 6)
+    field(FTVL, "LONG")
+    field(INP, "{const: [11,22,33,44,55,66]}")
+}
+
+record(subArray, "test_subarray_record") {
+    field(DTYP, "Soft Channel")
+    field(MALM, 6)
+    field(INP, "test_subarray_record_wf")
+    field(FTVL, "LONG")
+}

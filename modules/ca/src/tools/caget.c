@@ -53,7 +53,7 @@ static int nRead = 0;           /* Number of channels that were read */
 static int floatAsString = 0;   /* Flag: fetch floats as string */
 static int skipIfAnyDisconn = 0;/* Flag: print nothing unless all PVs connect */
 
-
+
 static void usage (void)
 {
     fprintf (stderr, "\nUsage: caget [options] <PV name> ...\n\n"

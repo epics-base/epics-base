@@ -37,4 +37,7 @@ Call ca_client_status with the specified interest level
 CA priority (0--99, default 0=lowest)
 :::
 
+::: {option} -i
+Print no values unless every PV connects.
+:::
 

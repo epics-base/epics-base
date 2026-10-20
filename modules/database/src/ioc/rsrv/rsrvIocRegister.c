@@ -13,6 +13,8 @@
 
 #include "rsrv.h"
 #include "server.h"
+
+void casgrep(const char *pattern, unsigned level);
 #include "epicsExport.h"
 
 
@@ -30,11 +32,38 @@ static void casrCallFunc(const iocshArgBuf *args)
     casr(args[0].ival);
 }
 
+/* casgrep */
+static const iocshArg casgrepArg0 = { "name-pattern", iocshArgString };
+static const iocshArg casgrepArg1 = { "level", iocshArgInt };
+static const iocshArg * const casgrepArgs[2] = {&casgrepArg0, &casgrepArg1};
+static const iocshFuncDef casgrepFuncDef = {"casgrep", 2, casgrepArgs,
+    "Report TCP Channel Access clients with channel names matching name-pattern.\n"
+    "  0  - matching client and channel summary\n"
+    "  1  - extends report with matching client information\n"
+    "  2  - extends report with matching channel names\n"
+    "  3  - extends report with channel and access information\n"
+    "  4  - extends report with connection diagnostics\n"
+    "  5+ - extends report with memory and lock diagnostics\n"
+    "The pattern uses case-sensitive whole-string * and ? glob matching on the\n"
+    "original create-channel name; duplicate channel objects are counted.\n"
+    "The diagnostic holds server locks while reporting and can delay CA activity.\n"};
+static void casgrepCallFunc(const iocshArgBuf *args)
+{
+    if (!args[0].sval || !*args[0].sval) {
+        printf("Usage: casgrep name-pattern [level]\n");
+    } else if (args[1].ival < 0) {
+        printf("casgrep: level must not be negative.\n");
+    } else {
+        casgrep(args[0].sval, args[1].ival);
+    }
+}
+
 static
 void rsrvRegistrar(void)
 {
     rsrv_register_server();
     iocshRegister(&casrFuncDef,casrCallFunc);
+    iocshRegister(&casgrepFuncDef,casgrepCallFunc);
 }
 
 epicsExportAddress(int, CASDEBUG);

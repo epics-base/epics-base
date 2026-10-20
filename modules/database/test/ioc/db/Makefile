@@ -37,6 +37,7 @@ dbTestIoc_DBD += devx.dbd
 dbTestIoc_DBD += jlinkz.dbd
 dbTestIoc_DBD += dbLinkdset.dbd
 dbTestIoc_DBD += dbCore.dbd
+dbTestIoc_DBD += rsrv.dbd
 TESTFILES += $(COMMON_DIR)/dbTestIoc.dbd ../xRecord.db
 
 testHarness_SRCS += dbTestIoc_registerRecordDeviceDriver.cpp
@@ -115,6 +116,12 @@ dbCaStatsTest_SRCS += dbTestIoc_registerRecordDeviceDriver.cpp
 testHarness_SRCS += dbCaStatsTest.c
 TESTS += dbCaStatsTest
 TESTFILES += ../dbCaStats.db
+
+TESTPROD_HOST += casgrepTest
+casgrepTest_SRCS += casgrepTest.c
+casgrepTest_SRCS += dbTestIoc_registerRecordDeviceDriver.cpp
+testHarness_SRCS += casgrepTest.c
+TESTS += casgrepTest
 
 TESTPROD_HOST += dbCaLinkTest
 dbCaLinkTest_SRCS += dbCaLinkTest.c
@@ -220,6 +227,10 @@ TESTSCRIPTS += $(TESTS:%=%.t)
 endif
 
 include $(TOP)/configure/RULES
+
+casgrepTest: casgrep-dbCore
+casgrep-dbCore:
+	$(MAKE) -C $(abspath $(TOP))/modules/database/src/ioc/O.$(T_A) -f ../Makefile TOP=../../../../.. T_A=$(T_A) install
 
 arrRecord$(DEP): $(COMMON_DIR)/arrRecord.h
 dbCaLinkTest$(DEP): $(COMMON_DIR)/xRecord.h $(COMMON_DIR)/arrRecord.h

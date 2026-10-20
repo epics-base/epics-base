@@ -907,6 +907,9 @@ void casgrep(const char *pattern, unsigned level)
     unsigned clients = 0;
     unsigned channels = 0;
 
+    if (!pattern)
+        pattern = "*";
+
     if (!clientQlock) {
         printf("Channel Access server is not initialized.\n");
         return;

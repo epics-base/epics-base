@@ -68,10 +68,12 @@ static void init_target_records(void) {
     }
 }
 
-static void snapshot(double values[NRECORDS]) {
+static void reset_targets(void) {
     int i;
     for (i = 0; i < NRECORDS; ++i) {
-        values[i] = targets[i]->val;
+        dbScanLock((dbCommon*)targets[i]);
+        targets[i]->val = 0.0;
+        dbScanUnlock((dbCommon*)targets[i]);
     }
 }
 
@@ -181,8 +183,7 @@ static const TestCase selm_mask_zero = {
 
 static void run_case(const TestCase *c) {
     testDiag("%s", c->diag);
-    double before[NRECORDS];
-    snapshot(before);
+    reset_targets();
 
     // Set the SELM, SELN, SHFT, and OFFS fields and process the fanout record
     testdbPutFieldOk("test_fanout_record.SELM", DBF_ENUM, c->selm);
@@ -195,7 +196,7 @@ static void run_case(const TestCase *c) {
         // Invalid field values must not process any output link
         int i;
         for (i = 0; i < NRECORDS; ++i) {
-            testdbGetFieldEqual(fanout_targets[i], DBF_DOUBLE, before[i]);
+            testdbGetFieldEqual(fanout_targets[i], DBF_DOUBLE, 0.0);
         }
         testdbGetFieldEqual("test_fanout_record.STAT", DBF_USHORT, SOFT_ALARM);
         testdbGetFieldEqual("test_fanout_record.SEVR", DBF_USHORT, INVALID_ALARM);
@@ -207,16 +208,16 @@ static void run_case(const TestCase *c) {
         case fanoutSELM_All:
             // Check that all target records changed
             for (i = 0; i < NRECORDS; ++i) {
-                testdbGetFieldEqual(fanout_targets[i], DBF_DOUBLE, before[i] + 1);
+                testdbGetFieldEqual(fanout_targets[i], DBF_DOUBLE, 1.0);
             }
             break;
         case fanoutSELM_Specified:
             // Check that only target records test_fanout_out(seln+offs) changed
             for (i = 0; i < NRECORDS; ++i) {
                 if (i == (c->seln + c->offs)) {
-                    testdbGetFieldEqual(fanout_targets[i], DBF_DOUBLE, before[i] + 1);
+                    testdbGetFieldEqual(fanout_targets[i], DBF_DOUBLE, 1.0);
                 } else {
-                    testdbGetFieldEqual(fanout_targets[i], DBF_DOUBLE, before[i]);
+                    testdbGetFieldEqual(fanout_targets[i], DBF_DOUBLE, 0.0);
                 }
             }
             break;
@@ -230,9 +231,9 @@ static void run_case(const TestCase *c) {
             }
             for (i = 0; i < NRECORDS; ++i) {
                 if (expected_bits & (1 << i)) {
-                    testdbGetFieldEqual(fanout_targets[i], DBF_DOUBLE, before[i] + 1);
+                    testdbGetFieldEqual(fanout_targets[i], DBF_DOUBLE, 1.0);
                 } else {
-                    testdbGetFieldEqual(fanout_targets[i], DBF_DOUBLE, before[i]);
+                    testdbGetFieldEqual(fanout_targets[i], DBF_DOUBLE, 0.0);
                 }
             }
             break;

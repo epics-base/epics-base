@@ -906,11 +906,85 @@ static void log_one_client (struct client *client, unsigned level)
         showClientMemory(client);
 }
 
+static unsigned casReportLocked(const char *pattern, unsigned level,
+    unsigned *pchannels)
+{
+    struct client *client = (struct client *) ellFirst(&clientQ);
+    unsigned clients = 0;
+
+    if (pchannels)
+        *pchannels = 0;
+
+    while (client) {
+        if (!pattern) {
+            log_one_client(client, level);
+            clients++;
+        }
+        else {
+            ELLLIST *list[] = {&client->chanList, &client->chanPendingUpdateARList};
+            unsigned matches = 0;
+            size_t i;
+
+            epicsMutexMustLock(client->chanListLock);
+            for (i = 0; i < NELEMENTS(list); i++) {
+                struct channel_in_use *pciu =
+                    (struct channel_in_use *) list[i]->node.next;
+
+                while (pciu) {
+                    if (epicsStrGlobMatch(dbChannelName(pciu->dbch), pattern))
+                        matches++;
+                    pciu = (struct channel_in_use *) ellNext(&pciu->node);
+                }
+            }
+
+            if (matches) {
+                clients++;
+                if (pchannels)
+                    *pchannels += matches;
+
+                if (level >= 1u) {
+                    char clientIP[40];
+
+                    ipAddrToDottedIP(&client->addr, clientIP, sizeof(clientIP));
+                    printf("    TCP client at %s '%s':\n", clientIP,
+                        client->pHostName ? client->pHostName : "");
+                    printf("\tUser '%s', V%u.%u, Priority = %u, %u Matching Channel%s\n",
+                        client->pUserName ? client->pUserName : "",
+                        CA_MAJOR_PROTOCOL_REVISION, client->minor_version_number,
+                        client->priority, matches, matches == 1 ? "" : "s");
+                }
+
+                if (level >= 2u) {
+                    for (i = 0; i < NELEMENTS(list); i++) {
+                        struct channel_in_use *pciu =
+                            (struct channel_in_use *) list[i]->node.next;
+
+                        while (pciu) {
+                            if (epicsStrGlobMatch(dbChannelName(pciu->dbch), pattern))
+                                showChannel(pciu, level - 2u);
+                            pciu = (struct channel_in_use *) ellNext(&pciu->node);
+                        }
+                    }
+                }
+
+                if (level >= 4u)
+                    showClientState(client);
+            }
+            epicsMutexUnlock(client->chanListLock);
+
+            if (matches && level >= 5u)
+                showClientMemory(client);
+        }
+        client = (struct client *) ellNext(&client->node);
+    }
+
+    return clients;
+}
+
 void casmatch(const char *pattern, unsigned level)
 {
-    struct client *client;
-    unsigned clients = 0;
-    unsigned channels = 0;
+    unsigned clients;
+    unsigned channels;
 
     if (!pattern)
         pattern = "*";
@@ -921,63 +995,7 @@ void casmatch(const char *pattern, unsigned level)
     }
 
     LOCK_CLIENTQ
-    client = (struct client *) ellFirst(&clientQ);
-    while (client) {
-        ELLLIST *list[] = {&client->chanList, &client->chanPendingUpdateARList};
-        unsigned matches = 0;
-        size_t i;
-
-        epicsMutexMustLock(client->chanListLock);
-        for (i = 0; i < NELEMENTS(list); i++) {
-            struct channel_in_use *pciu =
-                (struct channel_in_use *) list[i]->node.next;
-
-            while (pciu) {
-                if (epicsStrGlobMatch(dbChannelName(pciu->dbch), pattern))
-                    matches++;
-                pciu = (struct channel_in_use *) ellNext(&pciu->node);
-            }
-        }
-
-        if (matches) {
-            clients++;
-            channels += matches;
-
-            if (level >= 1u) {
-                char clientIP[40];
-
-                ipAddrToDottedIP(&client->addr, clientIP, sizeof(clientIP));
-                printf("    TCP client at %s '%s':\n", clientIP,
-                    client->pHostName ? client->pHostName : "");
-                printf("\tUser '%s', V%u.%u, Priority = %u, %u Matching Channel%s\n",
-                    client->pUserName ? client->pUserName : "",
-                    CA_MAJOR_PROTOCOL_REVISION, client->minor_version_number,
-                    client->priority, matches, matches == 1 ? "" : "s");
-            }
-
-            if (level >= 2u) {
-                for (i = 0; i < NELEMENTS(list); i++) {
-                    struct channel_in_use *pciu =
-                        (struct channel_in_use *) list[i]->node.next;
-
-                    while (pciu) {
-                        if (epicsStrGlobMatch(dbChannelName(pciu->dbch), pattern))
-                            showChannel(pciu, level - 2u);
-                        pciu = (struct channel_in_use *) ellNext(&pciu->node);
-                    }
-                }
-            }
-
-            if (level >= 4u)
-                showClientState(client);
-
-        }
-        epicsMutexUnlock(client->chanListLock);
-
-        if (matches && level >= 5u)
-            showClientMemory(client);
-        client = (struct client *) ellNext(&client->node);
-    }
+    clients = casReportLocked(pattern, level, &channels);
     UNLOCK_CLIENTQ
 
     printf("%u matching client%s, %u matching channel%s.\n", clients,
@@ -1009,14 +1027,9 @@ void casr (unsigned level)
             n, n == 1 ? "" : "s" );
     }
     else {
-        struct client *client = (struct client *) ellFirst ( &clientQ );
-
         printf("%d client%s connected:\n",
             n, n == 1 ? "" : "s" );
-        while (client) {
-            log_one_client(client, level - 1);
-            client = (struct client *) ellNext(&client->node);
-        }
+        casReportLocked(NULL, level - 1u, NULL);
     }
     UNLOCK_CLIENTQ
 

@@ -395,6 +395,9 @@ static void monitor(boRecord *prec)
 {
     unsigned short  monitor_mask;
 
+    /** IVAL is always the inverse of VAL. */
+    prec->ival = (prec->val == 0) ? 1 : 0;
+
     monitor_mask = recGblResetAlarms(prec);
     /* check for value change */
     if (prec->mlst != prec->val){
@@ -407,6 +410,9 @@ static void monitor(boRecord *prec)
     /* send out monitors connected to the value field */
     if (monitor_mask){
         db_post_events(prec,&prec->val,monitor_mask);
+
+        /** IVAL can post monitors. */
+        db_post_events(prec, &prec->ival, monitor_mask);
     }
     if(prec->oraw!=prec->rval) {
         db_post_events(prec,&prec->rval,

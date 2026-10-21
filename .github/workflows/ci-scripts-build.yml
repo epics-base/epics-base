@@ -221,6 +221,13 @@ jobs:
         sudo apt-get update
         sudo apt-get -y install qemu-system-x86 g++-mingw-w64-x86-64 gdb
       if: runner.os == 'Linux'
+    - name: "Use cmd shell for make"
+      # Git's sh.exe wrapper prepends Git's own MinGW runtime DLLs to PATH,
+      # which are incompatible with the Strawberry Perl compiler.
+      # SHELL from the environment is ignored, but make treats variable
+      # definitions in MAKEFLAGS like command line arguments (for all make calls).
+      run: '"MAKEFLAGS=SHELL=cmd" | Out-File -FilePath $env:GITHUB_ENV -Append'
+      if: runner.os == 'Windows' && matrix.cmp == 'gcc'
     - name: Prepare and compile dependencies
       run: python .ci/cue.py prepare
     - name: Build main module

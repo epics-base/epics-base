@@ -17,7 +17,7 @@ void dbTestIoc_registerRecordDeviceDriver(struct dbBase *);
 
 static int iocshOutput(const char *command, char *output, size_t size)
 {
-    static const char filename[] = "casgrepTestOutput";
+    static const char filename[] = "casmatchTestOutput";
     char line[1024];
     FILE *file;
     int status;
@@ -35,7 +35,7 @@ static int iocshOutput(const char *command, char *output, size_t size)
     return status;
 }
 
-MAIN(casgrepTest)
+MAIN(casmatchTest)
 {
     char output[1024] = "";
 
@@ -44,25 +44,25 @@ MAIN(casgrepTest)
     testdbReadDatabase("dbTestIoc.dbd", NULL, NULL);
     dbTestIoc_registerRecordDeviceDriver(pdbbase);
 
-    testOk(iocshCmd("casgrep \"*\"") == 0,
-        "casgrep is registered with the IOC shell");
-    testOk(iocshCmd("casgrep") == 0,
-        "casgrep accepts a missing pattern for diagnostic output");
-    testOk(iocshCmd("casgrep \"\"") == 0,
-        "casgrep accepts an empty pattern for diagnostic output");
-    testOk(iocshCmd("casgrep \"*\" -1") == 0,
-        "casgrep accepts a negative level for diagnostic output");
-    testOk(iocshOutput("help casgrep", output, sizeof(output)) == 0,
-        "casgrep help is available");
+    testOk(iocshCmd("casmatch \"*\"") == 0,
+        "casmatch is registered with the IOC shell");
+    testOk(iocshCmd("casmatch") == 0,
+        "casmatch accepts a missing pattern for diagnostic output");
+    testOk(iocshCmd("casmatch \"\"") == 0,
+        "casmatch accepts an empty pattern for diagnostic output");
+    testOk(iocshCmd("casmatch \"*\" -1") == 0,
+        "casmatch accepts a negative level for diagnostic output");
+    testOk(iocshOutput("help casmatch", output, sizeof(output)) == 0,
+        "casmatch help is available");
     testOk(strstr(output, "0  - matching client and channel summary") != NULL,
-        "casgrep help documents level 0");
+        "casmatch help documents level 0");
     testOk(strstr(output, "1  - extends report with matching client information") != NULL &&
         strstr(output, "2  - extends report with matching channel names") != NULL,
-        "casgrep help documents levels 1 and 2");
+        "casmatch help documents levels 1 and 2");
     testOk(strstr(output, "3  - extends report with channel and access information") != NULL &&
         strstr(output, "4  - extends report with connection diagnostics") != NULL &&
         strstr(output, "5+ - extends report with memory and lock diagnostics") != NULL,
-        "casgrep help documents levels 3 through 5");
+        "casmatch help documents levels 3 through 5");
     testdbCleanup();
     return testDone();
 }

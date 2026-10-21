@@ -117,11 +117,11 @@ testHarness_SRCS += dbCaStatsTest.c
 TESTS += dbCaStatsTest
 TESTFILES += ../dbCaStats.db
 
-TESTPROD_HOST += casgrepTest
-casgrepTest_SRCS += casgrepTest.c
-casgrepTest_SRCS += dbTestIoc_registerRecordDeviceDriver.cpp
-testHarness_SRCS += casgrepTest.c
-TESTS += casgrepTest
+TESTPROD_HOST += casmatchTest
+casmatchTest_SRCS += casmatchTest.c
+casmatchTest_SRCS += dbTestIoc_registerRecordDeviceDriver.cpp
+testHarness_SRCS += casmatchTest.c
+TESTS += casmatchTest
 
 TESTPROD_HOST += dbCaLinkTest
 dbCaLinkTest_SRCS += dbCaLinkTest.c
@@ -228,8 +228,8 @@ endif
 
 include $(TOP)/configure/RULES
 
-casgrepTest: casgrep-dbCore
-casgrep-dbCore:
+casmatchTest: casmatch-dbCore
+casmatch-dbCore:
 	$(MAKE) -C $(abspath $(TOP))/modules/database/src/ioc/O.$(T_A) -f ../Makefile TOP=../../../../.. T_A=$(T_A) install
 
 arrRecord$(DEP): $(COMMON_DIR)/arrRecord.h

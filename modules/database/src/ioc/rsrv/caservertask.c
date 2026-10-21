@@ -906,7 +906,7 @@ static void log_one_client (struct client *client, unsigned level)
         showClientMemory(client);
 }
 
-void casgrep(const char *pattern, unsigned level)
+void casmatch(const char *pattern, unsigned level)
 {
     struct client *client;
     unsigned clients = 0;

@@ -14,7 +14,7 @@
 #include "rsrv.h"
 #include "server.h"
 
-void casgrep(const char *pattern, unsigned level);
+void casmatch(const char *pattern, unsigned level);
 #include "epicsExport.h"
 
 
@@ -32,11 +32,11 @@ static void casrCallFunc(const iocshArgBuf *args)
     casr(args[0].ival);
 }
 
-/* casgrep */
-static const iocshArg casgrepArg0 = { "name-pattern", iocshArgString };
-static const iocshArg casgrepArg1 = { "level", iocshArgInt };
-static const iocshArg * const casgrepArgs[2] = {&casgrepArg0, &casgrepArg1};
-static const iocshFuncDef casgrepFuncDef = {"casgrep", 2, casgrepArgs,
+/* casmatch */
+static const iocshArg casmatchArg0 = { "name-pattern", iocshArgString };
+static const iocshArg casmatchArg1 = { "level", iocshArgInt };
+static const iocshArg * const casmatchArgs[2] = {&casmatchArg0, &casmatchArg1};
+static const iocshFuncDef casmatchFuncDef = {"casmatch", 2, casmatchArgs,
     "Report TCP Channel Access clients with channel names matching name-pattern.\n"
     "  0  - matching client and channel summary\n"
     "  1  - extends report with matching client information\n"
@@ -47,14 +47,14 @@ static const iocshFuncDef casgrepFuncDef = {"casgrep", 2, casgrepArgs,
     "The pattern uses case-sensitive whole-string * and ? glob matching on the\n"
     "original create-channel name; duplicate channel objects are counted.\n"
     "The diagnostic holds server locks while reporting and can delay CA activity.\n"};
-static void casgrepCallFunc(const iocshArgBuf *args)
+static void casmatchCallFunc(const iocshArgBuf *args)
 {
     if (!args[0].sval || !*args[0].sval) {
-        printf("Usage: casgrep name-pattern [level]\n");
+        printf("Usage: casmatch name-pattern [level]\n");
     } else if (args[1].ival < 0) {
-        printf("casgrep: level must not be negative.\n");
+        printf("casmatch: level must not be negative.\n");
     } else {
-        casgrep(args[0].sval, args[1].ival);
+        casmatch(args[0].sval, args[1].ival);
     }
 }
 
@@ -63,7 +63,7 @@ void rsrvRegistrar(void)
 {
     rsrv_register_server();
     iocshRegister(&casrFuncDef,casrCallFunc);
-    iocshRegister(&casgrepFuncDef,casgrepCallFunc);
+    iocshRegister(&casmatchFuncDef,casmatchCallFunc);
 }
 
 epicsExportAddress(int, CASDEBUG);

@@ -92,10 +92,21 @@ static pthread_key_t getpthreadInfo;
 static pthread_mutex_t onceLock;
 static pthread_mutex_t listLock;
 static pthread_mutex_t tidLock;
+/* serializes epicsThreadSetPriority() */
+static pthread_mutex_t prioLock;
 static ELLLIST pthreadList = ELLLIST_INIT;
 static commonAttr *pcommonAttr = 0;
 static int epicsThreadOnceCalled = 0;
 static int wantPrioScheduling = 0;
+
+/* osiPriority and isSuspended are read without a lock */
+#ifdef __ATOMIC_RELAXED
+#  define loadRelaxed(p)    __atomic_load_n(p, __ATOMIC_RELAXED)
+#  define storeRelaxed(p,v) __atomic_store_n(p, v, __ATOMIC_RELAXED)
+#else
+#  define loadRelaxed(p)    (*(p))
+#  define storeRelaxed(p,v) (*(p) = (v))
+#endif
 
 static epicsThreadOSD *createImplicit(void);
 
@@ -127,7 +138,7 @@ if(status) { \
 }
 
 
-LIBCOM_API int epicsThreadGetPosixPriority(epicsThreadId pthreadInfo)
+static int posixPriority(unsigned int osiPriority)
 {
 #if defined(_POSIX_THREAD_PRIORITY_SCHEDULING) && _POSIX_THREAD_PRIORITY_SCHEDULING > 0
     double maxPriority,minPriority,slope,oss;
@@ -137,11 +148,16 @@ LIBCOM_API int epicsThreadGetPosixPriority(epicsThreadId pthreadInfo)
     maxPriority = (double)pcommonAttr->maxPriority;
     minPriority = (double)pcommonAttr->minPriority;
     slope = (maxPriority - minPriority)/100.0;
-    oss = (double)pthreadInfo->osiPriority * slope + minPriority;
+    oss = (double)osiPriority * slope + minPriority;
     return((int)oss);
 #else
     return 0;
 #endif /* _POSIX_THREAD_PRIORITY_SCHEDULING */
+}
+
+LIBCOM_API int epicsThreadGetPosixPriority(epicsThreadId pthreadInfo)
+{
+    return posixPriority(epicsThreadGetPriority(pthreadInfo));
 }
 
 static void setSchedulingPolicy(epicsThreadOSD *pthreadInfo,int policy)
@@ -154,7 +170,7 @@ static void setSchedulingPolicy(epicsThreadOSD *pthreadInfo,int policy)
     status = pthread_attr_getschedparam(
         &pthreadInfo->attr,&pthreadInfo->schedParam);
     checkStatusOnce(status,"pthread_attr_getschedparam");
-    pthreadInfo->schedParam.sched_priority = epicsThreadGetPosixPriority(pthreadInfo);
+    pthreadInfo->schedParam.sched_priority = posixPriority(pthreadInfo->osiPriority);
     pthreadInfo->schedPolicy = policy;
     status = pthread_attr_setschedpolicy(
         &pthreadInfo->attr,policy);
@@ -365,6 +381,9 @@ static void once(void)
     checkStatusOnceQuit(status,"osdPosixMutexInit","epicsThreadInit");
     status = osdPosixMutexInit(&tidLock,PTHREAD_MUTEX_DEFAULT);
     checkStatusOnceQuit(status,"osdPosixMutexInit","epicsThreadInit");
+    /* no priority inheritance, it is slow under contention */
+    status = pthread_mutex_init(&prioLock,NULL);
+    checkStatusOnceQuit(status,"pthread_mutex_init","epicsThreadInit");
     status = osdPosixMutexInit(&listLock,PTHREAD_MUTEX_DEFAULT);
     checkStatusOnceQuit(status,"osdPosixMutexInit","epicsThreadInit");
     pcommonAttr = calloc(1,sizeof(commonAttr));
@@ -803,14 +822,14 @@ LIBCOM_API void epicsStdCall epicsThreadSuspendSelf(void)
     pthreadInfo = (epicsThreadOSD *)pthread_getspecific(getpthreadInfo);
     if(pthreadInfo==NULL)
         pthreadInfo = createImplicit();
-    pthreadInfo->isSuspended = 1;
+    storeRelaxed(&pthreadInfo->isSuspended, 1);
     epicsEventWait(pthreadInfo->suspendEvent);
 }
 
 LIBCOM_API void epicsStdCall epicsThreadResume(epicsThreadOSD *pthreadInfo)
 {
     assert(epicsThreadOnceCalled);
-    pthreadInfo->isSuspended = 0;
+    storeRelaxed(&pthreadInfo->isSuspended, 0);
     epicsEventSignal(pthreadInfo->suspendEvent);
 }
 
@@ -837,7 +856,7 @@ LIBCOM_API void epicsStdCall epicsThreadExitMain(void)
 LIBCOM_API unsigned int epicsStdCall epicsThreadGetPriority(epicsThreadId pthreadInfo)
 {
     assert(epicsThreadOnceCalled);
-    return(pthreadInfo->osiPriority);
+    return loadRelaxed(&pthreadInfo->osiPriority);
 }
 
 LIBCOM_API unsigned int epicsStdCall epicsThreadGetPrioritySelf(void)
@@ -848,9 +867,7 @@ LIBCOM_API unsigned int epicsStdCall epicsThreadGetPrioritySelf(void)
 
 LIBCOM_API void epicsStdCall epicsThreadSetPriority(epicsThreadId pthreadInfo,unsigned int priority)
 {
-#if defined(_POSIX_THREAD_PRIORITY_SCHEDULING) && _POSIX_THREAD_PRIORITY_SCHEDULING > 0
     int status;
-#endif /* _POSIX_THREAD_PRIORITY_SCHEDULING */
 
     assert(epicsThreadOnceCalled);
     assert(pthreadInfo);
@@ -861,19 +878,23 @@ LIBCOM_API void epicsStdCall epicsThreadSetPriority(epicsThreadId pthreadInfo,un
         fprintf(stderr,"epicsThreadSetPriority called by non epics thread\n");
         return;
     }
-    pthreadInfo->osiPriority = priority;
-    if(!pthreadInfo->isRealTimeScheduled) return;
+    status = mutexLock(&prioLock);
+    checkStatusQuit(status,"pthread_mutex_lock","epicsThreadSetPriority");
+    storeRelaxed(&pthreadInfo->osiPriority, priority);
 
 #if defined (_POSIX_THREAD_PRIORITY_SCHEDULING) && _POSIX_THREAD_PRIORITY_SCHEDULING > 0
-    if(!pcommonAttr->usePolicy) return;
-    pthreadInfo->schedParam.sched_priority = epicsThreadGetPosixPriority(pthreadInfo);
-    status = pthread_attr_setschedparam(
-        &pthreadInfo->attr,&pthreadInfo->schedParam);
-    if(errVerbose) checkStatus(status,"pthread_attr_setschedparam");
-    status = pthread_setschedparam(
-        pthreadInfo->tid, pthreadInfo->schedPolicy, &pthreadInfo->schedParam);
-    if(errVerbose) checkStatus(status,"pthread_setschedparam");
+    if(pthreadInfo->isRealTimeScheduled && pcommonAttr->usePolicy) {
+        pthreadInfo->schedParam.sched_priority = posixPriority(priority);
+        status = pthread_attr_setschedparam(
+            &pthreadInfo->attr,&pthreadInfo->schedParam);
+        if(errVerbose) checkStatus(status,"pthread_attr_setschedparam");
+        status = pthread_setschedparam(
+            pthreadInfo->tid, pthreadInfo->schedPolicy, &pthreadInfo->schedParam);
+        if(errVerbose) checkStatus(status,"pthread_setschedparam");
+    }
 #endif /* _POSIX_THREAD_PRIORITY_SCHEDULING */
+    status = pthread_mutex_unlock(&prioLock);
+    checkStatusQuit(status,"pthread_mutex_unlock","epicsThreadSetPriority");
 }
 
 LIBCOM_API epicsThreadBooleanStatus epicsStdCall epicsThreadHighestPriorityLevelBelow(
@@ -923,7 +944,7 @@ LIBCOM_API int epicsStdCall epicsThreadIsEqual(epicsThreadId p1, epicsThreadId p
 LIBCOM_API int epicsStdCall epicsThreadIsSuspended(epicsThreadId pthreadInfo) {
     assert(epicsThreadOnceCalled);
     assert(pthreadInfo);
-    return(pthreadInfo->isSuspended ? 1 : 0);
+    return loadRelaxed(&pthreadInfo->isSuspended) ? 1 : 0;
 }
 
 LIBCOM_API void epicsStdCall epicsThreadSleep(double seconds)

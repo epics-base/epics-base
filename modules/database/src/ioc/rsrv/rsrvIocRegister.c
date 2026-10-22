@@ -13,8 +13,6 @@
 
 #include "rsrv.h"
 #include "server.h"
-
-void casmatch(const char *pattern, unsigned level);
 #include "epicsExport.h"
 
 

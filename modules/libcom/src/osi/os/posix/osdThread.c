@@ -91,6 +91,7 @@ typedef struct {
 static pthread_key_t getpthreadInfo;
 static pthread_mutex_t onceLock;
 static pthread_mutex_t listLock;
+static pthread_mutex_t tidLock;
 static ELLLIST pthreadList = ELLLIST_INIT;
 static commonAttr *pcommonAttr = 0;
 static int epicsThreadOnceCalled = 0;
@@ -362,6 +363,8 @@ static void once(void)
                         "pthread_key_create","epicsThreadInit");
     status = osdPosixMutexInit(&onceLock,PTHREAD_MUTEX_DEFAULT);
     checkStatusOnceQuit(status,"osdPosixMutexInit","epicsThreadInit");
+    status = osdPosixMutexInit(&tidLock,PTHREAD_MUTEX_DEFAULT);
+    checkStatusOnceQuit(status,"osdPosixMutexInit","epicsThreadInit");
     status = osdPosixMutexInit(&listLock,PTHREAD_MUTEX_DEFAULT);
     checkStatusOnceQuit(status,"osdPosixMutexInit","epicsThreadInit");
     pcommonAttr = calloc(1,sizeof(commonAttr));
@@ -419,15 +422,26 @@ static void once(void)
     epicsThreadOnceCalled = 1;
 }
 
+/* tid is written by whichever of creator and new thread comes first */
+static void setTid(epicsThreadOSD *pthreadInfo, pthread_t tid)
+{
+    int status = mutexLock(&tidLock);
+    checkStatusQuit(status,"pthread_mutex_lock","setTid");
+    if(!pthreadInfo->isTidSet) {
+        pthreadInfo->tid = tid;
+        pthreadInfo->isTidSet = 1;
+    }
+    status = pthread_mutex_unlock(&tidLock);
+    checkStatusQuit(status,"pthread_mutex_unlock","setTid");
+}
+
 static void * start_routine(void *arg)
 {
     epicsThreadOSD *pthreadInfo = (epicsThreadOSD *)arg;
     int status;
     sigset_t blockAllSig;
 
-    // concurrently written from creator thread with same value
-    pthreadInfo->tid = pthread_self();
-    epicsAtomicWriteMemoryBarrier();
+    setTid(pthreadInfo, pthread_self());
 
     sigfillset(&blockAllSig);
     pthread_sigmask(SIG_SETMASK,&blockAllSig,NULL);
@@ -633,9 +647,8 @@ epicsThreadCreateOpt(const char * name,
     status = pthread_create(&new_tid, &pthreadInfo->attr,
         start_routine, pthreadInfo);
 
-    // pthreadInfo->tid concurrently written with same value by new thread
-    pthreadInfo->tid = new_tid;
-    epicsAtomicWriteMemoryBarrier();
+    if(!status)
+        setTid(pthreadInfo, new_tid);
 
     free_threadInfo(pthreadInfo); // dispose of temp ref
     /* On success, pthreadInfo treat as invalid after this point.
@@ -666,9 +679,8 @@ epicsThreadCreateOpt(const char * name,
         status = pthread_create(&new_tid, &pthreadInfo->attr,
             start_routine, pthreadInfo);
 
-        // pthreadInfo->tid concurrently written with same value by new thread
-        pthreadInfo->tid = new_tid;
-        epicsAtomicWriteMemoryBarrier();
+        if(!status)
+            setTid(pthreadInfo, new_tid);
 
         free_threadInfo(pthreadInfo); // dispose of temp ref
     }
@@ -706,6 +718,7 @@ static epicsThreadOSD *createImplicit(void)
     pthreadInfo = create_threadInfo(name);
     assert(pthreadInfo);
     pthreadInfo->tid = tid;
+    pthreadInfo->isTidSet = 1;
     pthreadInfo->osiPriority = 0;
     pthreadInfo->isOkToBlock = 1;
     status = pthread_attr_init(&pthreadInfo->attr);

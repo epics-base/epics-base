@@ -77,7 +77,7 @@ int cainfo (pv *pvs, int nPvs)
     char *boolStrings[] = { "no ", "" };
 
                                 /* Suppress all output if any PV is missing,
--                                * unless the user issued -i */
+                                 * unless the user issued -i */
     if (!showIfAnyConn) {
         for (n = 0; n < nPvs; n++) {
             if (!pvs[n].chid || ca_state(pvs[n].chid) != cs_conn)

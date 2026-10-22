@@ -264,7 +264,7 @@ static int caget (pv *pvs, int nPvs, RequestT request, OutputT format,
                                 /* Print the data */
                                 /* -------------- */
                                 /* Suppress all output if any PV is missing,
--                                * unless the user issued -i */
+                                 * unless the user issued -i */
     if (!showIfAnyConn && nConn < nPvs) {
         for (n = 0; n < nPvs; n++)
             free(pvs[n].value);

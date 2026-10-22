@@ -38,7 +38,7 @@ CA priority (0--99, default 0=lowest)
 :::
 
 ::: {option} -i
-Print no values unless every PV connects.
+Print values even when one PV is disconnected.
 :::
 
 ### Format and data type options

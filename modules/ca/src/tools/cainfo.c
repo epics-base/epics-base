@@ -32,7 +32,7 @@
 #include "tool_lib.h"
 
 static unsigned statLevel = 0;  /* ca_client_status() interest level */
-static int skipIfAnyDisconn = 0;/* Flag: print nothing unless all PVs connect */
+static int showIfAnyConn = 0;   /* Flag: print values if at least one PV connects */
 
 
 void usage (void)
@@ -44,7 +44,7 @@ void usage (void)
     "  -w <sec>:   Wait time, specifies CA timeout, default is %f second(s)\n"
     "  -s <level>: Call ca_client_status with the specified interest level\n"
     "  -p <prio>:  CA priority (0-%u, default 0=lowest)\n"
-    "  -i: Print no values, unless every PV connects (legacy behavior)\n"
+    "  -i: Incrementally print values, even when a PV in the list is disconnected\n"
     "\nExample: cainfo my_channel another_channel\n\n"
              , DEFAULT_TIMEOUT, CA_PRIORITY_MAX);
     fprintf (stderr, "\nEPICS Version %s, CA Protocol version %s\n", EPICS_VERSION_STRING, ca_version() );
@@ -76,9 +76,9 @@ int cainfo (pv *pvs, int nPvs)
         "never connected", "previously connected", "connected", "closed" };
     char *boolStrings[] = { "no ", "" };
 
-                                /* -i: print nothing at all unless every PV
-                                 * connected (legacy behavior) */
-    if (skipIfAnyDisconn) {
+                                /* Suppress all output if any PV is missing,
+-                                * unless the user issued -i */
+    if (!showIfAnyConn) {
         for (n = 0; n < nPvs; n++) {
             if (!pvs[n].chid || ca_state(pvs[n].chid) != cs_conn)
                 return 1;
@@ -195,8 +195,8 @@ int main (int argc, char *argv[])
             }
             if (caPriority > CA_PRIORITY_MAX) caPriority = CA_PRIORITY_MAX;
             break;
-        case 'i':               /* Print nothing unless all PVs connect */
-            skipIfAnyDisconn = 1;
+        case 'i':               /* Print even when one PV is disconnected */
+            showIfAnyConn = 1;
             break;
         case '?':
             fprintf(stderr,

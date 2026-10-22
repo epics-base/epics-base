@@ -51,7 +51,7 @@ typedef enum { get, callback } RequestT;
 static int nConn = 0;           /* Number of connected PVs */
 static int nRead = 0;           /* Number of channels that were read */
 static int floatAsString = 0;   /* Flag: fetch floats as string */
-static int skipIfAnyDisconn = 0;/* Flag: print nothing unless all PVs connect */
+static int showIfAnyConn = 0;   /* Flag: print PV values if at least one connects */
 
 
 static void usage (void)
@@ -63,7 +63,7 @@ static void usage (void)
     "  -w <sec>: Wait time, specifies CA timeout, default is %f second(s)\n"
     "  -c: Asynchronous get (use ca_get_callback and wait for completion)\n"
     "  -p <prio>: CA priority (0-%u, default 0=lowest)\n"
-    "  -i: Print no values, unless every PV connects (legacy behavior)\n"
+    "  -i: Incrementally print values, even when a PV in the list is disconnected\n"
     "Format options:\n"
     "      Default output format is \"name value\"\n"
     "  -t: Terse mode - print only value, without name\n"
@@ -263,10 +263,9 @@ static int caget (pv *pvs, int nPvs, RequestT request, OutputT format,
 
                                 /* Print the data */
                                 /* -------------- */
-
-                                /* -i: suppress all output if any PV is missing
-                                 * (legacy behavior) */
-    if (skipIfAnyDisconn && nConn < nPvs) {
+                                /* Suppress all output if any PV is missing,
+-                                * unless the user issued -i */
+    if (!showIfAnyConn && nConn < nPvs) {
         for (n = 0; n < nPvs; n++)
             free(pvs[n].value);
         return 1;
@@ -431,8 +430,8 @@ int main (int argc, char *argv[])
         case 'c':               /* Callback mode */
             request = callback;
             break;
-        case 'i':               /* Print nothing unless all PVs connect */
-            skipIfAnyDisconn = 1;
+        case 'i':               /* Print even when one PV is disconnected */
+            showIfAnyConn = 1;
             break;
         case 'd':               /* Data type specification */
             complainIfNotPlainAndSet(&format, specifiedDbr);

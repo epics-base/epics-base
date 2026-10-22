@@ -244,6 +244,23 @@ void testEpicsStrPrintEscaped(void)
     remove(filename);
 }
 
+static
+void testEpicsStrerror(void) {
+    const char *msg;
+
+    testDiag("testEpicsStrerror()");
+
+    /* Test a standard system error (2 = ENOENT: No such file or directory) */
+    msg = epicsStrerrorStr(2); 
+    testOk(strstr(msg, "No such file") != NULL, "Found text 'No such file'");
+    testOk(strstr(msg, "(errno=2)") != NULL, "Found error code '(errno=2)' inside: %s", msg);
+
+    /* Test negative or error bounds to verify robustness */
+    msg = epicsStrerrorStr(-99);
+    testOk(strstr(msg, "(errno=-99)") != NULL, "Handles negative error code gracefully: %s", msg);
+}
+
+
 MAIN(epicsStringTest)
 {
     const char * const empty = "";
@@ -258,7 +275,8 @@ MAIN(epicsStringTest)
     char *s;
     int status;
 
-    testPlan(446);
+    ///testPlan(446);
+    testPlan(449);
 
     testChars();
 
@@ -457,6 +475,7 @@ MAIN(epicsStringTest)
     testDistance();
     testStrTok();
     testEpicsStrPrintEscaped();
+    testEpicsStrerror();
 
     return testDone();
 }

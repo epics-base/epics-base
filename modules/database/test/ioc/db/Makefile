@@ -228,10 +228,6 @@ endif
 
 include $(TOP)/configure/RULES
 
-casmatchTest: casmatch-dbCore
-casmatch-dbCore:
-	$(MAKE) -C $(abspath $(TOP))/modules/database/src/ioc/O.$(T_A) -f ../Makefile TOP=../../../../.. T_A=$(T_A) install
-
 arrRecord$(DEP): $(COMMON_DIR)/arrRecord.h
 dbCaLinkTest$(DEP): $(COMMON_DIR)/xRecord.h $(COMMON_DIR)/arrRecord.h
 dbDbLinkTest$(DEP): $(COMMON_DIR)/xRecord.h

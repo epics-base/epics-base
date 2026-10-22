@@ -32,34 +32,6 @@ void recTestIoc_registerRecordDeviceDriver(struct dbBase *);
 /* index for INP field to test */
 static int i;
 
-static void test_sum(void){
-    double val1 = 1.0;
-    double val2 = 2.0;
-
-    /* initialize OUT PV */
-    testdbPutFieldOk("test_out.VAL", DBF_DOUBLE, 0.0);
-
-    /* initialize input PVs */
-    testdbPutFieldOk("test_ao1.VAL", DBF_DOUBLE, val1);
-    testdbPutFieldOk("test_ao2.VAL", DBF_DOUBLE, val2);
-
-    /* assign input PVs to calcout INP field */
-    testdbPutFieldOk("test_calcout.INPA", DBF_STRING, "test_ao1");
-    testdbPutFieldOk("test_calcout.INPB", DBF_STRING, "test_ao2");
-
-    /* set calcout record's CALC and OUT field */
-    testdbPutFieldOk("test_calcout.CALC", DBF_STRING, "A+B");
-    testdbPutFieldOk("test_calcout.OUT", DBF_STRING, "test_out PP");
-
-    /* process calout record */
-    testdbPutFieldOk("test_calcout.PROC", DBF_LONG, 1);
-
-    /* check if OUT PV was updated to expected value */
-    testdbGetFieldEqual("test_out.VAL", DBF_DOUBLE, val1+val2);
-
-    /* number of tests = 9 */
-}
-
 static void test_sum_grp(const char field1[2], const char field2[2], const char field3[2], int n){
     double val1 = n + 1.0;
     double val2 = n + 2.0;
@@ -71,6 +43,7 @@ static void test_sum_grp(const char field1[2], const char field2[2], const char 
     char inp3[20] = "";
     char calc[20] = "";
 
+    /* create INP links and CALC formula */
     snprintf(inp1, sizeof(inp1), "test_calcout.INP%s", field1);
     snprintf(inp2, sizeof(inp2), "test_calcout.INP%s", field2);
     snprintf(inp3, sizeof(inp3), "test_calcout.INP%s", field3);
@@ -99,36 +72,44 @@ static void test_sum_grp(const char field1[2], const char field2[2], const char 
     /* check if OUT PV was updated to correct value */
     testdbGetFieldEqual("test_out.VAL", DBF_DOUBLE, sum);
     
-    /* number of tests = 9 */
+    /* number of tests = 11 * 3 = 33 */
 }   
-
 
 static void test_oopt_on_change(void){
     double val1 = 1.0;
     double val2 = 2.0;
     double sum = val1 + val2;
 
-    double val3 = 0.0;
+    double val3 = 9.0;
 
     /* initialize OUT PV */
     testdbPutFieldOk("test_out.VAL", DBF_DOUBLE, 0.0);
 
+    /* initialize input PVs */
     testdbPutFieldOk("test_ao1.VAL", DBF_DOUBLE, val1);
     testdbPutFieldOk("test_ao2.VAL", DBF_DOUBLE, val2);
 
+    /* set INPA, INPB, CALC, and OUT fields */
     testdbPutFieldOk("test_calcout.INPA", DBF_STRING, "test_ao1");
     testdbPutFieldOk("test_calcout.INPB", DBF_STRING, "test_ao2");
-
-    testdbPutFieldOk("test_calcout.OOPT", DBF_ENUM, calcoutOOPT_On_Change);
-
     testdbPutFieldOk("test_calcout.CALC", DBF_STRING, "A+B");
     testdbPutFieldOk("test_calcout.OUT", DBF_STRING, "test_out PP");
+
+    /* change OOPT to 'On Change' */
+    testdbPutFieldOk("test_calcout.OOPT", DBF_ENUM, calcoutOOPT_On_Change);
+
+    /* process calout record */
     testdbPutFieldOk("test_calcout.PROC", DBF_LONG, 1);
 
+    /* check if OUT link updated */
     testdbGetFieldEqual("test_out.VAL", DBF_DOUBLE, sum);
-    testdbPutFieldOk("test_out.VAL", DBF_DOUBLE, val3);   
 
-    /* test if value did not change after processing */
+    /********************************************************
+     *  put new value to OUT PV different from current value
+     *  process the record
+     *  then make sure the OUT PV value did not change
+     ********************************************************/
+    testdbPutFieldOk("test_out.VAL", DBF_DOUBLE, val3);   
     testdbPutFieldOk("test_calcout.PROC", DBF_LONG, 1);
     testdbGetFieldEqual("test_out.VAL", DBF_DOUBLE, val3);
 
@@ -398,8 +379,11 @@ MAIN(calcoutTest){
     testIocInitOk();
     eltc(1);
 
-    test_sum();
-   
+    /* test_sum for all INP fields in groups of 3 */
+    for (i = 0; i < NUM_OF_INPUTS; i+=3) {
+        test_sum_grp(t_INPField[i], t_INPField[i+1], t_INPField[i+2], i);
+    }
+
     test_oopt_on_change();
     test_oopt_every_time();
     test_oopt_when_zero();
@@ -409,11 +393,6 @@ MAIN(calcoutTest){
 
     test_dopt_use_calc();
     test_dopt_use_ocal();
-
-    /* test_sum of all INP fields in groups of 3 */
-    for (i = 0; i < NUM_OF_INPUTS; i+=3) {
-        test_sum_grp(t_INPField[i], t_INPField[i+1], t_INPField[i+2], i);    
-    }
 
     testTodoBegin("Known BUG per Andrew");
     test_inav_local_pv();

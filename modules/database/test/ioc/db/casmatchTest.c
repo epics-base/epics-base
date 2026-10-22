@@ -51,17 +51,17 @@ MAIN(casmatchTest)
     testOk(iocshCmd("casmatch \"\"") == 0,
         "casmatch accepts an empty pattern for diagnostic output");
     testOk(iocshCmd("casmatch \"*\" -1") == 0,
-        "casmatch accepts a negative level for diagnostic output");
+        "casmatch clamps a negative level to zero");
     testOk(iocshOutput("help casmatch", output, sizeof(output)) == 0,
         "casmatch help is available");
-    testOk(strstr(output, "0  - matching client and channel summary") != NULL,
+    testOk(strstr(output, "Level 0  - matching client and channel summary") != NULL,
         "casmatch help documents level 0");
-    testOk(strstr(output, "1  - extends report with matching client information") != NULL &&
-        strstr(output, "2  - extends report with matching channel names") != NULL,
+    testOk(strstr(output, "1  - adds matching client information") != NULL &&
+        strstr(output, "2  - adds matching channel names") != NULL,
         "casmatch help documents levels 1 and 2");
-    testOk(strstr(output, "3  - extends report with channel and access information") != NULL &&
-        strstr(output, "4  - extends report with connection diagnostics") != NULL &&
-        strstr(output, "5+ - extends report with memory and lock diagnostics") != NULL,
+    testOk(strstr(output, "3  - adds channel and access information") != NULL &&
+        strstr(output, "4  - adds connection diagnostics") != NULL &&
+        strstr(output, "5+ - adds memory and lock diagnostics") != NULL,
         "casmatch help documents levels 3 through 5");
     testdbCleanup();
     return testDone();

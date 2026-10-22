@@ -46,7 +46,6 @@ myThread::myThread(int arg,const char *name) :
 {
     argvalue = new int;
     *argvalue = arg;
-    thread.start();
 }
 
 myThread::~myThread() {delete argvalue;}
@@ -78,6 +77,8 @@ void testMyThread()
         if (i == 0)
             startPriority = myThreads[i]->thread.getPriority();
         myThreads[i]->thread.setPriority(startPriority + i);
+        /* start after setPriority() to avoid racing with run() */
+        myThreads[i]->thread.start();
     }
 
     for (int i = 0; i < ntasks; i++) {

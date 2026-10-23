@@ -126,7 +126,7 @@ chtype best_type(CA_channel *pch) {
     case DBF_CHAR:
         if (ca_element_count(pch->chan) > 1)
             return DBF_CHAR;
-        /* Fall through */
+        EPICS_FALLTHROUGH;
     case DBF_INT:
     case DBF_LONG:
         return DBF_LONG;

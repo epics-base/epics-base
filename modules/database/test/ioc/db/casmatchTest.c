@@ -39,11 +39,13 @@ MAIN(casmatchTest)
 {
     char output[1024] = "";
 
-    testPlan(8);
+    testPlan(9);
     testdbPrepare();
     testdbReadDatabase("dbTestIoc.dbd", NULL, NULL);
     dbTestIoc_registerRecordDeviceDriver(pdbbase);
 
+    testOk(iocshCmd("casr -1") == 0,
+        "casr clamps a negative level to zero");
     testOk(iocshCmd("casmatch \"*\"") == 0,
         "casmatch is registered with the IOC shell");
     testOk(iocshCmd("casmatch") == 0,

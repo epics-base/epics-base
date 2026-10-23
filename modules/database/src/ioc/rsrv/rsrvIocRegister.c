@@ -27,7 +27,7 @@ static const iocshFuncDef casrFuncDef = {"casr",1,casrArgs,
                                          "        3+ - expert\n"};
 static void casrCallFunc(const iocshArgBuf *args)
 {
-    casr(args[0].ival);
+    casr(args[0].ival < 0 ? 0 : args[0].ival);
 }
 
 /* casmatch */

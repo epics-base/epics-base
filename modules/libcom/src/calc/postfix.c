@@ -15,6 +15,7 @@
 */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 
@@ -223,8 +224,8 @@ static int
 LIBCOM_API long
     postfix(const char *psrc, char *pout, short *perror)
 {
-    ELEMENT stack[80];
-    ELEMENT *pstacktop = stack;
+    ELEMENT *stack;
+    ELEMENT *pstacktop;
     const ELEMENT *pel;
     int operand_needed = TRUE;
     int runtime_depth = 0;
@@ -238,6 +239,19 @@ LIBCOM_API long
         if (pout) *pout = END_EXPRESSION;
         return -1;
     }
+
+    /* The translation stack only holds elements while compiling, and can
+     * never need more than one ELEMENT per input character (a run of '('
+     * or unary operators pushes one per character and pops none), plus one
+     * for the empty-stack sentinel at stack[0]. Allocate it sized to the
+     * input and release it before returning. */
+    stack = malloc((strlen(psrc) + 1) * sizeof(ELEMENT));
+    if (stack == NULL) {
+        *perror = CALC_ERR_NOMEM;
+        *pout = END_EXPRESSION;
+        return -1;
+    }
+    pstacktop = stack;
 
     /* place the expression elements into postfix */
     *pout = END_EXPRESSION;
@@ -500,10 +514,12 @@ LIBCOM_API long
         *perror = CALC_ERR_INCOMPLETE;
         goto bad;
     }
+    free(stack);
     return 0;
 
 bad:
     *pdest = END_EXPRESSION;
+    free(stack);
     return -1;
 }
 
@@ -530,9 +546,10 @@ LIBCOM_API const char *
         "Syntax error, unknown operator/operand",
         "NULL or empty input argument to postfix()",
         "Internal error, unknown element type",
+        "Memory allocation failure",
     };
 
-    if (error < CALC_ERR_NONE || error > CALC_ERR_INTERNAL)
+    if (error < CALC_ERR_NONE || error > CALC_ERR_NOMEM)
         return NULL;
     return errStrs[error];
 }

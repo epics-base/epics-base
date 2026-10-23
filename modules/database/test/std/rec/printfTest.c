@@ -4,6 +4,8 @@
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
+#include <string.h>
+
 #include "dbUnitTest.h"
 #include "testMain.h"
 #include "errlog.h"
@@ -522,6 +524,70 @@ static void test_all_inputs(void){
     // number of tests = 12
 }
 
+static void test_fmt_overflow_flags(void){
+    /* A '%' directive longer than doPrintf()'s internal format[20] buffer must
+     * be rejected with F_BADFMT. The accepted prefix is echoed and the
+     * remaining characters copied as literal text, so the trailing conversion
+     * is NOT applied. A too-long "%...d" therefore yields a '#' string, not
+     * the formatted value "0". */
+    char format_string[MAX_STRING_SIZE];
+    char result_string[MAX_STRING_SIZE];
+
+    format_string[0] = '%';
+    memset(format_string + 1, '#', 25);     /* well past the 20-byte limit */
+    format_string[26] = 'd';
+    format_string[27] = '\0';
+
+    /* echoed prefix ('%' + 18 flags) + leftover literals ('#'*6 + 'd'), with
+     * the single buffer-full trigger character dropped: '%' + 24 '#' + 'd' */
+    result_string[0] = '%';
+    memset(result_string + 1, '#', 24);
+    result_string[25] = 'd';
+    result_string[26] = '\0';
+
+    /* set format string */
+    testdbPutFieldOk("test_printf_rec.FMT", DBF_STRING, format_string);
+
+    /* processing the record (via inp0's FLNK) must not overflow format[] */
+    testdbPutFieldOk("test_printf_inp0_rec.VAL", DBF_SHORT, 0);
+
+    /* verify the over-long directive was rejected and echoed, not expanded */
+    testdbGetFieldEqual("test_printf_rec.VAL", DBF_STRING, result_string);
+
+    // number of tests = 3
+}
+
+static void test_fmt_overflow_star(void){
+    /* The link-supplied width form '%*d' replaces the '*' with an integer
+     * in the format buffer; the expansion must be checked. With 15 leading
+     * flags the '*' is too close to the end, so the format directive is
+     * rejected (F_BADFMT): yields '%' + 15 '#' and a trailing 'd' */
+    char format_string[MAX_STRING_SIZE];
+    char result_string[MAX_STRING_SIZE];
+
+    format_string[0] = '%';
+    memset(format_string + 1, '#', 15);
+    format_string[16] = '*';
+    format_string[17] = 'd';
+    format_string[18] = '\0';
+
+    result_string[0] = '%';
+    memset(result_string + 1, '#', 15);
+    result_string[16] = 'd';
+    result_string[17] = '\0';
+
+    /* set format string */
+    testdbPutFieldOk("test_printf_rec.FMT", DBF_STRING, format_string);
+
+    /* inp0 supplies the '*' width and, via its FLNK, processes the record */
+    testdbPutFieldOk("test_printf_inp0_rec.VAL", DBF_SHORT, 3);
+
+    /* verify the directive was rejected without overrunning format[] */
+    testdbGetFieldEqual("test_printf_rec.VAL", DBF_STRING, result_string);
+
+    // number of tests = 3
+}
+
 MAIN(printfTest) {
 #ifdef _WIN32
 #if (defined(_MSC_VER) && _MSC_VER < 1900) || \
@@ -530,7 +596,8 @@ MAIN(printfTest) {
 #endif
 #endif
 
-    testPlan(3+3+3+3+3+3+3+3+4+3+3+3+3+3+3+3+3+3+3+3+3+3+3+3+6+6+12);
+    testPlan(3+3+3+3+3+3+3+3+4+3+3+3+3+3+3+3+3+3+3+3+3+3+3+3+6+6+12
+        +3+3);
 
     testdbPrepare();
     testdbReadDatabase("recTestIoc.dbd", NULL, NULL);
@@ -569,6 +636,8 @@ MAIN(printfTest) {
     test_ll_flag();
     test_sizv();
     test_all_inputs();
+    test_fmt_overflow_flags();
+    test_fmt_overflow_star();
 
     testIocShutdownOk();
     testdbCleanup();

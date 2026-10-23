@@ -60,7 +60,7 @@ void recGblRecordError(long status, void *pdbc,
     const char *pmessage)
 {
     dbCommon *precord = pdbc;
-    char errMsg[256] = "";
+    char errMsg[ERRSYM_BUFLEN] = "";
 
     if ( status>0 )
         errSymLookup(status, errMsg, sizeof(errMsg));
@@ -75,7 +75,7 @@ void recGblDbaddrError(long status, const struct dbAddr *paddr,
 {
     dbCommon *precord = 0;
     dbFldDes *pdbFldDes = 0;
-    char errMsg[256] = "";
+    char errMsg[ERRSYM_BUFLEN] = "";
 
     if (paddr) {
         pdbFldDes = paddr->pfldDes;
@@ -96,7 +96,7 @@ void recGblRecSupError(long status, const struct dbAddr *paddr,
     dbCommon *precord = 0;
     dbFldDes *pdbFldDes = 0;
     dbRecordType *pdbRecordType = 0;
-    char errMsg[256] = "";
+    char errMsg[ERRSYM_BUFLEN] = "";
 
     if (paddr) {
         precord = paddr->precord;

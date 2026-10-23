@@ -31,6 +31,7 @@
 
 #include "libComAPI.h"
 #include "compilerDependencies.h"
+#include "errSymTbl.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -256,15 +257,6 @@ LIBCOM_API int errlogPrintfNoConsole(
     EPICS_PRINTF_FMT(const char *pformat), ...
 ) EPICS_PRINTF_STYLE(1,2);
 LIBCOM_API int errlogVprintfNoConsole(const char *pformat,va_list pvar);
-
-/**
- * Lookup the status code and return the string value in pBuf
- *
- * \param status The status code to lookup
- * \param pBuf The char buffer to write the string value into
- * \param bufLength The max size of pBuf
- */
-LIBCOM_API void errSymLookup(long status, char *pBuf, size_t bufLength);
 
 /** @defgroup colormacros Color macros
  *

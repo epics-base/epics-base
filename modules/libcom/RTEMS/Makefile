@@ -16,20 +16,36 @@ SRC_DIRS += ../$(OS_API)
 
 PERL_SCRIPTS += epicsMakeMemFs.pl
 
+DOCS = epicsRtemsInit.md
+
 INC += epicsRtemsInitHooks.h
 INC += epicsMemFs.h
 INC += epicsNtp.h
+INC += epicsRtemsInit.h
 
+rtemsCom_SRCS += rtems_config.c
+ifneq ($(RTEMS_INIT),legacy)
+rtemsCom_SRCS += epicsRtemsInit.cpp
+rtemsCom_SRCS += epicsRtemsInit_cmds.cpp
+rtemsCom_SRCS += epicsRtemsInit_debugger.cpp
+rtemsCom_SRCS += epicsRtemsInit_filesys.cpp
+rtemsCom_SRCS += epicsRtemsInit_ioc.cpp
+rtemsCom_SRCS += epicsRtemsInit_log.cpp
+rtemsCom_SRCS += epicsRtemsInit_memfs.c
+rtemsCom_SRCS += epicsRtemsInit_net.cpp
+rtemsCom_SRCS += epicsRtemsInit_nfs.cpp
+rtemsCom_SRCS += epicsRtemsInit_ntp.cpp
+else
 ifeq ($(RTEMS_QEMU_FIXUPS),YES)
 rtems_init_CPPFLAGS += -DQEMU_FIXUPS
 endif
 rtemsCom_SRCS += rtems_init.c
-rtemsCom_SRCS += rtems_config.c
 rtemsCom_SRCS += rtems_netconfig.c
 rtemsCom_SRCS += rtems_util.c
 rtemsCom_SRCS += setBootConfigFromNVRAM.c
 rtemsCom_SRCS += epicsRtemsInitHookPre.c
 rtemsCom_SRCS += epicsRtemsInitHookPost.c
+endif
 rtemsCom_SRCS += epicsMemFs.c
 rtemsCom_SRCS += epicsNtp.c
 

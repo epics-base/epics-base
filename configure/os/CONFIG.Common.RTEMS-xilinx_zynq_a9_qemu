@@ -9,6 +9,9 @@ RTEMS_BSP = xilinx_zynq_a9_qemu
 RTEMS_TARGET_CPU = arm
 GNU_TARGET = arm-rtems
 
+# LibBSD domain page memory in Megabytes (MB)
+ARCH_DEP_CFLAGS += -DRTEMS_BSD_DOMAIN_PAGE_MBUFS_SIZE_MB=32
+
 #use dhcp/bootp
 ARCH_DEP_CFLAGS += -DMY_DO_BOOTP=NULL
 
@@ -17,4 +20,3 @@ ARCH_DEP_LDFLAGS = -L$(RTEMS_BASE)/$(GNU_TARGET)$(RTEMS_VERSION)/xilinx_zynq_a9_
 
 
 include $(CONFIG)/os/CONFIG.Common.RTEMS
-

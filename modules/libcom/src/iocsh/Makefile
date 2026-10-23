@@ -11,12 +11,14 @@ SRC_DIRS += $(LIBCOM)/iocsh
 INC += iocsh.h
 INC += initHooks.h
 INC += registry.h
+INC += registerModules.h
 INC += libComRegister.h
 Com_SRCS += iocsh.cpp
 Com_SRCS += initHooks.c
 Com_SRCS += registry.c
 Com_SRCS += libComRegister.c
 Com_SRCS += afterIocRunning.c
+Com_SRCS += registerModules.c
 
 iocsh_CXXFLAGS += -DEPICS_COMMANDLINE_LIBRARY=EPICS_COMMANDLINE_LIBRARY_$(COMMANDLINE_LIBRARY)
 iocsh_INCLUDES += $(INCLUDES_$(COMMANDLINE_LIBRARY))

@@ -58,8 +58,8 @@ int epicsStdCall sockAddrAreIdentical
  * sockAddrToA()
  * (convert socket address to ASCII host name)
  */
-unsigned epicsStdCall sockAddrToA (
-    const struct sockaddr * paddr, char * pBuf, unsigned bufSize )
+size_t epicsStdCall sockAddrToA (
+    const struct sockaddr * paddr, char * pBuf, size_t bufSize )
 {
     if ( bufSize < 1 ) {
         return 0;
@@ -67,7 +67,7 @@ unsigned epicsStdCall sockAddrToA (
 
     if ( paddr->sa_family != AF_INET ) {
         static const char * pErrStr = "<Ukn Addr Type>";
-        unsigned len = strlen ( pErrStr );
+        size_t len = strlen ( pErrStr );
         if ( len < bufSize ) {
             strcpy ( pBuf, pErrStr );
             return len;
@@ -89,21 +89,21 @@ unsigned epicsStdCall sockAddrToA (
  * ipAddrToA()
  * (convert IP address to ASCII host name)
  */
-unsigned epicsStdCall ipAddrToA (
-    const struct sockaddr_in * paddr, char * pBuf, unsigned bufSize )
+size_t epicsStdCall ipAddrToA (
+    const struct sockaddr_in * paddr, char * pBuf, size_t bufSize )
 {
-    unsigned len = ipAddrToHostName (
+    size_t len = ipAddrToHostName (
         & paddr->sin_addr, pBuf, bufSize );
     if ( len == 0 ) {
         len = ipAddrToDottedIP ( paddr, pBuf, bufSize );
     }
     else {
-        unsigned reducedSize = bufSize - len;
+        size_t reducedSize = bufSize - len;
         int status = epicsSnprintf (
                         &pBuf[len], reducedSize, ":%hu",
                         ntohs (paddr->sin_port) );
         if ( status > 0 ) {
-            unsigned portSize = (unsigned) status;
+            size_t portSize = (size_t) status;
             if ( portSize < reducedSize ) {
                 len += portSize;
             }
@@ -115,18 +115,18 @@ unsigned epicsStdCall ipAddrToA (
 /*
  * sockAddrToDottedIP ()
  */
-unsigned epicsStdCall sockAddrToDottedIP (
-    const struct sockaddr * paddr, char * pBuf, unsigned bufSize )
+size_t epicsStdCall sockAddrToDottedIP (
+    const struct sockaddr * paddr, char * pBuf, size_t bufSize )
 {
     if ( paddr->sa_family != AF_INET ) {
         const char * pErrStr = "<Ukn Addr Type>";
-        unsigned errStrLen = strlen ( pErrStr );
+        size_t errStrLen = strlen ( pErrStr );
         if ( errStrLen < bufSize ) {
             strcpy ( pBuf, pErrStr );
             return errStrLen;
         }
         else {
-            unsigned reducedSize = bufSize - 1u;
+            size_t reducedSize = bufSize - 1u;
             strncpy ( pBuf, pErrStr, reducedSize );
             pBuf[reducedSize] = '\0';
             return reducedSize;
@@ -141,13 +141,13 @@ unsigned epicsStdCall sockAddrToDottedIP (
 /*
  * ipAddrToDottedIP ()
  */
-unsigned epicsStdCall ipAddrToDottedIP (
-    const struct sockaddr_in *paddr, char *pBuf, unsigned bufSize )
+size_t epicsStdCall ipAddrToDottedIP (
+    const struct sockaddr_in *paddr, char *pBuf, size_t bufSize )
 {
     static const char * pErrStr = "<IPA>";
     unsigned chunk[nDigitsDottedIP];
     unsigned addr = ntohl ( paddr->sin_addr.s_addr );
-    unsigned strLen;
+    size_t strLen;
     unsigned i;
     int status;
 

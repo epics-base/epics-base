@@ -257,6 +257,7 @@ MAIN(epicsStringTest)
     char result[8];
     char *s;
     int status;
+    size_t size;
 
     testPlan(446);
 
@@ -324,12 +325,12 @@ MAIN(epicsStringTest)
 
     testDiag("Testing size = epicsStrnEscapedFromRawSize");
 
-    status = epicsStrnEscapedFromRawSize(ABCD, 3);
-    testOk(status == 3, "size(\"ABCD\", 3) -> %d (exp. 3)", status);
-    status = epicsStrnEscapedFromRawSize(ABCD, 4);
-    testOk(status == 4, "size(\"ABCD\", 4) -> %d (exp. 4)", status);
-    status = epicsStrnEscapedFromRawSize(ABCD, 5);
-    testOk(status == 6, "size(\"ABCD\", 5) -> %d (exp. 8)", status);
+    size = epicsStrnEscapedFromRawSize(ABCD, 3);
+    testOk(size == 3, "size(\"ABCD\", 3) -> %u (exp. 3)", (unsigned)size);
+    size = epicsStrnEscapedFromRawSize(ABCD, 4);
+    testOk(size == 4, "size(\"ABCD\", 4) -> %u (exp. 4)", (unsigned)size);
+    size = epicsStrnEscapedFromRawSize(ABCD, 5);
+    testOk(size == 6, "size(\"ABCD\", 5) -> %u (exp. 8)", (unsigned)size);
 
     testDiag("Testing esc = epicsStrnEscapedFromRaw(out, 4, ...)");
 

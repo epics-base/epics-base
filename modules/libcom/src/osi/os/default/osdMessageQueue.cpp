@@ -17,6 +17,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <stddef.h>
 
 #include "epicsMessageQueue.h"
 #include <ellLib.h>
@@ -408,7 +409,7 @@ LIBCOM_API int epicsStdCall
 epicsMessageQueuePending(epicsMessageQueueId pmsg)
 {
     char *myInPtr, *myOutPtr;
-    int nmsg;
+    ptrdiff_t nmsg;
 
     epicsMutexMustLock(pmsg->mutex);
     myInPtr = (char *)pmsg->inPtr;
@@ -420,7 +421,7 @@ epicsMessageQueuePending(epicsMessageQueueId pmsg)
     else
         nmsg = pmsg->capacity  - (myOutPtr - myInPtr) / pmsg->slotSize;
     epicsMutexUnlock(pmsg->mutex);
-    return nmsg;
+    return static_cast<int>(nmsg);
 }
 
 LIBCOM_API void epicsStdCall

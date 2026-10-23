@@ -27,8 +27,7 @@ double doCalc(const char *expr) {
     };
     char *rpn = (char*)malloc(INFIX_TO_POSTFIX_SIZE(strlen(expr)+1));
     short err;
-    double result = 0.0;
-    result /= result;  /* Start as NaN */
+    double result = epicsNAN;
 
     if(!rpn) {
         testAbort("postfix: %s no memory", expr);
@@ -54,8 +53,7 @@ void testCalc(const char *expr, double expected) {
     };
     char *rpn = (char*)malloc(INFIX_TO_POSTFIX_SIZE(strlen(expr)+1));
     short err;
-    double result = 0.0;
-    result /= result;  /* Start as NaN */
+    double result = epicsNAN;
 
     if(!rpn) {
         testFail("postfix: %s no memory", expr);
@@ -93,8 +91,7 @@ void testUInt32Calc(const char *expr, epicsUInt32 expected) {
     char *rpn = (char*)malloc(INFIX_TO_POSTFIX_SIZE(strlen(expr)+1));
     short err;
     epicsUInt32 uresult;
-    double result = 0.0;
-    result /= result;  /* Start as NaN */
+    double result = epicsNAN;
 
     if(!rpn) {
         testFail("postfix: %s no memory", expr);
@@ -302,6 +299,11 @@ static inline double MIN(double a, double b, double c, double d, double e,
  */
 #if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 2)
 #  pragma GCC diagnostic ignored "-Wparentheses"
+#endif
+#ifdef _MSC_VER
+#pragma warning(disable:4554)
+#pragma warning(disable:4804)
+#pragma warning(disable:4806)
 #endif
 
 MAIN(epicsCalcTest)

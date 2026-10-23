@@ -38,6 +38,7 @@
 #   include <stdarg.h>
 #endif
 
+#include "osiSock.h"
 #include "epicsThread.h"
 
 #include "libCaAPI.h"
@@ -1479,7 +1480,7 @@ LIBCA_API unsigned epicsStdCall ca_host_minor_protocol (chid pChan);
  *  if (opened) then fd was created
  *  if (!opened) then fd was deleted
  */
-typedef void CAFDHANDLER (void *parg, int fd, int opened);
+typedef void CAFDHANDLER (void *parg, SOCKET sock, int opened);
 
 /** \brief For use with the services provided by a file descriptor manager
  * (IO multiplexor) such as "fdmgr.c".

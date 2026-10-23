@@ -309,7 +309,7 @@ static size_t
     for (i = 0; val; i++) {
         epicsUInt64 tenth = val / 10;
 
-        digit[i] = val - tenth * 10 + '0';
+        digit[i] = '0' + (char)(val - tenth * 10);
         val = tenth;
     }
 
@@ -331,7 +331,7 @@ static size_t
     for (i = 0; val; i++) {
         epicsUInt64 tenth = val / base;
 
-        digit = val - tenth * base;
+        digit = (char)(val - tenth * base);
         digits[i] = digit < 10 ? digit + '0' : digit - 10 + 'a';
         val = tenth;
     }
@@ -371,7 +371,7 @@ size_t
     if (val > 0)
         return UInt32ToDec(val, pdest);
 
-    if (val == -0x80000000) {
+    if (val == -0x80000000LL) {
         strcpy(pdest, "-2147483648");
         return strlen(pdest);
     }
@@ -433,7 +433,7 @@ size_t
     if (val > 0)
         return 2 + UInt32ToBase(val, pdest, 16);
 
-    if (val == -0x80000000) {
+    if (val == -0x80000000LL) {
         strcpy(pdest, "80000000");
         return 11;
     }
@@ -470,7 +470,7 @@ size_t
         return 1 + UInt32ToBase(val, pdest, 8);
     }
 
-    if (val == -0x80000000) {
+    if (val == -0x80000000LL) {
         strcpy(pdest, "-020000000000");
         return strlen(pdest);
     }

@@ -17,14 +17,23 @@
 #include "calcoutRecord.h"
 
 #define NUM_OF_INPUTS 21
+#define NUM_OF_PATTERNS 5
 
-/* INP to test */
+/* INP field to test */
 static const char t_INPField[NUM_OF_INPUTS][2] = {
     {"A"}, {"B"}, {"C"}, {"D"}, {"E"},
     {"F"}, {"G"}, {"H"}, {"I"}, {"J"},
     {"K"}, {"L"}, {"M"}, {"N"}, {"O"},
     {"P"}, {"Q"}, {"R"}, {"S"}, {"T"},
     {"U"}
+};
+
+static double t_ValuePatterns[NUM_OF_PATTERNS][2] = {
+    { 0.0, 0.0 },    /* no change in value */
+    { 0.5, 0.5 },    /* non-zero, but no change */
+    { 1.0, 1.5 },    /* value change */
+    { 0.5, 0.0 },    /* transition to zero */
+    { 0.0, 0.5 }     /* transition to non-zero */
 };
 
 void recTestIoc_registerRecordDeviceDriver(struct dbBase *);
@@ -72,7 +81,7 @@ static void test_sum_grp(const char field1[2], const char field2[2], const char 
     /* check if OUT PV was updated to correct value */
     testdbGetFieldEqual("test_out.VAL", DBF_DOUBLE, sum);
     
-    /* number of tests = 11 * 3 = 33 */
+    /* number of tests = 11 * 21 /3  = 77 */
 }   
 
 static void test_oopt_on_change(void){
@@ -98,7 +107,7 @@ static void test_oopt_on_change(void){
     /* change OOPT to 'On Change' */
     testdbPutFieldOk("test_calcout.OOPT", DBF_ENUM, calcoutOOPT_On_Change);
 
-    /* process calout record */
+    /* process calcout record */
     testdbPutFieldOk("test_calcout.PROC", DBF_LONG, 1);
 
     /* check if OUT link updated */
@@ -116,126 +125,186 @@ static void test_oopt_on_change(void){
     /* reset OOPT to default (Every Time) */
     testdbPutFieldOk("test_calcout.OOPT", DBF_ENUM, calcoutOOPT_Every_Time);
 
-    /* number of tests = 13 */
+    /* number of tests = 14 */
 }
 
 static void test_oopt_every_time(void){
-    double val1 = 1.0;
-    double val2 = 2.0;
+    double val1 = 3.0;
+    double val2 = 4.0;
     double sum = val1 + val2;
 
-    double val3 = 0.0;
+    double val3 = 0.5;
 
+    /* initialize OUT PV */
+    testdbPutFieldOk("test_out.VAL", DBF_DOUBLE, 0.0);
+
+    /* initialize input PVs */
     testdbPutFieldOk("test_ao1.VAL", DBF_DOUBLE, val1);
     testdbPutFieldOk("test_ao2.VAL", DBF_DOUBLE, val2);
 
+    /* set INPA, INPB, CALC, and OUT fields */
     testdbPutFieldOk("test_calcout.INPA", DBF_STRING, "test_ao1");
     testdbPutFieldOk("test_calcout.INPB", DBF_STRING, "test_ao2");
-
-    testdbPutFieldOk("test_calcout.OOPT", DBF_ENUM, calcoutOOPT_Every_Time);
-
     testdbPutFieldOk("test_calcout.CALC", DBF_STRING, "A+B");
-    testdbPutFieldOk("test_calcout.OUT", DBF_STRING, "test_out PP");
-    testdbPutFieldOk("test_calcout.PROC", DBF_LONG, 1);
+    testdbPutFieldOk("test_calcout.OUT", DBF_STRING, "test_out");
 
-    testdbGetFieldEqual("test_out.VAL", DBF_DOUBLE, sum);
-    testdbPutFieldOk("test_out.VAL", DBF_DOUBLE, val3);
-
-    //test if value changes after processing
-    testdbPutFieldOk("test_calcout.PROC", DBF_LONG, 1);
-    testdbGetFieldEqual("test_out.VAL", DBF_DOUBLE, sum);
-
-    // reset OOPT to default (Every Time)
+    /* change OOPT to 'Every Time' */
     testdbPutFieldOk("test_calcout.OOPT", DBF_ENUM, calcoutOOPT_Every_Time);
 
-    // number of tests = 13
+    /* process calcout record */
+    testdbPutFieldOk("test_calcout.PROC", DBF_LONG, 1);
+
+    /* check if OUT link updated */
+    testdbGetFieldEqual("test_out.VAL", DBF_DOUBLE, sum);
+
+    /********************************************************
+     *  put new value to OUT PV different from current value
+     *  process the record
+     *  then make sure the OUT PV value changed
+     ********************************************************/
+    testdbPutFieldOk("test_out.VAL", DBF_DOUBLE, val3);
+    testdbPutFieldOk("test_calcout.PROC", DBF_LONG, 1);
+    testdbGetFieldEqual("test_out.VAL", DBF_DOUBLE, sum);
+
+    /* number of tests = 13 */
 }
 
 static void test_oopt_when_zero(void){
-    double val1 = 0.0;
+    double val1 = 3.0;
+    double val2 = -2.0;
+    double zval = 0.0;
     double nz_val = -12.3;
 
     /* initialize OUT PV to non-zero value */
     testdbPutFieldOk("test_out.VAL", DBF_DOUBLE, nz_val);
 
+    /* initialize input PVs */
     testdbPutFieldOk("test_ao1.VAL", DBF_DOUBLE, val1);
+    testdbPutFieldOk("test_ao2.VAL", DBF_DOUBLE, val2);
 
+    /* set INPA, INPB, CALC, and OUT fields */
     testdbPutFieldOk("test_calcout.INPA", DBF_STRING, "test_ao1");
+    testdbPutFieldOk("test_calcout.INPB", DBF_STRING, "test_ao2");
+    testdbPutFieldOk("test_calcout.CALC", DBF_STRING, "A+B-1");
+    testdbPutFieldOk("test_calcout.OUT", DBF_STRING, "test_out");
+
+    /* change OOPT to 'When Zero' */ 
     testdbPutFieldOk("test_calcout.OOPT", DBF_ENUM, calcoutOOPT_When_Zero);
-    testdbPutFieldOk("test_calcout.CALC", DBF_STRING, "A");
-    testdbPutFieldOk("test_calcout.OUT", DBF_STRING, "test_out PP");
+
+    /* process calcout record */
     testdbPutFieldOk("test_calcout.PROC", DBF_LONG, 1);
 
-    testdbGetFieldEqual("test_out.VAL", DBF_DOUBLE, val1);
+     /* check if OUT link updated */
+    testdbGetFieldEqual("test_out.VAL", DBF_DOUBLE, zval);
+
+    /********************************************************
+     *  put new value to OUT PV different from current value
+     *  update CALC field so result is not equal to zero
+     *  process calcout record
+     *  then make sure the OUT PV value did not change
+     ********************************************************/
     testdbPutFieldOk("test_out.VAL", DBF_DOUBLE, nz_val);
-
-    // test if value changes after processing
+    testdbPutFieldOk("test_calcout.CALC", DBF_STRING, "A");
     testdbPutFieldOk("test_calcout.PROC", DBF_LONG, 1);
-    testdbGetFieldEqual("test_out.VAL", DBF_DOUBLE, val1);
+    testdbGetFieldEqual("test_calcout.VAL", DBF_DOUBLE, val1);
+    testdbGetFieldEqual("test_out.VAL", DBF_DOUBLE, nz_val);
 
-    // reset OOPT to default (Every Time)
+    /* reset OOPT to default (Every Time) */
     testdbPutFieldOk("test_calcout.OOPT", DBF_ENUM, calcoutOOPT_Every_Time);
 
-    // number of tests = 12
+    /* number of tests = 16 */
 }
 
 static void test_oopt_when_non_zero(void){
     double val1 = 1.0;
-    double val2 = 0.0;
+    double val2 = -1.0;
+    double zval = 0.0;
+    double nz_val = 22;
 
-    testdbPutFieldOk("test_out.VAL", DBF_DOUBLE, val2);
-    testdbPutFieldOk("test_ao1.VAL", DBF_DOUBLE, val1);
-
-    testdbPutFieldOk("test_calcout.INPA", DBF_STRING, "test_ao1");
-    testdbPutFieldOk("test_calcout.OOPT", DBF_ENUM, calcoutOOPT_When_Non_zero);
-    testdbPutFieldOk("test_calcout.CALC", DBF_STRING, "A");
-    testdbPutFieldOk("test_calcout.OUT", DBF_STRING, "test_out PP");
-    testdbPutFieldOk("test_calcout.PROC", DBF_LONG, 1);
-
-    testdbGetFieldEqual("test_out.VAL", DBF_DOUBLE, val1);
-    testdbPutFieldOk("test_out.VAL", DBF_DOUBLE, val2);
-
-    // test if value changes after processing
-    testdbPutFieldOk("test_calcout.PROC", DBF_LONG, 1);
-    testdbGetFieldEqual("test_out.VAL", DBF_DOUBLE, val1);
-
-    // reset OOPT to default (Every Time)
-    testdbPutFieldOk("test_calcout.OOPT", DBF_ENUM, calcoutOOPT_Every_Time);
-
-    // number of tests = 12
-}
-
-static void test_oopt_transition_to_zero(void){
-    double val1 = 1.0;
-    double val2 = 2.0;
-    double val3 = 0.0;
-
-
-    testdbPutFieldOk("test_out.VAL", DBF_DOUBLE, val3);
-
+    /* initialize OUT and INP PVs */
+    testdbPutFieldOk("test_out.VAL", DBF_DOUBLE, zval);
     testdbPutFieldOk("test_ao1.VAL", DBF_DOUBLE, val1);
     testdbPutFieldOk("test_ao2.VAL", DBF_DOUBLE, val2);
 
+    /* set INPA, INPB, CALC, and OUT fields */
     testdbPutFieldOk("test_calcout.INPA", DBF_STRING, "test_ao1");
     testdbPutFieldOk("test_calcout.INPB", DBF_STRING, "test_ao2");
-    testdbPutFieldOk("test_calcout.OOPT", DBF_ENUM, calcoutOOPT_Transition_To_Zero);
-
-    testdbPutFieldOk("test_calcout.CALC", DBF_STRING, "A-B");
-    testdbPutFieldOk("test_calcout.OUT", DBF_STRING, "test_out PP");
+    testdbPutFieldOk("test_calcout.CALC", DBF_STRING, "A");
+    testdbPutFieldOk("test_calcout.OUT", DBF_STRING, "test_out");
     testdbPutFieldOk("test_calcout.PROC", DBF_LONG, 1);
 
-    testdbGetFieldEqual("test_out.VAL", DBF_DOUBLE, val3);
-
-    //test if value changes after processing
-    testdbPutFieldOk("test_ao2.VAL", DBF_DOUBLE, val1);
+    /* change OOPT to 'When Non Zero' and process record */
+    testdbPutFieldOk("test_calcout.OOPT", DBF_ENUM, calcoutOOPT_When_Non_zero);
     testdbPutFieldOk("test_calcout.PROC", DBF_LONG, 1);
-    testdbGetFieldEqual("test_calcout.VAL", DBF_LONG, 0);
-    testdbGetFieldEqual("test_out.VAL", DBF_DOUBLE, 0.0);
 
-    // reset OOPT to default (Every Time)
+    /* check if OUT link updated */
+    testdbGetFieldEqual("test_out.VAL", DBF_DOUBLE, val1);
+
+    /********************************************************
+     *  put new value to OUT PV different from current value
+     *  update CALC field so result is not equal to zero
+     *  process calcout record
+     *  then make sure the OUT PV value did not change
+     ********************************************************/
+    testdbPutFieldOk("test_out.VAL", DBF_DOUBLE, nz_val);
+    testdbPutFieldOk("test_calcout.CALC", DBF_STRING, "A+B");
+    testdbPutFieldOk("test_calcout.PROC", DBF_LONG, 1);
+    testdbGetFieldEqual("test_calcout.VAL", DBF_DOUBLE, zval);
+    testdbGetFieldEqual("test_out.VAL", DBF_DOUBLE, nz_val);
+
+    /* reset OOPT to default (Every Time) */
     testdbPutFieldOk("test_calcout.OOPT", DBF_ENUM, calcoutOOPT_Every_Time);
 
-    // number of tests = 15
+    /* number of tests = 16 */
+}
+
+static void test_oopt_transition_to_zero(void){
+    double val1 = 3.0;
+    double val2 = 4.0;
+    double zval = 0.0;
+    double nz_val = 123;
+
+    /* initialize OUT and INP PVs */
+    testdbPutFieldOk("test_out.VAL", DBF_DOUBLE, zval);
+    testdbPutFieldOk("test_ao1.VAL", DBF_DOUBLE, val1);
+    testdbPutFieldOk("test_ao2.VAL", DBF_DOUBLE, val2);
+
+    testdbGetFieldEqual("test_calcout.VAL", DBF_DOUBLE, zval);
+
+    /* set INPA, INPB, CALC, and OUT fields */
+    testdbPutFieldOk("test_calcout.INPA", DBF_STRING, "test_ao1");
+    testdbPutFieldOk("test_calcout.INPB", DBF_STRING, "test_ao2");
+    testdbPutFieldOk("test_calcout.CALC", DBF_STRING, "A+B");
+    testdbPutFieldOk("test_calcout.OUT", DBF_STRING, "test_out");
+
+    /* change OOPT to 'When Non Zero' and process record for a non-zero VAL */
+    testdbPutFieldOk("test_calcout.OOPT", DBF_ENUM, calcoutOOPT_Transition_To_Zero);
+    testdbPutFieldOk("test_calcout.PROC", DBF_LONG, 1);
+
+    /* update CALC to get another non-zero VAL */
+    testdbPutFieldOk("test_calcout.CALC", DBF_STRING, "B-A");
+    testdbPutFieldOk("test_calcout.PROC", DBF_LONG, 1);
+
+    /* check if OUT link updated */
+    testdbGetFieldEqual("test_calcout.VAL", DBF_DOUBLE, val1+val2);
+    testdbGetFieldEqual("test_out.VAL", DBF_DOUBLE, zval);
+
+    /********************************************************
+     *  put new value to OUT PV different from current value
+     *  update CALC field so result is equal to zero
+     *  process calcout record
+     *  then make sure the OUT PV value did not change
+     ********************************************************/
+    testdbPutFieldOk("test_out.VAL", DBF_DOUBLE, nz_val);
+    testdbPutFieldOk("test_calcout.CALC", DBF_STRING, "A-B+1");
+    testdbPutFieldOk("test_calcout.PROC", DBF_LONG, 1);
+    testdbGetFieldEqual("test_calcout.VAL", DBF_DOUBLE, zval);
+    testdbGetFieldEqual("test_out.VAL", DBF_DOUBLE, zval);
+
+    /* reset OOPT to default (Every Time) */
+    testdbPutFieldOk("test_calcout.OOPT", DBF_ENUM, calcoutOOPT_Every_Time);
+
+    /* number of tests = 17 */
 }
 
 
@@ -325,7 +394,7 @@ static void test_dopt_use_ocal(void){
 }
 
 
-static void test_inav_local_pv(void){
+static void test_input_link_status(void){
     double val1 = 123.0;
     double val2 = 345.1;
 
@@ -342,32 +411,11 @@ static void test_inav_local_pv(void){
     testdbGetFieldEqual("test_calcout2.INBV", DBF_STRING, "Constant");
     testdbGetFieldEqual("test_calcout2.INCV", DBF_STRING, "Constant");
     testdbGetFieldEqual("test_calcout2.INDV", DBF_STRING, "Constant");
-
-
-    // test INP
-    testdbPutFieldOk("test_calcout2.CALC", DBF_STRING, "A");
-    testdbPutFieldOk("test_calcout2.PROC", DBF_LONG, 1);
-    testdbGetFieldEqual("test_calcout2.VAL", DBF_DOUBLE, val1);
-
-    testdbPutFieldOk("test_calcout2.CALC", DBF_STRING, "B");
-    testdbPutFieldOk("test_calcout2.PROC", DBF_LONG, 1); 
-    testdbGetFieldEqual("test_calcout2.VAL", DBF_DOUBLE, val2);
-
-    testdbPutFieldOk("test_calcout2.CALC", DBF_STRING, "C");
-    testdbPutFieldOk("test_calcout2.PROC", DBF_LONG, 1); 
-    testdbGetFieldEqual("test_calcout2.VAL", DBF_DOUBLE, val2);
-
-    testdbPutFieldOk("test_calcout2.CALC", DBF_STRING, "D");
-    testdbPutFieldOk("test_calcout2.PROC", DBF_LONG, 1); 
-    testdbGetFieldEqual("test_calcout2.VAL", DBF_DOUBLE, val1);
-
-    testdbPutFieldOk("test_calcout2.CALC", DBF_STRING, "E");
-    testdbPutFieldOk("test_calcout2.PROC", DBF_LONG, 1);
-    testdbGetFieldEqual("test_calcout2.VAL", DBF_DOUBLE, val1);
 }
 
 MAIN(calcoutTest){
-    testPlan(8+12+12+11+11+14+14+15+12);
+    //testPlan(8+12+12+11+11+14+14+15+12);
+    testPlan(206);
 
     testdbPrepare();
     testdbReadDatabase("recTestIoc.dbd", NULL, NULL);
@@ -395,7 +443,7 @@ MAIN(calcoutTest){
     test_dopt_use_ocal();
 
     testTodoBegin("Known BUG per Andrew");
-    test_inav_local_pv();
+    test_input_link_status();
     testTodoEnd();
 
     testIocShutdownOk();

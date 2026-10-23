@@ -533,7 +533,11 @@ copy the time stamp, not the User Tag). If the link points to any other field,
 that field's value is read and stored in the TSE field which is then used to
 provide the time stamp as described above.
 
-=fields ASG, ASP, DISP, DTYP, MLOK, MLIS, PPN, PPNR, PUTF, RDES, RPRO, TIME, UTAG, TSE, TSEL
+The B<TOUT> field can be used to define a timeout in seconds for record inactivity.
+If the field is greater than 0 and the record has not been processed for that many
+seconds, the record will raise an C<INVALID/TIMEOUT> alarm.
+
+=fields ASG, ASP, DISP, DTYP, MLOK, MLIS, PPN, PPNR, PUTF, RDES, RPRO, TIME, UTAG, TOUT, TSE, TSEL
 
 =cut
 
@@ -559,6 +563,12 @@ provide the time stamp as described above.
 		interest(1)
 		menu(menuAlarmSevr)
 		initial("INVALID")
+	}
+	field(TOUT,DBF_DOUBLE) {
+		prompt("Inactivity Timeout")
+		promptgroup("20 - Scan")
+		special(SPC_TOUT)
+		interest(1)
 	}
 	%#include "epicsTime.h"
 	field(TIME,DBF_NOACCESS) {

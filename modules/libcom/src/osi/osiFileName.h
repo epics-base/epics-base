@@ -20,7 +20,7 @@
 extern "C" {
 #endif
 
-#if defined(_WIN32) || defined(__CYGWIN__)
+#if defined(_WIN32)
 #  define OSI_PATH_LIST_SEPARATOR ";"
 #  define OSI_PATH_SEPARATOR "\\"
 #else

@@ -1,7 +1,0 @@
-# CONFIG.cygwin-x86_64.Common
-#
-# Definitions for cygwin-x86_64 host archs
-# Sites may override these definitions in CONFIG_SITE.cygwin-x86_64.Common
-#-------------------------------------------------------
-
-include $(CONFIG)/os/CONFIG.cygwin-x86.Common

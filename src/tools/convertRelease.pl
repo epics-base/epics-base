@@ -117,7 +117,7 @@ sub releaseTops {
 }
 
 #
-# Generate Path files so Windows/Cygwin can find our DLLs
+# Generate Path files so Windows can find our DLLs
 #
 sub dllPath {
     unlink $outfile;

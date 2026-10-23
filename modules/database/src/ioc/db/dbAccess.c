@@ -24,6 +24,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#define EPICS_PRIVATE_API
+
 #include "alarm.h"
 #include "cantProceed.h"
 #include "cvtFast.h"
@@ -1106,6 +1108,13 @@ static long dbPutFieldLink(DBADDR *paddr,
     status = dbParseLink(pstring, pfldDes->field_type, &link_info, precord->name, pfldDes->name);
     if (status)
         return status;
+
+    if (link_info.ltype == PV_LINK &&
+        (link_info.modifiers & (pvlOptSrcInt | pvlOptSrcExt | pvlOptSrcAuto)) != 0) {
+        errlogPrintf(ERL_ERROR ": dbPutFieldLink %s.%s=%s: INT, EXT, AUTO modifiers not allowed at runtime\n",
+            precord->name, pfldDes->name, link_info.target);
+        goto cleanup;
+    }
 
     if (link_info.ltype == PV_LINK &&
         (link_info.modifiers & (pvlOptCA | pvlOptCP | pvlOptCPP)) == 0) {

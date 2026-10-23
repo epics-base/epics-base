@@ -82,7 +82,7 @@ Com_SRCS += epicsGeneralTime.c
 # Time providers
 Com_SRCS += osiClockTime.c
 Com_SRCS_vxWorks += osiNTPTime.c tz2timezone.c
-Com_SRCS_RTEMS += osiNTPTime.c
+Com_SRCS_RTEMS += osiNTPTime.c epicsSimpleNtp.c
 
 ifeq ($(OS_CLASS),vxWorks)
 osdTime.o: USR_CXXFLAGS += -DBUILD_TIME=$(shell perl -e 'print time')

@@ -407,6 +407,7 @@ LIBCOM_API unsigned short epicsStdCall envGetInetPortConfigParam
         errlogPrintf ("setting \"%s\" = %ld\n", pEnv->name, epicsParam);
     }
 
+    if (epicsParam==0) {} else
     if (epicsParam<=IPPORT_USERRESERVED || epicsParam>USHRT_MAX) {
         errlogPrintf ("EPICS Environment \"%s\" out of range\n", pEnv->name);
         /*

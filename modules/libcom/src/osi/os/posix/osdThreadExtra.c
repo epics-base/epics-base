@@ -18,6 +18,8 @@
 #include "epicsEvent.h"
 #include "epicsThread.h"
 
+#include "osdThread.h"
+
 EPICS_THREAD_HOOK_ROUTINE epicsThreadHookDefault;
 EPICS_THREAD_HOOK_ROUTINE epicsThreadHookMain;
 

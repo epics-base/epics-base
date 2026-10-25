@@ -31,7 +31,6 @@ INC += epicsAssert.h
 INC += epicsFindSymbol.h
 INC += osiPoolStatus.h
 INC += osdPoolStatus.h
-INC += osdThread.h
 
 INC += epicsThread.h
 INC += epicsTime.h

@@ -115,7 +115,7 @@ Reach a consensus that the software is ready to release.
 5. Tag the submodule (replace `ANJ` with your initials):
 
    ```
-   git tag -m "ANJ: Tag for EPICS 7.0.11" <submodule-version>
+   git tag -m "ANJ: Tag for EPICS 7.0.12" <submodule-version>
    ```
 
 6. Generate documentation for modules with
@@ -221,7 +221,7 @@ Reach a consensus that the software is ready to release.
    `new-notes/*.md` files, then deletes the files and prepares a
    Git commit to apply those changes permanently to the repository.
 
-   Run these commands to generate the `RELEASE-7.0.11.md`
+   Run these commands to generate the `RELEASE-7.0.12.md`
    file and remove the individual release note entry files:
 
    ```
@@ -236,7 +236,7 @@ Reach a consensus that the software is ready to release.
    ```
    git status
    git diff --staged
-   git commit -m "Generate RELEASE-7.0.11.md notes file"
+   git commit -m "Generate RELEASE-7.0.12.md notes file"
    ```
 
    If you need to undo those Git actions before committing and confirm
@@ -249,7 +249,7 @@ Tag the epics-base module in Git (replace `ANJ` with your initials):
 
 ```
 cd base-7.0
-git tag -m "ANJ: Tagged for release" R7.0.11
+git tag -m "ANJ: Tagged for release" R7.0.12
 ```
 
 Don't push to GitHub yet.
@@ -280,14 +280,14 @@ continuous integration:
 
 ```
 cd base-7.0
-./.tools/make-tar.sh R7.0.11 ../base-7.0.11.tar.gz base-7.0.11/
+./.tools/make-tar.sh R7.0.12 ../base-7.0.12.tar.gz base-7.0.12/
 ```
 
 Create a GPG signature file of the tarfile as follows:
 
 ```
 cd ..
-gpg --armor --sign --detach-sig base-7.0.11.tar.gz
+gpg --armor --sign --detach-sig base-7.0.12.tar.gz
 ```
 
 **Release Manager:**
@@ -340,7 +340,7 @@ Upload the tar file and its `.asc` signature file to the
 epics-controls web-server.
 
 ```
-scp base-7.0.11.tar.gz base-7.0.11.tar.gz.asc epics-controls:download/base
+scp base-7.0.12.tar.gz base-7.0.12.tar.gz.asc epics-controls:download/base
 ```
 
 **Website Editor:**
@@ -359,7 +359,7 @@ This generates the News item.
 
 **Release Manager:**
 Go to the GitHub
-[Create release from tag R7.0.11](https://github.com/epics-base/epics-base/releases/new?tag=R7.0.11)
+[Create release from tag R7.0.12](https://github.com/epics-base/epics-base/releases/new?tag=R7.0.12)
 page. Upload the tar file and its `.asc` signature file to the new
 GitHub release page, or just drag-n-drop them into the page. Copy/paste
 the text from the previous release and edit. Submit.

@@ -210,7 +210,7 @@ LIBCOM_API int errlogSetConsole(FILE *stream);
  * \param bufsize The desired buffer size
  * \return 0 if successful, -1 if called from callback function
  *
- * \since UNRELEASED the default buffer size is 2560.
+ * \since 7.0.11 the default buffer size is 2560.
  */
 LIBCOM_API int errlogInit(int bufsize);
 
@@ -222,7 +222,7 @@ LIBCOM_API int errlogInit(int bufsize);
  * \param maxMsgSize The desired max message size
  * \return 0 if successful, -1 if called from callback function
  *
- * \since UNRELEASED It is possible to enlarge the error log buffer size after initialisation.
+ * \since 7.0.11 It is possible to enlarge the error log buffer size after initialisation.
  *                   The default buffer size is 2560 and the default maximum message size is 512.
  */
 LIBCOM_API int errlogInit2(int bufsize, int maxMsgSize);

@@ -121,7 +121,7 @@ LIBCOM_API char * epicsStrnDup(const char *s, size_t len);
  * \param n   Length of string
  * \return Number of characters printed, or negative on error.
  *
- * \since 7.0.8 until UNRELEASED, @code strlen(s) @endcode must be valid.
+ * \since 7.0.8 until 7.0.11, @code strlen(s) @endcode must be valid.
  */
 LIBCOM_API int epicsStrPrintEscaped(FILE *fp, const char *s, size_t n);
 

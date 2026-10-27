@@ -545,12 +545,16 @@ bool cac::findOrCreateVirtCircuit (
     guard.assertIdenticalMutex ( this->mutex );
     bool newIIU = false;
 
-    if ( piiu ) {
-        if ( ! piiu->alive ( guard ) ) {
-            return newIIU;
-        }
+    if ( piiu && ! piiu->alive ( guard ) ) {
+        // The circuit is shutting down, such as after its last channel
+        // was cleared, and would disconnect any channel installed on it.
+        // Take it out of the server table, so that it is not found again,
+        // and create a new circuit to the server. destroyIIU() still
+        // destroys the old one.
+        this->serverTable.remove ( *piiu );
+        piiu = NULL;
     }
-    else {
+    if ( ! piiu ) {
         try {
             autoPtrFreeList < tcpiiu, 32, epicsMutexNOOP > pnewiiu (
                     this->freeListVirtualCircuit,
@@ -648,16 +652,19 @@ void cac::transferChanToVirtCircuit (
         guard, addr,
         pChan->getPriority(guard), piiu, minorVersionNumber );
 
+    // if no circuit could be created, leave the channel searching
+    if ( ! piiu ) {
+        return;
+    }
+
     // must occur before moving to new iiu
     pChan->getPIIU(guard)->uninstallChanDueToSuccessfulSearchResponse (
         guard, *pChan, currentTime );
-    if ( piiu ) {
-        piiu->installChannel (
-            guard, *pChan, sid, typeCode, count );
+    piiu->installChannel (
+        guard, *pChan, sid, typeCode, count );
 
-        if ( newIIU ) {
-            piiu->start ( guard );
-        }
+    if ( newIIU ) {
+        piiu->start ( guard );
     }
 }
 
@@ -1252,7 +1259,11 @@ void cac::destroyIIU ( tcpiiu & iiu )
         assert ( this->pudpiiu );
         iiu.disconnectAllChannels ( mgr.cbGuard, guard, *this->pudpiiu );
 
-        this->serverTable.remove ( iiu );
+        // findOrCreateVirtCircuit() may already have replaced a circuit
+        // that was shutting down with a new one to the same server.
+        if ( this->serverTable.lookup ( iiu ) == & iiu ) {
+            this->serverTable.remove ( iiu );
+        }
         this->circuitList.remove ( iiu );
     }
 

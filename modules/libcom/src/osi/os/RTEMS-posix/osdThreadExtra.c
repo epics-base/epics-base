@@ -18,6 +18,8 @@
 #include "epicsEvent.h"
 #include "epicsThread.h"
 
+#include "osdThread.h"
+
 #include <pthread.h>
 
 void epicsThreadShowInfo(epicsThreadOSD *pthreadInfo, unsigned int level)

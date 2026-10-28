@@ -211,7 +211,6 @@
 #include <seqRecord.h>
 #include <shareLib.h>
 #include <special.h>
-#include <stateRecord.h>
 #include <stringinRecord.h>
 #include <stringoutRecord.h>
 #include <subArrayRecord.h>

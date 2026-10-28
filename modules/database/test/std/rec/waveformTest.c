@@ -7,6 +7,8 @@
 
 #include <string.h>
 
+#include "epicsStdio.h"
+
 #include "dbAccess.h"
 #include "dbAccessDefs.h"
 #include "dbEvent.h"
@@ -22,8 +24,7 @@ static void processWaveform(const char *record)
 {
     char field[32];
 
-    strcpy(field, record);
-    strcat(field, ".PROC");
+    epicsSnprintf(field, sizeof(field), "%s.PROC", record);
     testdbPutFieldOk(field, DBF_LONG, 1);
 }
 
@@ -42,21 +43,23 @@ static void testSoftInput(void)
     testDiag("soft input copies array and updates NORD");
     putArray("wfSource", NELEMENTS(shortInput), shortInput);
     processWaveform("wfSoft");
-    testdbGetFieldEqual("wfSoft.NORD", DBF_ULONG, (unsigned int)3);
-    testdbGetArrFieldEqual("wfSoft", DBF_LONG, 4, 3, shortInput);
+    testdbGetFieldEqual("wfSoft.NORD", DBF_ULONG, 3u);
+    testdbGetArrFieldEqual("wfSoft", DBF_LONG, 4, NELEMENTS(shortInput),
+        shortInput);
     testdbGetFieldEqual("wfSoft.UDF", DBF_UCHAR, 0);
 
     testDiag("soft input truncates to destination NELM");
     putArray("wfSource", NELEMENTS(longInput), longInput);
     processWaveform("wfSoft");
-    testdbGetFieldEqual("wfSoft.NORD", DBF_ULONG, (unsigned int)4);
+    testdbGetFieldEqual("wfSoft.NORD", DBF_ULONG, 4u);
     testdbGetArrFieldEqual("wfSoft", DBF_LONG, 4, 4, expectedLong);
 
     testDiag("soft input lowers NORD for a shorter source array");
     putArray("wfSource", NELEMENTS(shortInput), shortInput);
     processWaveform("wfSoft");
-    testdbGetFieldEqual("wfSoft.NORD", DBF_ULONG, (unsigned int)3);
-    testdbGetArrFieldEqual("wfSoft", DBF_LONG, 4, 3, shortInput);
+    testdbGetFieldEqual("wfSoft.NORD", DBF_ULONG, 3u);
+    testdbGetArrFieldEqual("wfSoft", DBF_LONG, 4, NELEMENTS(shortInput),
+        shortInput);
 }
 
 static void testArrayWrites(void)
@@ -67,12 +70,12 @@ static void testArrayWrites(void)
 
     testDiag("array write is limited by NELM");
     putArray("wfMeta", NELEMENTS(longInput), longInput);
-    testdbGetFieldEqual("wfMeta.NORD", DBF_ULONG, (unsigned int)4);
+    testdbGetFieldEqual("wfMeta.NORD", DBF_ULONG, 4u);
     testdbGetArrFieldEqual("wfMeta", DBF_LONG, 4, 4, expectedLong);
 
     testDiag("shorter array write lowers NORD");
     putArray("wfMeta", NELEMENTS(shortInput), shortInput);
-    testdbGetFieldEqual("wfMeta.NORD", DBF_ULONG, (unsigned int)2);
+    testdbGetFieldEqual("wfMeta.NORD", DBF_ULONG, 2u);
     testdbGetArrFieldEqual("wfMeta", DBF_LONG, 4, 2, shortInput);
 }
 

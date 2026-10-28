@@ -1889,13 +1889,6 @@ LIBCA_API int epicsStdCall ca_client_status ( unsigned level );
  */
 LIBCA_API int epicsStdCall ca_context_status ( struct ca_client_context *context, unsigned level );
 
-/*
- * deprecated
- */
-#define ca_build_channel(NAME,XXXXX,CHIDPTR,YYYYY)\
-ca_build_and_connect(NAME, XXXXX, 1, CHIDPTR, YYYYY, 0, 0)
-#define ca_array_build(NAME,XXXXX, ZZZZZZ, CHIDPTR,YYYYY)\
-ca_build_and_connect(NAME, XXXXX, ZZZZZZ, CHIDPTR, YYYYY, 0, 0)
 LIBCA_API int epicsStdCall ca_build_and_connect
     ( const char *pChanName, chtype, unsigned long,
     chid * pChanID, void *, caCh * pFunc, void * pArg );
@@ -1932,10 +1925,6 @@ LIBCA_API int epicsStdCall ca_clear_event ( evid eventID );
 #define ca_add_event(type,chan,pFunc,pArg,pEventID)\
 ca_add_array_event(type,1u,chan,pFunc,pArg,0.0,0.0,0.0,pEventID)
 
-#define ca_add_delta_event(TYPE,CHID,ENTRY,ARG,DELTA,EVID)\
-    ca_add_array_event(TYPE,1,CHID,ENTRY,ARG,DELTA,DELTA,0.0,EVID)
-#define ca_add_general_event(TYPE,CHID,ENTRY,ARG,P_DELTA,N_DELTA,TO,EVID)\
-ca_add_array_event(TYPE,1,CHID,ENTRY,ARG,P_DELTA,N_DELTA,TO,EVID)
 #define ca_add_array_event(TYPE,COUNT,CHID,ENTRY,ARG,P_DELTA,N_DELTA,TO,EVID)\
 ca_add_masked_array_event(TYPE,COUNT,CHID,ENTRY,ARG,P_DELTA,N_DELTA,TO,EVID, DBE_VALUE | DBE_ALARM)
 LIBCA_API int epicsStdCall ca_add_masked_array_event

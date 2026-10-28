@@ -48,7 +48,7 @@ ifeq ($(wildcard $(PERL_h)),)
   $(warning Perl's C header files were not found.)
   $(warning The Perl CA module will not be built.)
 else
-ifeq ($(findstring $(OS_CLASS),WIN32 cygwin32),) # Doesn't build on WIN32
+ifeq ($(findstring $(OS_CLASS),WIN32),) # Doesn't build on WIN32
   LOADABLE_LIBRARY_HOST = Cap5
 
   PERL_SCRIPTS += capr.pl

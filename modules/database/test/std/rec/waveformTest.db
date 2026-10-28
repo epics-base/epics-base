@@ -1,0 +1,21 @@
+record(waveform, "wfSource") {
+    field(FTVL, "LONG")
+    field(NELM, "6")
+}
+
+record(waveform, "wfSoft") {
+    field(DTYP, "Soft Channel")
+    field(INP, "wfSource")
+    field(FTVL, "LONG")
+    field(NELM, "4")
+}
+
+record(waveform, "wfMeta") {
+    field(FTVL, "DOUBLE")
+    field(NELM, "4")
+}
+
+record(waveform, "wfString") {
+    field(FTVL, "STRING")
+    field(NELM, "2")
+}

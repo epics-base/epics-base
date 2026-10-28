@@ -238,8 +238,8 @@ Post the soft-event whose handle is in EPVT.
 
 =item 5.
 
-Check to see if monitors should be invoked.
-Alarm monitors are invoked if the new alarm status or severity are non-zero.
+Post a value monitor. Alarm monitor flags are included if the alarm status or
+severity has changed.
 
 =item 6.
 

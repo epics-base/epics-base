@@ -2645,7 +2645,7 @@ long dbPutString(DBENTRY *pdbentry,const char *pstring)
         break;
     case DBF_NOACCESS:
         dbMsgPrint(pdbentry, "Can't set array field before iocInit()");
-        /* fall through */
+        EPICS_FALLTHROUGH;
     default:
         return S_dbLib_badField;
     }

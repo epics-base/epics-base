@@ -431,7 +431,7 @@ long dbJLinkParse(const char *json, size_t jlen, short dbfType,
         yajl_free_error(yh, err);
         dbJLinkFree(parser->pjlink);
         dbJLinkFree(parser->product);
-        /* fall through */
+        EPICS_FALLTHROUGH;
     default:
         status = S_db_badField;
     }

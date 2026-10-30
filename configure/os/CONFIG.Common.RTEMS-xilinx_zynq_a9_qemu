@@ -12,7 +12,7 @@ GNU_TARGET = arm-rtems
 #use dhcp/bootp
 ARCH_DEP_CFLAGS += -DMY_DO_BOOTP=NULL
 
-OP_SYS_LDLIBS += -Wl,--gc-sections
+OP_SYS_LDFLAGS += -Wl,--gc-sections
 ARCH_DEP_LDFLAGS = -L$(RTEMS_BASE)/$(GNU_TARGET)$(RTEMS_VERSION)/xilinx_zynq_a9_qemu/lib/
 
 

@@ -176,7 +176,7 @@ static void connection_handler ( struct connection_handler_args args )
                                                 ppv->chid,
                                                 eventMask,
                                                 event_handler,
-                                                (void*)ppv,
+                                                ppv,
                                                 &ppv->evid);
         }
     }

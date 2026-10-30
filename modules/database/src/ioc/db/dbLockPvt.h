@@ -12,6 +12,7 @@
 #include "dbLock.h"
 #include "epicsMutex.h"
 #include "epicsSpin.h"
+#include "epicsThread.h"
 
 /* Define to enable additional error checking */
 #undef LOCKSET_DEBUG

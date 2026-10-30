@@ -69,9 +69,13 @@ output value PVAL is added to it.
 
 =head4 Drive Limits
 
-The output value is now clipped to the range DRVL to DRVH inclusive, provided
-that DRVH E<gt> DRVL.
-The result is copied into both the VAL and PVAL fields.
+The VAL field's value will be clipped within limits specified in the fields DRVH
+and DRVL if these have been configured by the database designer:
+
+  DRVL <= VAL <= DRVH
+
+Note: These limits are only enforced as long as DRVH E<gt> DRVL. If they are not
+set or DRVH E<lt>= DRVL they will not be used.
 
 =head4 Limit Rate of Change
 
@@ -162,7 +166,7 @@ OUT field. For analog outputs that write their values to devices, the
 OUT field must specify the address of the I/O card. In addition, the
 DTYP field must contain the name of the device support module. Be aware
 that the address format differs according to the I/O bus used. See L<Address
-Specification|https://docs.epics-controls.org/en/latest/guides/EPICS_Process_Database_Concepts.html#address-specification>
+Specification|https://docs.epics-controls.org/en/latest/process-database/EPICS_Process_Database_Concepts.html#address-specification>
 for information on the format of hardware addresses.
 
 For soft records the output link can be a database link, a channel
@@ -220,8 +224,8 @@ alarms that are common to all record types.
 These parameters are used to specify deadbands for monitors on the VAL
 field. The monitors are sent when the value field exceeds the last
 monitored field by the specified deadband. If these fields have a value
-of zero, everytime the value changes, a monitor will be triggered; if
-they have a value of -1, everytime the record is processed, monitors
+of zero, every time the value changes, a monitor will be triggered; if
+they have a value of -1, every time the record is processed, monitors
 are triggered. ADEL is the deadband for archive monitors, and MDEL the
 deadband for all other types of monitors. See Monitor Specification for
 a complete explanation of monitors.
@@ -328,7 +332,7 @@ for more information on simulation mode and its fields.
         prompt("Display Precision")
         promptgroup("80 - Display")
         interest(1)
-        prop(YES)
+        prop(YES)       # get_precision
     }
     field(LINR,DBF_MENU) {
         prompt("Linearization")
@@ -357,7 +361,7 @@ for more information on simulation mode and its fields.
         promptgroup("80 - Display")
         interest(1)
         size(16)
-        prop(YES)
+        prop(YES)       # get_units
     }
     field(ROFF,DBF_ULONG) {
         prompt("Raw Offset")
@@ -382,26 +386,26 @@ for more information on simulation mode and its fields.
         promptgroup("30 - Action")
         pp(TRUE)
         interest(1)
-        prop(YES)
+        prop(YES)       # get_control_double
     }
     field(DRVL,DBF_DOUBLE) {
         prompt("Drive Low Limit")
         promptgroup("30 - Action")
         pp(TRUE)
         interest(1)
-        prop(YES)
+        prop(YES)       # get_control_double
     }
     field(HOPR,DBF_DOUBLE) {
         prompt("High Operating Range")
         promptgroup("80 - Display")
         interest(1)
-        prop(YES)
+        prop(YES)       # get_graphic_double
     }
     field(LOPR,DBF_DOUBLE) {
         prompt("Low Operating Range")
         promptgroup("80 - Display")
         interest(1)
-        prop(YES)
+        prop(YES)       # get_graphic_double
     }
     field(AOFF,DBF_DOUBLE) {
         prompt("Adjustment Offset")
@@ -420,35 +424,35 @@ for more information on simulation mode and its fields.
         promptgroup("70 - Alarm")
         pp(TRUE)
         interest(1)
-        prop(YES)
+        prop(YES)       #get_alarm_double
     }
     field(LOLO,DBF_DOUBLE) {
         prompt("Lolo Alarm Limit")
         promptgroup("70 - Alarm")
         pp(TRUE)
         interest(1)
-        prop(YES)
+        prop(YES)       #get_alarm_double
     }
     field(HIGH,DBF_DOUBLE) {
         prompt("High Alarm Limit")
         promptgroup("70 - Alarm")
         pp(TRUE)
         interest(1)
-        prop(YES)
+        prop(YES)       #get_alarm_double
     }
     field(LOW,DBF_DOUBLE) {
         prompt("Low Alarm Limit")
         promptgroup("70 - Alarm")
         pp(TRUE)
         interest(1)
-        prop(YES)
+        prop(YES)       #get_alarm_double
     }
     field(HHSV,DBF_MENU) {
         prompt("Hihi Severity")
         promptgroup("70 - Alarm")
         pp(TRUE)
         interest(1)
-        prop(YES)
+        prop(YES)       #get_alarm_double
         menu(menuAlarmSevr)
     }
     field(LLSV,DBF_MENU) {
@@ -456,7 +460,7 @@ for more information on simulation mode and its fields.
         promptgroup("70 - Alarm")
         pp(TRUE)
         interest(1)
-        prop(YES)
+        prop(YES)       #get_alarm_double
         menu(menuAlarmSevr)
     }
     field(HSV,DBF_MENU) {
@@ -464,7 +468,7 @@ for more information on simulation mode and its fields.
         promptgroup("70 - Alarm")
         pp(TRUE)
         interest(1)
-        prop(YES)
+        prop(YES)       #get_alarm_double
         menu(menuAlarmSevr)
     }
     field(LSV,DBF_MENU) {
@@ -472,7 +476,7 @@ for more information on simulation mode and its fields.
         promptgroup("70 - Alarm")
         pp(TRUE)
         interest(1)
-        prop(YES)
+        prop(YES)       #get_alarm_double
         menu(menuAlarmSevr)
     }
     field(HYST,DBF_DOUBLE) {
@@ -689,13 +693,17 @@ Routine process implements the following algorithm:
 
 =over
 
-=item 1. Check to see that the appropriate device support module
+=item 1.
+
+Check to see that the appropriate device support module
 exists. If it doesn't, an error message is issued and processing is
 terminated with the PACT field set to TRUE. This ensures that processes
 will no longer be called for this record. Thus error storms will not
 occur.
 
-=item 2. Check PACT: If PACT is FALSE call fetch_values and convert
+=item 2.
+
+Check PACT: If PACT is FALSE call fetch_values and convert
 which perform the following steps:
 
 =over
@@ -742,20 +750,28 @@ calculated in, using the formula RVAL = (RVAL -AOFF) / ASLO - ROFF.
 
 =back
 
-=item 3. Check alarms: This routine checks to see if the new VAL causes
+=item 3.
+
+Check alarms: This routine checks to see if the new VAL causes
 the alarm status and severity to change. If so, NSEV, NSTA and y are
 set. It also honors the alarm hysteresis factor (HYST). Thus the value
 must change by at least HYST before the alarm status and severity is
 reduced.
 
-=item 4. Check severity and write the new value. See Invalid Alarm
+=item 4.
+
+Check severity and write the new value. See Invalid Alarm
 Output Action for details on how invalid alarms affect output records.
 
-=item 5. If PACT has been changed to TRUE, the device support write
+=item 5.
+
+If PACT has been changed to TRUE, the device support write
 output routine has started but has not completed writing the new value.
 In this case, the processing routine merely returns, leaving PACT TRUE.
 
-=item 6. Check to see if monitors should be invoked:
+=item 6.
+
+Check to see if monitors should be invoked:
 
 =over
 
@@ -772,7 +788,9 @@ monitors are invoked.
 
 =back
 
-=item 7. Scan forward link if necessary, set PACT and INIT FALSE, and
+=item 7.
+
+Scan forward link if necessary, set PACT and INIT FALSE, and
 return.
 
 =back

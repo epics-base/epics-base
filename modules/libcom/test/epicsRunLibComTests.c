@@ -54,6 +54,7 @@ int initHookTest(void);
 int ipAddrToAsciiTest(void);
 int macDefExpandTest(void);
 int macLibTest(void);
+int fdManagerTest(void);
 int osiSockTest(void);
 int ringBytesTest(void);
 int ringPointerTest(void);
@@ -110,6 +111,7 @@ void epicsRunLibComTests(void)
     runTest(ipAddrToAsciiTest);
     runTest(macDefExpandTest);
     runTest(macLibTest);
+    runTest(fdManagerTest);
     runTest(osiSockTest);
     runTest(ringBytesTest);
     runTest(ringPointerTest);

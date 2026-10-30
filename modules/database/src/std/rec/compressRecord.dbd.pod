@@ -88,7 +88,7 @@ As stated above, the ALG field specifies which algorithm to be performed on the 
 The INP should be a database or channel access link. Though INP can be a
 constant, the data compression algorithms are supported only when INP is a
 database link. See L<Address
-Specification|https://docs.epics-controls.org/en/latest/guides/EPICS_Process_Database_Concepts.html#address-specification>
+Specification|https://docs.epics-controls.org/en/latest/process-database/EPICS_Process_Database_Concepts.html#address-specification>
 for information on specifying links.
 
 
@@ -121,7 +121,7 @@ holds the average of the first element of INP over N samples, VAL[1] holds the
 average of the next element of INP over N samples, and so on. The following
 shows the equation:
 
-=for comment Latex form of equation bellow : VAL[i] \leftarrow \frac{1}{N}\sum_{n=1}^NINP_{n}[i]
+=for comment Latex form of equation below : VAL[i] \leftarrow \frac{1}{N}\sum_{n=1}^NINP_{n}[i]
 
 =begin html
 
@@ -449,26 +449,26 @@ Scan forward link if necessary, set PACT FALSE, and return.
 		prompt("High Operating Range")
 		promptgroup("80 - Display")
 		interest(1)
-		prop(YES)
+		prop(YES)		# get_graphic_double, get_control_double
 	}
 	field(LOPR,DBF_DOUBLE) {
 		prompt("Low Operating Range")
 		promptgroup("80 - Display")
 		interest(1)
-		prop(YES)
+		prop(YES)		# get_graphic_double, get_control_double
 	}
 	field(PREC,DBF_SHORT) {
 		prompt("Display Precision")
 		promptgroup("80 - Display")
 		interest(1)
-		prop(YES)
+		prop(YES)		# get_precision
 	}
 	field(EGU,DBF_STRING) {
 		prompt("Engineering Units")
 		promptgroup("80 - Display")
 		interest(1)
 		size(16)
-		prop(YES)
+		prop(YES)		# get_units
 	}
 	field(OFF,DBF_ULONG) {
 		prompt("Offset")

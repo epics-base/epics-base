@@ -60,7 +60,7 @@ xdrv *xdrv_get(int group)
             return curd;
         }
     }
-    cantProceed("xdrv_get() for non-existant group");
+    cantProceed("xdrv_get() for non-existent group");
     return NULL;
 }
 

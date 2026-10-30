@@ -47,9 +47,7 @@ extern void *POSIX_Init(void *argument);
 
 #ifndef RTEMS_LEGACY_STACK
 #define CONFIGURE_USE_IMFS_AS_BASE_FILESYSTEM
-/*
- * Configure LibBSD.
- */
+
 //#define RTEMS_BSD_CONFIG_NET_PF_UNIX
 //#define RTEMS_BSD_CONFIG_NET_IF_BRIDGE
 //#define RTEMS_BSD_CONFIG_NET_IF_LAGG

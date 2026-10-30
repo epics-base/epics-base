@@ -60,7 +60,7 @@ static const iocshArg * const InitArgs[1] = { &InitArg0 };
 static const iocshFuncDef InitFuncDef = {
     "ClockTime_Init", 1, InitArgs,
     "Starts or stops the IOC periodically synchronizing the OS clock\n"
-    "with the higest priority working time provider.\n"};
+    "with the highest priority working time provider.\n"};
 static void InitCallFunc(const iocshArgBuf *args)
 {
     ClockTime_Init(args[0].ival);

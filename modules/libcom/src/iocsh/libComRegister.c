@@ -9,10 +9,10 @@
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
-#include <stdlib.h>
-
+#include <stdint.h>
 #include "iocsh.h"
 #include "asLib.h"
+#include "epicsStdlib.h"
 #include "epicsStdioRedirect.h"
 #include "epicsString.h"
 #include "epicsTime.h"
@@ -22,11 +22,13 @@
 #include "osiUnistd.h"
 #include "logClient.h"
 #include "errlog.h"
+#include "errlogPvt.h"
 #include "taskwd.h"
 #include "registry.h"
 #include "epicsGeneralTime.h"
 #include "freeList.h"
 #include "libComRegister.h"
+#include "afterIocRunning.h"
 
 /* Register the PWD environment variable when the cd IOC shell function is
  * registered. This variable contains the current directory path.
@@ -214,7 +216,7 @@ static void registryDumpCallFunc(const iocshArgBuf *args)
 static const iocshFuncDef iocLogInitFuncDef = {"iocLogInit",0,0,
                                                "Initialize IOC logging\n"
                                                "  * EPICS environment variable 'EPICS_IOC_LOG_INET' has to be defined\n"
-                                               "  * Logging controled via 'iocLogDisable' variable\n"
+                                               "  * Logging controlled via 'iocLogDisable' variable\n"
                                                "       see 'setIocLogDisable' command\n"};
 static void iocLogInitCallFunc(const iocshArgBuf *args)
 {
@@ -266,7 +268,7 @@ static const iocshArg * const errlogInitArgs[1] = {&errlogInitArg0};
 static const iocshFuncDef errlogInitFuncDef = {
     "errlogInit",1,errlogInitArgs,
     "Initialize error log client buffer size\n"
-    "  bufSize - size of circular buffer (default = 1280 bytes)\n"
+    "  bufSize - size of circular buffer (default = 2560 bytes)\n"
 };
 static void errlogInitCallFunc(const iocshArgBuf *args)
 {
@@ -281,12 +283,27 @@ static const iocshArg * const errlogInit2Args[] =
 static const iocshFuncDef errlogInit2FuncDef = {
     "errlogInit2", 2, errlogInit2Args,
     "Initialize error log client buffer size and maximum message size\n"
-    "  bufSize    - size of circular buffer       (default = 1280 bytes)\n"
-    "  maxMsgSize - maximum size of error message (default =  256 bytes)\n"
+    "  bufSize    - size of circular buffer       (default = 2560 bytes)\n"
+    "  maxMsgSize - maximum size of error message (default =  512 bytes)\n"
 };
 static void errlogInit2CallFunc(const iocshArgBuf *args)
 {
     errlogInit2(args[0].ival, args[1].ival);
+}
+
+/* errlogShow */
+static const iocshArg errlogShowArg0 = { "level",iocshArgInt};
+static const iocshArg * const errlogShowArgs[1] = {&errlogShowArg0};
+static const iocshFuncDef errlogShowFuncDef = {
+    "errlogShow",1,errlogShowArgs,
+    "Show the contents of the error log private data\n"
+    "level 0 - Show the size of the buffers and max message size\n"
+    "      1 - Show the number of listeners\n"
+    "      2 - Show the contents of the buffer\n"
+};
+static void errlogShowCallFunc(const iocshArgBuf *args)
+{
+    errlogShow(args[0].ival);
 }
 
 /* errlog */
@@ -348,7 +365,6 @@ static void threadCallFunc(const iocshArgBuf *args)
     int level = 0;
     const char *cp;
     epicsThreadId tid;
-    unsigned long ltmp;
     int argc = args[0].aval.ac;
     char **argv = args[0].aval.av;
     char *endp;
@@ -363,7 +379,7 @@ static void threadCallFunc(const iocshArgBuf *args)
     }
     for ( ; i < argc ; i++) {
         cp = argv[i];
-        ltmp = strtoul (cp, &endp, 0);
+        tid = (epicsThreadId) (uintptr_t) strtoull(cp, &endp, 0);
         if (*endp) {
             tid = epicsThreadGetId (cp);
             if (!tid) {
@@ -371,9 +387,6 @@ static void threadCallFunc(const iocshArgBuf *args)
                 iocshSetError(-1);
                 continue;
             }
-        }
-        else {
-            tid = (epicsThreadId)ltmp;
         }
         if (first) {
             epicsThreadShow (0, level);
@@ -431,7 +444,6 @@ static void epicsThreadResumeCallFunc(const iocshArgBuf *args)
     int i;
     const char *cp;
     epicsThreadId tid;
-    unsigned long ltmp;
     char nameBuf[64];
     int argc = args[0].aval.ac;
     char **argv = args[0].aval.av;
@@ -439,7 +451,7 @@ static void epicsThreadResumeCallFunc(const iocshArgBuf *args)
 
     for (i = 1 ; i < argc ; i++) {
         cp = argv[i];
-        ltmp = strtoul(cp, &endp, 0);
+        tid = (epicsThreadId) (uintptr_t) strtoull(cp, &endp, 0);
         if (*endp) {
             tid = epicsThreadGetId(cp);
             if (!tid) {
@@ -449,7 +461,6 @@ static void epicsThreadResumeCallFunc(const iocshArgBuf *args)
             }
         }
         else {
-            tid =(epicsThreadId)ltmp;
             epicsThreadGetName(tid, nameBuf, sizeof nameBuf);
             if (nameBuf[0] == '\0') {
                 fprintf(stderr, "'%s' is not a valid thread id\n", cp);
@@ -516,6 +527,7 @@ void epicsStdCall libComRegister(void)
     iocshRegister(&eltcFuncDef, eltcCallFunc);
     iocshRegister(&errlogInitFuncDef,errlogInitCallFunc);
     iocshRegister(&errlogInit2FuncDef,errlogInit2CallFunc);
+    iocshRegister(&errlogShowFuncDef,errlogShowCallFunc);
     iocshRegister(&errlogFuncDef, errlogCallFunc);
     iocshRegister(&errlogSevFuncDef, errlogSevCallFunc);
     iocshRegister(&iocLogPrefixFuncDef, iocLogPrefixCallFunc);
@@ -529,6 +541,8 @@ void epicsStdCall libComRegister(void)
 
     iocshRegister(&generalTimeReportFuncDef,generalTimeReportCallFunc);
     iocshRegister(&installLastResortEventProviderFuncDef, installLastResortEventProviderCallFunc);
+
+    afterIocRunningRegister();
 
     comDefs[0].pval = &asCheckClientIP;
     comDefs[1].pval = &freeListBypass;

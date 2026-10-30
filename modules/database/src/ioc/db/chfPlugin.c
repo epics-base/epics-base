@@ -339,7 +339,7 @@ static parse_result parse_start(chFilter *filter)
         }
     }
 
-    filter->puser = (void*) f;
+    filter->puser = f;
 
     return parse_continue;
 

@@ -63,10 +63,10 @@ logReset (void)
     if (fp) {
         char buf[80];
         fp(buf, sizeof buf);
-        errlogPrintf ("Startup after %s.\n", buf);
+        printf ("Startup after %s.\n", buf);
     }
     else {
-        errlogPrintf ("Startup.\n");
+        printf ("Startup.\n");
     }
 }
 
@@ -341,7 +341,7 @@ initialize_remote_filesystem(char **argv, int hasLocalFilesystem)
             argv[1] = abspath;
         }
     }
-    errlogPrintf("nfsMount(\"%s\", \"%s\", \"%s\")\n",
+    printf("nfsMount(\"%s\", \"%s\", \"%s\")\n",
                  server_name, server_path, mount_point);
     nfsMount(server_name, server_path, mount_point);
 #endif
@@ -414,7 +414,7 @@ set_directory (const char *commandline)
     if (chdir (directoryPath) < 0)
         LogFatal ("Can't set initial directory(%s): %s\n", directoryPath, strerror(errno));
     else
-        errlogPrintf("chdir(\"%s\")\n", directoryPath);
+        printf("chdir(\"%s\")\n", directoryPath);
     free(directoryPath);
 }
 
@@ -591,8 +591,8 @@ Init (rtems_task_argument ignored)
     if (epicsRtemsInitPreSetBootConfigFromNVRAM(&rtems_bsdnet_config) != 0)
         delayedPanic("epicsRtemsInitPreSetBootConfigFromNVRAM");
     if (rtems_bsdnet_config.bootp == NULL) {
-        extern void setBootConfigFromNVRAM(void);
-        setBootConfigFromNVRAM();
+        extern int setBootConfigFromNVRAM(char *, size_t);
+        setBootConfigFromNVRAM(NULL, 0);
     }
     if (epicsRtemsInitPostSetBootConfigFromNVRAM(&rtems_bsdnet_config) != 0)
         delayedPanic("epicsRtemsInitPostSetBootConfigFromNVRAM");
@@ -681,12 +681,16 @@ Init (rtems_task_argument ignored)
      */
     printf ("***** Preparing EPICS application *****\n");
     iocshRegisterRTEMS ();
-    set_directory (argv[1]);
-    epicsEnvSet ("IOC_STARTUP_SCRIPT", argv[1]);
+    /* No startup script when the application declares that it needs no
+     * filesystem (epicsRtemsFSImage == NULL).
+     */
+    if (argv[1] != NULL) {
+        set_directory (argv[1]);
+        epicsEnvSet ("IOC_STARTUP_SCRIPT", argv[1]);
+    }
     atexit(exitHandler);
-    errlogFlush();
     printf ("***** Starting EPICS application *****\n");
-    result = main ((sizeof argv / sizeof argv[0]) - 1, argv);
+    result = main (argv[1] != NULL ? 2 : 1, argv);
     printf ("***** IOC application terminating *****\n");
     epicsThreadSleep(1.0);
     epicsExit(result);

@@ -72,7 +72,7 @@ link.
 DOL can also be a constant, in which case VAL will be initialized to the
 constant value. However to be interpreted as a constant instead of a CA link
 the constant can only be numeric, so string output records are best initialized
-by dirctly setting the VAL field. Note that if DOL is a constant, OMSL
+by directly setting the VAL field. Note that if DOL is a constant, OMSL
 cannot be C<<< closed_loop >>>.
 
 =fields VAL, DOL, OMSL

@@ -49,7 +49,7 @@
 
 /*
  * These port numbers are only used if the CA repeater and
- * CA server port numbers cant be obtained from the EPICS
+ * CA server port numbers can't be obtained from the EPICS
  * environment variables "EPICS_CA_REPEATER_PORT" and
  * "EPICS_CA_SERVER_PORT"
  */

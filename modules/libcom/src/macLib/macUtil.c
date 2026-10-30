@@ -62,8 +62,11 @@ epicsStdCall macParseDefns(
         printf( "macParseDefns( %s )\n", defns );
 
     /* allocate temporary pointer arrays; in worst case they need to have
-       as many entries as the length of the defns string */
-    numMax = strlen( defns );
+       as many entries as the length of the defns string + 2
+       for defns="1,3,5" give 3 pairs so num will be 6 (strlen(defns)+1)
+       but as num is used as an index e.g. del[num] we need
+       numMax to be strlen(defns) + 2 */
+    numMax = strlen( defns ) + 2;
     if ( numMax < altNumMax )
         numMax = altNumMax;
     ptr = (const char **) calloc( numMax, sizeof( char * ) );
@@ -78,7 +81,7 @@ epicsStdCall macParseDefns(
     del[0] = FALSE;
     quote  = 0;
     state  = preName;
-    for ( c = (const char *) defns; *c != '\0'; c++ ) {
+    for ( c = defns; *c != '\0'; c++ ) {
 
         /* handle quotes */
         if ( quote )
@@ -184,7 +187,7 @@ epicsStdCall macParseDefns(
             *memCpp++ = memCp;
 
         /* copy value regardless of the above */
-        strncpy( memCp, (const char *) ptr[i], end[i] - ptr[i] );
+        strncpy( memCp, ptr[i], end[i] - ptr[i] );
         memCp += end[i] - ptr[i];
         *memCp++ = '\0';
     }
@@ -224,9 +227,9 @@ epicsStdCall macParseDefns(
     }
 
     /* free workspace */
-    free( ( void * ) ptr );
-    free( ( void * ) end );
-    free( ( char * ) del );
+    free( ( void * ) ptr ); /* cast away const */
+    free( ( void * ) end ); /* cast away const */
+    free( del );
 
     /* debug output */
     if ( handle != NULL && handle->debug & 1 )
@@ -238,9 +241,9 @@ epicsStdCall macParseDefns(
     /* error exit */
 error:
     errlogPrintf( "macParseDefns: failed to allocate memory\n" );
-    if ( ptr != NULL ) free( ( void * ) ptr );
-    if ( end != NULL ) free( ( void * ) end );
-    if ( del != NULL ) free( ( char * ) del );
+    if ( ptr != NULL ) free( ( void * ) ptr ); /* cast away const */
+    if ( end != NULL ) free( ( void * ) end ); /* cast away const */
+    if ( del != NULL ) free( del );
     *pairs = NULL;
     return -1;
 }

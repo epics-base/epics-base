@@ -16,7 +16,7 @@ It can accept boolean values in its 32 bit fields (B0-B9, BA-BF, B10-B19 and
 B1A-B1F), and converts them to a 32-bit signed integer in VAL which is provided
 to the device support. A zero value in a bit field becomes a zero bit in VAL, a
 non-zero value in a bit field becomes a one bit in VAL, with B0 being the least
-signficant bit and B1F the MSB/sign bit.
+significant bit and B1F the MSB/sign bit.
 
 =recordtype mbboDirect
 
@@ -47,7 +47,7 @@ placed into the VAL field.
 
 When OMSL is set to C<<< supervisory >>>, the DOL field is ignored during
 processing and the contents of VAL are used. A value to be output may thus be
-written direcly into the VAL field from elsewhere as long as the record is in
+written directly into the VAL field from elsewhere as long as the record is in
 C<<< supervisory >>> mode.
 
 =fields OMSL, DOL, VAL
@@ -81,7 +81,7 @@ initialization if the record is still undefined (UDF) after DOL has been read
 and the device support initialized but at least one of the B0-B1F fields is
 non-zero, the VAL field will be set from those fields and UDF will be cleared.
 
-=fields B0, B1, B2, B3, B4, B5, B6, B7, B8, B9, BA, BB, BC, BD, BE, BF, B10, B11, B12, B13, B14, B15, B16, B17, B18, B19, B1A, B1B, B1C, B1D, B1E, B1F
+=fields B0 - B9, BA - BF, B10 - B1F
 
 =head3 Convert and Write Parameters
 
@@ -89,7 +89,7 @@ For records that are to write values to hardware devices, the OUT output link
 must contain the address of the I/O card, and the DTYP field must specify
 the proper device support module. Be aware that the address format differs
 according to the I/O bus used. See L<Address
-Specification|https://docs.epics-controls.org/en/latest/guides/EPICS_Process_Database_Concepts.html#address-specification>
+Specification|https://docs.epics-controls.org/en/latest/process-database/EPICS_Process_Database_Concepts.html#address-specification>
 for information on the format of hardware addresses.
 
 During record processing VAL is converted into RVAL, which is the actual 32-bit
@@ -130,7 +130,7 @@ Parameters> for more on the record name (NAME) and description (DESC) fields.
     %struct mbboDirectRecord;
     %typedef struct mbbodirectdset {
     %    dset common; /*init_record returns: (0, 2)=>(success, success no convert)*/
-    %    long (*write_mbbo)(struct mbboDirectRecord *prec); /*returns: (0, 2)=>(success, success no convert)*/
+    %    long (*write_mbboDirect)(struct mbboDirectRecord *prec); /*returns: (0, 2)=>(success, success no convert)*/
     %} mbbodirectdset;
     %#define HAS_mbbodirectdset
     %
@@ -152,6 +152,7 @@ Parameters> for more on the record name (NAME) and description (DESC) fields.
         promptgroup("50 - Output")
         special(SPC_NOMOD)
         interest(1)
+        prop(YES)       # get_precision
     }
     field(DOL,DBF_INLINK) {
         prompt("Desired Output Link")
@@ -298,7 +299,7 @@ the IVOV field to the output.
 See L<Invalid Output Action Fields|dbCommonOutput/Invalid Output Action Fields>
 for more information about IVOA and IVOV.
 
-See L<Alarm Specification|https://docs.epics-controls.org/en/latest/guides/EPICS_Process_Database_Concepts.html#alarm-specification>
+See L<Alarm Specification|https://docs.epics-controls.org/en/latest/process-database/EPICS_Process_Database_Concepts.html#alarm-specification>
 for a complete explanation of record alarms and of the standard fields.
 L<Alarm Fields|dbCommonRecord/Alarm Fields> lists other fields related
 to alarms that are common to all record types.

@@ -279,7 +279,7 @@ int NTPTime_Report(int level)
 
             epicsTimeToStrftime(lastSync, sizeof(lastSync),
                 "%Y-%m-%d %H:%M:%S.%06f", &NTPTimePvt.syncTime);
-            printf("Syncronization interval = %.1f seconds\n",
+            printf("Synchronization interval = %.1f seconds\n",
                 NTPTimeSyncInterval);
             printf("Last synchronized at %s\n",
                 lastSync);

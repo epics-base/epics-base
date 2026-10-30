@@ -12,6 +12,11 @@ TOP = ../../../..
 include $(TOP)/configure/CONFIG
 
 HTMLS += CAref.html
+DOCS += acctst.md
+DOCS += catime.md
+DOCS += casw.md
+DOCS += caEventRate.md
+DOCS += ca_test.md
 
 #
 #	includes to install from this subproject

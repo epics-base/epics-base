@@ -89,9 +89,9 @@ namespace boost
     #endif
 
     namespace boost
-    { 
-      namespace assertion 
-      { 
+    {
+      namespace assertion
+      {
         namespace detail
         {
           inline void assertion_failed_msg(char const * expr, char const * msg, char const * function,

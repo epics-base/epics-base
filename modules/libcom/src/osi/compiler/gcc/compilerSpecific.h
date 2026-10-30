@@ -45,7 +45,11 @@
 /*
  * Enable format-string checking if possible
  */
+#if __GNUC__ * 100 + __GNUC_MINOR__  >= 404
+#define EPICS_PRINTF_STYLE(f,a) __attribute__((format(__gnu_printf__,f,a)))
+#else
 #define EPICS_PRINTF_STYLE(f,a) __attribute__((format(__printf__,f,a)))
+#endif
 
 /*
  * Deprecation marker
@@ -56,5 +60,22 @@
  * Unused marker
  */
 #define EPICS_UNUSED __attribute__((unused))
+
+/*
+ * No return marker
+ */
+#ifndef vxWorks
+// VxWorks does not mark abort() or exit() noreturn!
+#define EPICS_NORETURN __attribute__((noreturn))
+#endif
+
+/*
+ * malloc marker takes 1 or 2 args: (index of size) or (index of count, index of element size)
+ */
+#if __GNUC__ * 100 + __GNUC_MINOR__  >= 403
+#define EPICS_MALLOC(...) __attribute__((__malloc__, __alloc_size__(__VA_ARGS__)))
+#else
+#define EPICS_MALLOC(...) __attribute__((__malloc__))
+#endif
 
 #endif  /* ifndef compilerSpecific_h */

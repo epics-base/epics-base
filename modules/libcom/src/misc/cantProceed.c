@@ -15,6 +15,7 @@
 #include <stdarg.h>
 
 #include "errlog.h"
+#include "envDefs.h"
 #include "cantProceed.h"
 #include "epicsThread.h"
 #include "epicsStackTrace.h"
@@ -27,7 +28,7 @@ LIBCOM_API void * callocMustSucceed(size_t count, size_t size, const char *msg)
             errlogPrintf("%s: callocMustSucceed(%lu, %lu) - " ERL_ERROR " calloc failed\n",
                     msg, (unsigned long)count, (unsigned long)size);
             errlogPrintf("Thread %s (%p) suspending.\n",
-                    epicsThreadGetNameSelf(), (void *)epicsThreadGetIdSelf());
+                    epicsThreadGetNameSelf(), epicsThreadGetIdSelf());
             errlogFlush();
             epicsThreadSuspendSelf();
         }
@@ -43,7 +44,7 @@ LIBCOM_API void * mallocMustSucceed(size_t size, const char *msg)
             errlogPrintf("%s: mallocMustSucceed(%lu) - " ERL_ERROR " malloc failed\n",
                 msg, (unsigned long)size);
             errlogPrintf("Thread %s (%p) suspending.\n",
-                    epicsThreadGetNameSelf(), (void *)epicsThreadGetIdSelf());
+                    epicsThreadGetNameSelf(), epicsThreadGetIdSelf());
             errlogFlush();
             epicsThreadSuspendSelf();
         }
@@ -53,20 +54,30 @@ LIBCOM_API void * mallocMustSucceed(size_t size, const char *msg)
 
 LIBCOM_API void cantProceed(const char *msg, ...)
 {
+    int shouldAbort = 0;
     va_list pvar;
     va_start(pvar, msg);
     if (msg)
         errlogVprintf(msg, pvar);
     va_end(pvar);
 
-    errlogPrintf(ANSI_RED("CRITICAL ERROR") " Thread %s (%p) can't proceed, suspending.\n",
-            epicsThreadGetNameSelf(), (void *)epicsThreadGetIdSelf());
+    envGetBoolConfigParam(&EPICS_ABORT_ON_ASSERT, &shouldAbort);
+
+    errlogPrintf(ANSI_RED("CRITICAL ERROR") " Thread %s (%p) can't proceed, %s.\n",
+            epicsThreadGetNameSelf(), epicsThreadGetIdSelf(), shouldAbort ? "aborting" : "suspending");
 
     epicsStackTrace();
 
     errlogFlush();
 
     epicsThreadSleep(1.0);
-    while (1)
-        epicsThreadSuspendSelf();
+
+    if (shouldAbort) {
+        errlogPrintf("cantProceed() Calling abort()\n");
+        errlogFlush();
+        abort();
+    } else {
+        while (1)
+            epicsThreadSuspendSelf();
+    }
 }

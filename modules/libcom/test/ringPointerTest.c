@@ -117,6 +117,20 @@ static void testSingle(void)
     testOk1(epicsRingPointerGetUsed(ring)==0);
     testOk1(epicsRingPointerGetHighWaterMark(ring)==rsize);
 
+    testDiag("Reset lowers a grown mark to the current non-zero usage");
+    /* Mark is still rsize from the fill above; push half so that
+     * usage < mark, then reset and confirm the mark drops to usage
+     * (not to zero, not left unchanged, not the reversed complement).
+     */
+    for(i=0; i<rsize/2; i++)
+        epicsRingPointerPush(ring, int2ptr(i+1));
+    testOk1(epicsRingPointerGetUsed(ring)==rsize/2);
+    testOk1(epicsRingPointerGetHighWaterMark(ring)==rsize);
+    epicsRingPointerResetHighWaterMark(ring);
+    testOk1(epicsRingPointerGetHighWaterMark(ring)==rsize/2);
+    while(epicsRingPointerPop(ring)) {}     /* drain for following tests */
+    testOk1(epicsRingPointerIsEmpty(ring));
+
     testDiag("Fill it up again");
     for(i=2; i<2*rsize; i++) {
         int ret;
@@ -255,7 +269,7 @@ MAIN(ringPointerTest)
     epicsThreadOpts opts = EPICS_THREAD_OPTS_INIT;
     epicsEventId stop = epicsEventMustCreate(epicsEventEmpty);
 
-    testPlan(42);
+    testPlan(46);
     testSingle();
     /* testPair() needs to run with a priority > 0.
      * Start a new thread since main() is a "non-epics"

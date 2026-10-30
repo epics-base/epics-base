@@ -122,7 +122,7 @@ long dbAllocRecord(DBENTRY *pdbentry,const char *precordName)
         pflddes = pdbRecordType->papFldDes[i];
         if(!pflddes) continue;
         pfield = (char*)precord + pflddes->offset;
-        pdbentry->pfield = (void *)pfield;
+        pdbentry->pfield = pfield;
         pdbentry->pflddes = pflddes;
         pdbentry->indfield = i;
         switch(pflddes->field_type) {

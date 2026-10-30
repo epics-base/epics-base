@@ -22,7 +22,8 @@
 double doCalc(const char *expr) {
     /* Evaluate expression, return result */
     double args[CALCPERFORM_NARGS] = {
-        1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0
+        1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0,
+        13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0, 20.0, 21.0
     };
     char *rpn = (char*)malloc(INFIX_TO_POSTFIX_SIZE(strlen(expr)+1));
     short err;
@@ -48,7 +49,8 @@ void testCalc(const char *expr, double expected) {
     /* Evaluate expression, test against expected result */
     bool pass = false;
     double args[CALCPERFORM_NARGS] = {
-        1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0
+        1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0,
+        13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0, 20.0, 21.0
     };
     char *rpn = (char*)malloc(INFIX_TO_POSTFIX_SIZE(strlen(expr)+1));
     short err;
@@ -85,7 +87,8 @@ void testUInt32Calc(const char *expr, epicsUInt32 expected) {
     /* Evaluate expression, test against expected result */
     bool pass = false;
     double args[CALCPERFORM_NARGS] = {
-        1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0
+        1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0,
+        13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0, 20.0, 21.0
     };
     char *rpn = (char*)malloc(INFIX_TO_POSTFIX_SIZE(strlen(expr)+1));
     short err;
@@ -162,18 +165,27 @@ void testBadExpr(const char *expr, short expected_err) {
 #define testExpr(expr) testCalc(#expr, expr);
 
 /* These are the argument bits for testArgs */
-#define A_A 0x001
-#define A_B 0x002
-#define A_C 0x004
-#define A_D 0x008
-#define A_E 0x010
-#define A_F 0x020
-#define A_G 0x040
-#define A_H 0x080
-#define A_I 0x100
-#define A_J 0x200
-#define A_K 0x400
-#define A_L 0x800
+#define A_A 0x000001
+#define A_B 0x000002
+#define A_C 0x000004
+#define A_D 0x000008
+#define A_E 0x000010
+#define A_F 0x000020
+#define A_G 0x000040
+#define A_H 0x000080
+#define A_I 0x000100
+#define A_J 0x000200
+#define A_K 0x000400
+#define A_L 0x000800
+#define A_M 0x001000
+#define A_N 0x002000
+#define A_O 0x004000
+#define A_P 0x008000
+#define A_Q 0x010000
+#define A_R 0x020000
+#define A_S 0x040000
+#define A_T 0x080000
+#define A_U 0x100000
 
 
 /* Macros and functions to make some expressions into valid C code */
@@ -296,9 +308,11 @@ MAIN(epicsCalcTest)
 {
     int repeat;
     const double a=1.0, b=2.0, c=3.0, d=4.0, e=5.0, f=6.0,
-                 g=7.0, h=8.0, i=9.0, j=10.0, k=11.0, l=12.0;
+                 g=7.0, h=8.0, i=9.0, j=10.0, k=11.0, l=12.0,
+                 m=13.0, n=14.0, o=15.0, p=16.0, q=17.0, r=18.0,
+                 s=19.0, t=20.0, u=21.0;
 
-    testPlan(637);
+    testPlan(687);
 
     /* LITERAL_OPERAND elements */
     testExpr(0);
@@ -335,6 +349,15 @@ MAIN(epicsCalcTest)
     testExpr(j);
     testExpr(k);
     testExpr(l);
+    testExpr(m);
+    testExpr(n);
+    testExpr(o);
+    testExpr(p);
+    testExpr(q);
+    testExpr(r);
+    testExpr(s);
+    testExpr(t);
+    testExpr(u);
     testExpr(PI);
     testExpr(D2R);
     testExpr(R2D);
@@ -832,6 +855,15 @@ MAIN(epicsCalcTest)
     testCalc("j := 0; j", 0);
     testCalc("k := 0; k", 0);
     testCalc("l := 0; l", 0);
+    testCalc("m := 0; m", 0);
+    testCalc("n := 0; n", 0);
+    testCalc("o := 0; o", 0);
+    testCalc("p := 0; p", 0);
+    testCalc("q := 0; q", 0);
+    testCalc("r := 0; r", 0);
+    testCalc("s := 0; s", 0);
+    testCalc("t := 0; t", 0);
+    testCalc("u := 0; u", 0);
 
     testCalc("a; a := 0", a);
     testCalc("b; b := 0", b);
@@ -845,6 +877,15 @@ MAIN(epicsCalcTest)
     testCalc("j; j := 0", j);
     testCalc("k; k := 0", k);
     testCalc("l; l := 0", l);
+    testCalc("m; m := 0", m);
+    testCalc("n; n := 0", n);
+    testCalc("o; o := 0", o);
+    testCalc("p; p := 0", p);
+    testCalc("q; q := 0", q);
+    testCalc("r; r := 0", r);
+    testCalc("s; s := 0", s);
+    testCalc("t; t := 0", t);
+    testCalc("u; u := 0", u);
 
     // Check relative precedences.
     testExpr(0 ? 1 : 2 | 4);                    // 0 1
@@ -921,8 +962,17 @@ MAIN(epicsCalcTest)
     testArgs("J", A_J, 0);
     testArgs("K", A_K, 0);
     testArgs("L", A_L, 0);
-    testArgs("A+B+C+D+E+F+G+H+I+J+K+L",
-        A_A|A_B|A_C|A_D|A_E|A_F|A_G|A_H|A_I|A_J|A_K|A_L, 0);
+    testArgs("M", A_M, 0);
+    testArgs("N", A_N, 0);
+    testArgs("O", A_O, 0);
+    testArgs("P", A_P, 0);
+    testArgs("Q", A_Q, 0);
+    testArgs("R", A_R, 0);
+    testArgs("S", A_S, 0);
+    testArgs("T", A_T, 0);
+    testArgs("U", A_U, 0);
+    testArgs("A+B+C+D+E+F+G+H+I+J+K+L+M+N+O+P+Q+R+S+T+U",
+        A_A|A_B|A_C|A_D|A_E|A_F|A_G|A_H|A_I|A_J|A_K|A_L|A_M|A_N|A_O|A_P|A_Q|A_R|A_S|A_T|A_U, 0);
     testArgs("0.1;A:=0", 0, A_A);
     testArgs("1.1;B:=0", 0, A_B);
     testArgs("2.1;C:=0", 0, A_C);
@@ -935,6 +985,15 @@ MAIN(epicsCalcTest)
     testArgs("9.1;J:=0", 0, A_J);
     testArgs("10.1;K:=0", 0, A_K);
     testArgs("11.1;L:=0", 0, A_L);
+    testArgs("12.1;M:=0", 0, A_M);
+    testArgs("13.1;N:=0", 0, A_N);
+    testArgs("14.1;O:=0", 0, A_O);
+    testArgs("15.1;P:=0", 0, A_P);
+    testArgs("16.1;Q:=0", 0, A_Q);
+    testArgs("17.1;R:=0", 0, A_R);
+    testArgs("18.1;S:=0", 0, A_S);
+    testArgs("19.1;T:=0", 0, A_T);
+    testArgs("20.1;U:=0", 0, A_U);
     testArgs("12.1;A:=0;B:=A;C:=B;D:=C", 0, A_A|A_B|A_C|A_D);
     testArgs("13.1;B:=A;A:=B;C:=D;D:=C", A_A|A_D, A_A|A_B|A_C|A_D);
 
@@ -955,6 +1014,11 @@ MAIN(epicsCalcTest)
     testBadExpr(":1", CALC_ERR_SYNTAX);
     testBadExpr("0,", CALC_ERR_BAD_SEPERATOR);
     testBadExpr("0)", CALC_ERR_PAREN_NOT_OPEN);
+    testBadExpr("V", CALC_ERR_SYNTAX);
+    testBadExpr("W", CALC_ERR_SYNTAX);
+    testBadExpr("X", CALC_ERR_SYNTAX);
+    testBadExpr("Y", CALC_ERR_SYNTAX);
+    testBadExpr("Z", CALC_ERR_SYNTAX);
 
     // Bit manipulations wrt bit 31 (bug lp:1514520)
     //   using integer literals

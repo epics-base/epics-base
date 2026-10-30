@@ -1,5 +1,8 @@
 # msi: Macro Substitution and Include Tool
 
+``` {program} msi
+```
+
 (msitool)=
 ## Introduction
 
@@ -18,7 +21,9 @@ substitution files accepted by the EPICS IOC's dbLoadTemplate command.
 
 ## Command Syntax
 
-`msi -V -g -o outfile -I dir -M subs -S subfile template`
+``` bash
+msi -V -g -o outfile -I dir -M subs -S subfile template
+```
 
 All parameters are optional. The -o, -I, -M, and -S switches may be
 separated from their associated value string by spaces if desired.
@@ -26,80 +31,89 @@ Output will be written to stdout unless the -o option is given.
 
 Switches have the following meanings:
 
-- **-V**
+::: {option} -V
+Verbose warnings; if this parameter is specified then any undefined
+macro discovered in the template file which does not have an
+associated default value is considered an error. An error message is
+generated, and when msi terminates it will do so with an exit status
+of 2.
+:::
 
-    Verbose warnings; if this parameter is specified then any undefined
-    macro discovered in the template file which does not have an
-    associated default value is considered an error. An error message is
-    generated, and when msi terminates it will do so with an exit status
-    of 2.
-- **-g**
+::: {option} -g
+When this flag is given all macros defined in a substitution file
+will have global scope and thus their values will persist until a
+new value is given for this macro. This flag is provided for
+backwards compatibility as this was the behavior of previous
+versions of msi, but it does not follow common scoping rules and is
+discouraged.
+:::
 
-    When this flag is given all macros defined in a substitution file
-    will have global scope and thus their values will persist until a
-    new value is given for this macro. This flag is provided for
-    backwards compatibility as this was the behavior of previous
-    versions of msi, but it does not follow common scoping rules and is
-    discouraged.
-- **-o _file_**
+::: {option} -o <file>
+Output will be written to the specified \<file\> rather than to the
+standard output.
+:::
 
-    Output will be written to the specifed file rather than to the
-    standard output.
-- **-I _dir_**
+::: {option} -I <dir>
+This parameter, which may be repeated or contain a colon-separated
+(or semi-colon separated on Windows) list of directory paths,
+specifies a search path for include commands. For example:
 
-    This parameter, which may be repeated or contain a colon-separated
-    (or semi-colon separated on Windows) list of directory paths,
-    specifies a search path for include commands. For example:
+``` bash
+msi -I /home/mrk/examples:. -I.. template
+```
 
-        msi -I /home/mrk/examples:. -I.. template
+specifies that all named files should be searched for in the following locations,
+in the order given:
 
-    specifies that all named files should be searched for in the following locations, 
-    in the order given:
+1.  `/home/mrk/examples`
+2.  `.` (the current directory)
+3.  `..` (the parent of the current directory)
 
-     1. /home/mrk/examples
-     2. . (the current directory)
-     3. .. (the parent of the current directory)
+Note that relative path searching is handled as
 
-    Note that relative path searching is handled as
-    
-        $ cat foo.substitutions
-        file rel/path/bar.template {
-          # contents
-        }
-        $ msi -I . -I /some/path foo.substitutions
-    
-    which will try to find `bar.template` at the path `./rel/path/` followed by
-    `/some/path/rel/path`.
+    $ cat foo.substitutions
+    file rel/path/bar.template {
+      # contents
+    }
+    $ msi -I . -I /some/path foo.substitutions
 
+which will try to find `bar.template` at the path `./rel/path/` followed by
+`/some/path/rel/path`.
+:::
 
-- **-M _substitutions_**
+::: {option} -M <substitutions>
+This parameter specifies macro values for the template instance.
+Multiple macro values can be specified in one substitution
+parameter, or in multiple -M parameters. For example:
 
-    This parameter specifies macro values for the template instance.
-    Multiple macro values can be specified in one substitution
-    parameter, or in multiple -M parameters. For example:
+``` bash
+msi -M "a=aval,b=bval" -Mc=cval template
+```
 
-        msi -M "a=aval,b=bval" -Mc=cval template
+specifies that in the template file each occurrence of:
 
-    specifies that in the template file each occurrence of:
+- `$(a)` or `${a}` is replaced by _aval_
+- `$(b)` or `${b}` is replaced by _bval_
+- `$(c)` or `${c}` is replaced by _cval_
+:::
 
-    - `$(a)` or `${a}` is replaced by _aval_
-    - `$(b)` or `${b}` is replaced by _bval_
-    - `$(c)` or `${c}` is replaced by _cval_
+::: {option} -S <subfile>
+The substitution file. See below for format.
+:::
 
-- **-S _subfile_**
-
-    The substitution file. See below for format.
-- **_template_**
-
-    The input file. If no file is specified then input is taken from
-    stdin, i.e. msi can be used as a filter. See below for a description
-    of commands that can be embedded in the template file.
+::: {option} <template>
+The input file. If no file is specified then input is taken from
+stdin, i.e. msi can be used as a filter. See below for a description
+of commands that can be embedded in the template file.
+:::
 
 It is not possible to display usage by just typing msi since executing
 the command with no arguments is a valid command. To show usage specify
 an illegal switch, e.g.
 
-    msi -help
+``` bash
+msi -help
+```
 
 
 ## Exit Status
@@ -152,7 +166,7 @@ expanded properly.
 However neither back-slash characters nor quotes of either variety are
 removed when generating the output file, so depending on what is being
 output the single quote behaviour may not be useful and may even be a
-hinderance. It cannot be disabled in the current version of msi.
+hindrance. It cannot be disabled in the current version of msi.
 
 
 ### Template file commands
@@ -167,9 +181,9 @@ template file itself. These commands are:
 
 Lines containing commands must be in one of these forms:
 
-  - include "_filename_"
+-   {samp}`include "{filename}"`
 
-  - substitute "_name1=value1, name2=value2, ..._"
+-   {samp}`substitute "{name1=value1, name2=value2, ...}"`
 
 White space is allowed before and after the command verb, and after the
 quoted string. If embedded quotes are needed, the backslash character \
@@ -227,11 +241,11 @@ dbTemplate format. We will discuss each separately.
 ### Regular format
 
     global {gbl_var1=gbl_val1, gbl_var2=gbl_val2, ...}
-    {var1=set1_val1, var2=set1_val2, ...}
-    {var2=set2_val2, var1=set2_val1, ...}
+        {var1=set1_val1, var2=set1_val2, ...}
+        {var2=set2_val2, var1=set2_val1, ...}
     global {gbl_var1=gbl_val3, gbl_var2=gbl_val4, ...}
-    {var1=set3_val1, var2=set3_val2, ...}
-    {var2=set4_val2, var1=set4_val1, ...}
+        {var1=set3_val1, var2=set3_val2, ...}
+        {var2=set4_val2, var1=set4_val1, ...}
 
 The template file is output with macro substitutions performed once for
 each set of braces containing macro replacement values.
@@ -241,12 +255,12 @@ each set of braces containing macro replacement values.
 
     global {gbl_var1=gbl_val1, gbl_var2=gbl_val2, ...}
     pattern {var1, var2, ...}
-    {set1_val1, set1_val2, ...}
-    {set2_val1, set2_val2, ...}
+        {set1_val1, set1_val2, ...}
+        {set2_val1, set2_val2, ...}
     pattern {var2, var1, ...}
     global {gbl_var1=gbl_val3, gbl_var2=gbl_val4, ...}
-    {set3_val2, set3_val1, ...}
-    {set4_val2, set4_val2, ...}
+        {set3_val2, set3_val1, ...}
+        {set4_val2, set4_val2, ...}
 
 This produces the same result as the regular format example above.
 
@@ -320,8 +334,8 @@ The file template contains
 and the file `substitute` is
 
     global {family=Kraimer}
-    {first=Marty}
-    {first=Irma}
+        {first=Marty}
+        {first=Irma}
 
 The following is the output produced:
 
@@ -340,8 +354,8 @@ Let the command be:
 The file pattern contains
 
     pattern {first,last}
-    {Marty,Kraimer}
-    {Irma,Kraimer}
+        {Marty,Kraimer}
+        {Irma,Kraimer}
 
 and template is the same as the previous example:
 
@@ -365,16 +379,16 @@ Let the command be
 `xxx.substitutions` is
 
     file template {
-    pattern {first,last}
-    {Marty,Kraimer}
-    {Irma,Kraimer}
-    pattern {last,first}
-    {Smith,Bill}
-    {Smith,Mary}
+        pattern {first,last}
+            {Marty,Kraimer}
+            {Irma,Kraimer}
+        pattern {last,first}
+            {Smith,Bill}
+            {Smith,Mary}
     }
     file template {
-    {first=Marty,last=Kraimer}
-    {first=Irma,last=Kraimer}
+        {first=Marty,last=Kraimer}
+        {first=Irma,last=Kraimer}
     }
 
 `template` is the same as in the previous example.

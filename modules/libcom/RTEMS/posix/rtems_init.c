@@ -34,6 +34,8 @@
 #include <sys/stat.h>
 #include <sys/socket.h>
 #include <sys/syslog.h>
+#include <net/route.h>
+#include <net/if_dl.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <assert.h>
@@ -65,6 +67,8 @@
 #include <rtems/bsd/modules.h>
 #include <rtems/dhcpcd.h>
 #include <machine/rtems-bsd-commands.h>
+#include <bsp.h>
+#include <bsp/nexus-devices.h>
 #endif
 
 #include <rtems/telnetd.h>
@@ -90,7 +94,7 @@
 #ifndef RTEMS_LEGACY_STACK
 // setup own ntp-client to get time
 #include "epicsNtp.h"
-epicsEventId 	dhcpDone;
+epicsEventId dhcpDone;
 #endif
 
 /* these settings are needed by the rtems startup
@@ -126,10 +130,10 @@ logReset (void)
     if (fp) {
         char buf[80];
         fp(buf, sizeof buf);
-        errlogPrintf ("Startup after %s.\n", buf);
+        printf ("Startup after %s.\n", buf);
     }
     else {
-        errlogPrintf ("Startup.\n");
+        printf ("Startup.\n");
     }
 }
 
@@ -169,7 +173,7 @@ LogFatal (const char *msg, ...)
 void
 LogRtemsFatal (const char *msg, rtems_status_code sc)
 {
-    errlogPrintf ("%s: %s\n", msg, rtems_status_text (sc));
+    printf ("%s: %s\n", msg, rtems_status_text (sc));
     delayedPanic (msg);
 }
 
@@ -179,7 +183,7 @@ LogRtemsFatal (const char *msg, rtems_status_code sc)
 void
 LogNetFatal (const char *msg, int err)
 {
-    errlogPrintf ("%s: %d\n", msg, err);
+    printf ("%s: %d\n", msg, err);
     delayedPanic (msg);
 }
 
@@ -411,7 +415,7 @@ initialize_remote_filesystem(char **argv, int hasLocalFilesystem)
             argv[1] = abspath;
         }
     }
-    errlogPrintf("nfsMount(\"%s\", \"%s\", \"%s\")\n",
+    printf("nfsMount(\"%s\", \"%s\", \"%s\")\n",
                  server_name, server_path, mount_point);
     nfsMount(server_name, server_path, mount_point);
 #endif
@@ -484,7 +488,7 @@ set_directory (const char *commandline)
     if (chdir (directoryPath) < 0)
         LogFatal ("Can't set initial directory(%s): %s\n", directoryPath, strerror(errno));
     else
-        errlogPrintf("chdir(\"%s\")\n", directoryPath);
+        printf("chdir(\"%s\")\n", directoryPath);
     free(directoryPath);
 }
 
@@ -507,11 +511,11 @@ static void rtshellCallFunc(const iocshArgBuf *args)
 {
     rtems_shell_cmd_t *cmd = rtems_shell_lookup_cmd(args[0].sval);
     int ret;
-    
+
     if (!cmd) {
         fprintf(stderr, "ERR: No such command\n");
         iocshSetError(-1);
-    
+
     } else {
         fflush(stdout);
         fflush(stderr);
@@ -768,7 +772,7 @@ dhcpcd_hook_handler(rtems_dhcpcd_hook *hook, char *const *env)
     printf("\n");
     for (;NULL != *env;++env) {
         printf("dhcpcd ---> '%s'\n", *env);
-        
+
         for(const struct dhcp_vars_t* var = dhcp_vars; var->name; var++) {
             size_t namelen = strlen(var->name);
 
@@ -811,8 +815,8 @@ dhcpcd_hook_handler(rtems_dhcpcd_hook *hook, char *const *env)
 }
 
 static rtems_dhcpcd_hook dhcpcd_hook = {
-	.name = "ioc boot",
-	.handler = dhcpcd_hook_handler
+    .name = "ioc boot",
+    .handler = dhcpcd_hook_handler
 };
 
 static void
@@ -869,9 +873,53 @@ default_network_dhcpcd(void)
         rv = close(fd);
         assert(rv == 0);
     }
-    
+
     sc = rtems_dhcpcd_start(NULL);
     assert(sc == RTEMS_SUCCESSFUL);
+}
+
+/*
+ * Block until the named interface reports link up via an RTM_IFINFO routing
+ * message, or until timeout_secs elapses.
+ *
+ * route_sock must already be open (opened before the interface was configured
+ * so that no RTM_IFINFO event can be missed).
+ *
+ * This function was modeled after the RTM_IFINFO handling in
+ * rtems-libbsd/dhcpcd/if-bsd.c (manage_link).  There's a
+ * simpler implementation in a test that uses a sleep loop in
+ * rtems-libbsd/testsuite/include/rtems/bsd/test/default-init.h, but
+ * we chose this more responsive event based implementation.
+ *
+ * Returns 0 if link came up, -1 on timeout or error.
+ */
+static int
+wait_for_link_up(int route_sock, const char *ifname, int timeout_secs)
+{
+    printf("Waiting for link on %s (timeout %ds)...\n", ifname, timeout_secs);
+
+    struct timeval tv = { .tv_sec = timeout_secs, .tv_usec = 0 };
+    setsockopt(route_sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
+
+    char buf[sizeof(struct if_msghdr) + sizeof(struct sockaddr_dl)];
+    ssize_t n;
+    while ((n = recv(route_sock, buf, sizeof(buf), 0)) > 0) {
+        struct rt_msghdr *rtm = (struct rt_msghdr *)(void *)buf;
+        if (rtm->rtm_type == RTM_IFINFO) {
+            struct if_msghdr *ifm = (struct if_msghdr *)(void *)buf;
+            char name[IFNAMSIZ];
+            if (if_indextoname(ifm->ifm_index, name) != NULL &&
+                strcmp(name, ifname) == 0 &&
+                ifm->ifm_data.ifi_link_state == LINK_STATE_UP) {
+                return 0;
+            }
+        }
+    }
+
+    /* recv returned <= 0: SO_RCVTIMEO expired (EAGAIN) or socket error */
+    printf("Warning: link did not come up on %s within %ds\n",
+           ifname, timeout_secs);
+    return -1;
 }
 #endif // not RTEMS_LEGACY_STACK
 
@@ -944,10 +992,10 @@ rtems_telnetd_config_table rtems_telnetd_config = {
 void *
 POSIX_Init ( void *argument __attribute__((unused)))
 {
-    int                	result;
-    char               	*argv[3]         = { NULL, NULL, NULL };
-    rtems_status_code  	sc;
-    struct timespec  	now;
+    int                 result;
+    char                *argv[3]         = { NULL, NULL, NULL };
+    rtems_status_code   sc;
+    struct timespec     now;
     char timeBuff[100];
 
     initConsole ();
@@ -990,8 +1038,8 @@ POSIX_Init ( void *argument __attribute__((unused)))
     if (epicsRtemsInitPreSetBootConfigFromNVRAM(&rtems_bsdnet_config) != 0)
         delayedPanic("epicsRtemsInitPreSetBootConfigFromNVRAM");
     if (rtems_bsdnet_config.bootp == NULL) {
-        extern void setBootConfigFromNVRAM(void);
-        setBootConfigFromNVRAM();
+        extern int setBootConfigFromNVRAM(char *, size_t);
+        setBootConfigFromNVRAM(NULL, 0);
     }
     if (epicsRtemsInitPostSetBootConfigFromNVRAM(&rtems_bsdnet_config) != 0)
         delayedPanic("epicsRtemsInitPostSetBootConfigFromNVRAM");
@@ -1004,7 +1052,7 @@ POSIX_Init ( void *argument __attribute__((unused)))
     /*
      * Create a reasonable environment
      */
-    
+
     putenv ("TERM=xterm");
     putenv ("IOCSH_HISTSIZE=20");
 
@@ -1018,7 +1066,7 @@ POSIX_Init ( void *argument __attribute__((unused)))
 #if defined(QEMU_FIXUPS) && defined(__i386__)
     // glorious hack to stub out useless EEPROM check
     // which takes sooooo longggg w/ QEMU
-    // Writes a 'ret' instruction to immediatly return to the caller
+    // Writes a 'ret' instruction to immediately return to the caller
     extern void _bsd_e1000_validate_nvm_checksum(void);
     *(char*)&_bsd_e1000_validate_nvm_checksum = 0xc3;
 #endif
@@ -1047,41 +1095,75 @@ POSIX_Init ( void *argument __attribute__((unused)))
     printf("\n***** ifconfig lo0 *****\n");
     rtems_bsd_ifconfig_lo0();
 
-    printf("\n***** add dhcpcd hook *****\n");
-    dhcpDone = epicsEventMustCreate(epicsEventEmpty);
-    rtems_dhcpcd_add_hook(&dhcpcd_hook);
+    /* Check whether global environment static network config exists.
+     * If so, use that, else, fall back to DHCP. */
+    extern int setBootConfigFromNVRAM(char *, size_t);
 
-    printf("\n***** Start default network dhcpcd *****\n");
-    // if MY_BOOTP???
-    default_network_dhcpcd();
+    /* Open route socket before configuring the interface so that no
+     * events are missed. */
+    int route_sock = socket(PF_ROUTE, SOCK_RAW, 0);
+    if (route_sock < 0)
+        printf("Warning: could not open PF_ROUTE socket: %s\n", strerror(errno));
 
-    /* this seems to be hard coded in the BSP -> Sebastian Huber ? */
-    printf("\n--Info (hpj)-- bsd task prio IRQS: %d  -----\n", rtems_bsd_get_task_priority("IRQS"));
-    printf("\n--Info (hpj)-- bsd task prio TIME: %d  -----\n", rtems_bsd_get_task_priority("TIME"));
+    printf("\n***** checking for static network configuration *****\n");
+    int status = setBootConfigFromNVRAM(rtemsInit_NTP_server_ip,
+                                             sizeof(rtemsInit_NTP_server_ip));
+    bool try_dhcp = status != 0;
+
+    if (try_dhcp) {
+        /* Route socket not needed — DHCP path has its own event mechanism */
+        if (route_sock >= 0) {
+            close(route_sock);
+            route_sock = -1;
+        }
+
+        printf("\n***** add dhcpcd hook *****\n");
+        dhcpDone = epicsEventMustCreate(epicsEventEmpty);
+        rtems_dhcpcd_add_hook(&dhcpcd_hook);
+
+        printf("\n***** Start default network dhcpcd *****\n");
+        default_network_dhcpcd();
+
+        /* this seems to be hard coded in the BSP -> Sebastian Huber ? */
+        printf("\n--Info (hpj)-- bsd task prio IRQS: %d  -----\n", rtems_bsd_get_task_priority("IRQS"));
+        printf("\n--Info (hpj)-- bsd task prio TIME: %d  -----\n", rtems_bsd_get_task_priority("TIME"));
 
 
-    // wait for dhcp done ... should be if SYNCDHCP is used
-    epicsEventWaitStatus stat;
-    printf("\n ---- Waiting for DHCP ...\n");
-    stat = epicsEventWaitWithTimeout(dhcpDone, 600); 
-    if (stat == epicsEventOK)
-    	epicsEventDestroy(dhcpDone);
-    else if (stat == epicsEventWaitTimeout)
-        printf("\n ---- DHCP timed out!\n");
-    else
-	printf("\n ---- dhcpDone Event Unknown state %d\n", stat);
+        // wait for dhcp done ... should be if SYNCDHCP is used
+        epicsEventWaitStatus stat;
+        printf("\n ---- Waiting for DHCP ...\n");
+        stat = epicsEventWaitWithTimeout(dhcpDone, 600);
+        if (stat == epicsEventOK)
+            epicsEventDestroy(dhcpDone);
+        else if (stat == epicsEventWaitTimeout)
+            printf("\n ---- DHCP timed out!\n");
+        else
+            printf("\n ---- dhcpDone Event Unknown state %d\n", stat);
+    } else {
+        /* Static IP: block until the physical link comes up before
+         * proceeding to NTP and NFS, analogous to the DHCP event wait. */
+        if (route_sock >= 0) {
+            char ifnamebuf[IF_NAMESIZE];
+            char *ifname = if_indextoname(1, ifnamebuf);
+            if (ifname != NULL)
+                wait_for_link_up(route_sock, ifname, 30);
+            close(route_sock);
+        }
+    }
 
-    const char* ifconfg_args[] = {
-        "ifconfig", NULL
-    };
-    const char* netstat_args[] = {
-        "netstat", "-rn", NULL
-    };
+    { // Dump ifconfig and netstat info to stdout
+        const char* ifconfg_args[] = {
+            "ifconfig", NULL
+        };
+        const char* netstat_args[] = {
+            "netstat", "-rn", NULL
+        };
 
-    printf("-------------- IFCONFIG -----------------\n");
-    rtems_bsd_command_ifconfig(1, (char**) ifconfg_args);
-    printf("-------------- NETSTAT ------------------\n");
-    rtems_bsd_command_netstat(2, (char**) netstat_args);
+        printf("-------------- IFCONFIG -----------------\n");
+        rtems_bsd_command_ifconfig(1, (char**) ifconfg_args);
+        printf("-------------- NETSTAT ------------------\n");
+        rtems_bsd_command_netstat(2, (char**) netstat_args);
+    }
 
     /* until now there is no NTP support in libbsd -> Sebastian Huber ... */
     printf("\n***** Until now no NTP support in RTEMS 5 with rtems-libbsd *****\n");
@@ -1159,12 +1241,24 @@ POSIX_Init ( void *argument __attribute__((unused)))
    // printf (" telnetd initialized with result %d\n", result);
 #endif
 
+#if 0
+// Start an rtems shell before main, for debugging RTEMS system issues
+    rtems_shell_init("SHLL", RTEMS_MINIMUM_STACK_SIZE * 4,
+                     100, "/dev/console",
+                     false, true,
+                     NULL);
+#endif
+
     printf ("***** Preparing EPICS application *****\n");
     iocshRegisterRTEMS ();
-    set_directory (argv[1]);
-    epicsEnvSet ("IOC_STARTUP_SCRIPT", argv[1]);
+    /* No startup script when the application declares that it needs no
+     * filesystem (epicsRtemsFSImage == NULL).
+     */
+    if (argv[1] != NULL) {
+        set_directory (argv[1]);
+        epicsEnvSet ("IOC_STARTUP_SCRIPT", argv[1]);
+    }
     atexit(exitHandler);
-    errlogFlush();
     printf ("***** Starting EPICS application *****\n");
 
 
@@ -1181,7 +1275,7 @@ POSIX_Init ( void *argument __attribute__((unused)))
                      NULL);
 #endif
 
-    result = main ((sizeof argv / sizeof argv[0]) - 1, argv);
+    result = main (argv[1] != NULL ? 2 : 1, argv);
     printf ("***** IOC application terminating *****\n");
     epicsThreadSleep(1.0);
     epicsExit(result);

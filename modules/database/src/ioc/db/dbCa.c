@@ -40,6 +40,7 @@
 /* We can't include dbStaticLib.h here */
 #define dbCalloc(nobj,size) callocMustSucceed(nobj,size,"dbCalloc")
 
+#include <epicsAtomic.h>
 #include "db_access_routines.h"
 #include "dbCa.h"
 #include "dbCaPvt.h"
@@ -64,6 +65,7 @@ extern int dbServiceIsolate;
 static ELLLIST workList = ELLLIST_INIT;    /* Work list for dbCaTask */
 static epicsMutexId workListLock; /*Mutual exclusions semaphores for workList*/
 static epicsEventId workListEvent; /*wakeup event for dbCaTask*/
+static size_t initOutstanding; // one count for every link with a DBCA_CALLBACK_INIT_WAIT bit
 static int removesOutstanding = 0;
 #define removesOutstandingWarning 10000
 
@@ -115,13 +117,12 @@ static int dbca_chan_count;
  * During link modification or IOC shutdown the pca->plink pointer (guarded by caLink.lock)
  * is used as a flag to indicate that a link is no longer active.
  *
- * References to the struct caLink are owned by the dbCaTask, and any scanOnceCallback()
- * which is in progress.
+ * References to the struct caLink are owned by the dbCaTask.
  *
- * The libca and scanOnceCallback callbacks take no action if pca->plink==NULL.
+ * The libca callbacks take no action if pca->plink==NULL.
  *
  *   dbCaPutLinkCallback causes an additional complication because
- *   when dbCaRemoveLink is called the callback may not have occured.
+ *   when dbCaRemoveLink is called the callback may not have occurred.
  *   If putComplete sees plink==0 it will not call the user's code.
  *   If pca->putCallback is non-zero, dbCaTask will call the
  *   user's callback AFTER it has called ca_clear_channel.
@@ -210,9 +211,9 @@ void testdbCaWaitForEventCB(void *raw)
 {
     struct waitPvt *pvt = raw;
 
-    epicsMutexMustLock(pvt->pca->lock);
+    epicsMutexMustLock(workListLock);
     epicsEventMustTrigger(pvt->evt);
-    epicsMutexUnlock(pvt->pca->lock);
+    epicsMutexUnlock(workListLock);
 }
 
 static
@@ -240,8 +241,6 @@ void testdbCaWaitForEvent(DBLINK *plink, unsigned long cnt, enum testEvent event
         dbScanUnlock(plink->precord);
 
         epicsEventMustWait(evt);
-        /* ensure worker has finished executing */
-        dbCaSync();
 
         dbScanLock(plink->precord);
         epicsMutexMustLock(pca->lock);
@@ -251,8 +250,15 @@ void testdbCaWaitForEvent(DBLINK *plink, unsigned long cnt, enum testEvent event
         pca->userPvt = NULL;
     }
 
-    epicsEventDestroy(evt);
     epicsMutexUnlock(pca->lock);
+
+    /* ensure worker has finished executing */
+    dbCaSync();
+
+    epicsMutexMustLock(workListLock); /* lock to ensure that epicsEventMustTrigger() has returned */
+    epicsEventDestroy(evt);
+    epicsMutexUnlock(workListLock);
+
     caLinkDec(pca);
     dbScanUnlock(plink->precord);
 }
@@ -267,6 +273,10 @@ void testdbCaWaitForUpdateCount(DBLINK *plink, unsigned long cnt)
     testdbCaWaitForEvent(plink, cnt, testEventCount);
 }
 
+// private access to access.cpp
+LIBCA_API
+void dbCaSyncLocal(void);
+
 /* Block until worker thread has processed all previously queued actions.
  * Does not prevent additional actions from being queued.
  */
@@ -274,6 +284,8 @@ void dbCaSync(void)
 {
     epicsEventId wake;
     caLink templink;
+
+    dbCaSyncLocal();
 
     /* we only partially initialize templink.
      * It has no link field and no subscription
@@ -341,7 +353,7 @@ static void dbCaLinkInitImpl(int isolate)
     dbCaCtl = ctlPause;
 
     dbCaWorker = epicsThreadCreateOpt("dbCaLink", dbCaTask, NULL, &opts);
-    /* wait for worker to startup and initialize dbCaClientContext */
+    /* wait for worker to startup, initialize dbCaClientContext, and connect local CA */
     epicsEventMustWait(startStopEvent);
 }
 
@@ -360,6 +372,10 @@ void dbCaRun(void)
     if (dbCaCtl == ctlPause) {
         dbCaCtl = ctlRun;
         epicsEventSignal(workListEvent);
+
+        while(epicsAtomicGetSizeT(&initOutstanding)) {
+            epicsEventMustWait(startStopEvent);
+        }
     }
 }
 
@@ -370,11 +386,12 @@ void dbCaPause(void)
         epicsEventSignal(workListEvent);
     }
 }
-
-void dbCaAddLinkCallback(struct link *plink,
-    dbCaCallback connect, dbCaCallback monitor, void *userPvt)
+void dbCaAddLinkCallbackOpt(struct dbLocker *locker, struct link *plink,
+                            dbCaCallback connect, dbCaCallback monitor, void *userPvt,
+                            unsigned flags)
 {
     caLink *pca;
+    (void)locker; /* Passed for symmetry with dbDbAddLink().  So far unused. */
 
     assert(!plink->value.pv_link.pvt);
 
@@ -386,6 +403,10 @@ void dbCaAddLinkCallback(struct link *plink,
     pca->connect = connect;
     pca->monitor = monitor;
     pca->userPvt = userPvt;
+    pca->flags = flags;
+
+    if(flags & DBCA_CALLBACK_INIT_WAITING)
+        epicsAtomicIncrSizeT(&initOutstanding);
 
     epicsMutexMustLock(pca->lock);
     plink->lset = &dbCa_lset;
@@ -395,15 +416,22 @@ void dbCaAddLinkCallback(struct link *plink,
     epicsMutexUnlock(pca->lock);
 }
 
+void dbCaAddLinkCallback(struct link *plink,
+    dbCaCallback connect, dbCaCallback monitor, void *userPvt)
+{
+    dbCaAddLinkCallbackOpt(NULL, plink, connect, monitor, userPvt, 0);
+}
+
 long dbCaAddLink(struct dbLocker *locker, struct link *plink, short dbfType)
 {
-    dbCaAddLinkCallback(plink, 0, 0, NULL);
+    dbCaAddLinkCallbackOpt(locker, plink, 0, 0, NULL, 0);
     return 0;
 }
 
 void dbCaRemoveLink(struct dbLocker *locker, struct link *plink)
 {
     caLink *pca = (caLink *)plink->value.pv_link.pvt;
+    (void)locker; /* Passed for symmetry with dbDbRemoveLink().  So far unused. */
 
     if (!pca) return;
     epicsMutexMustLock(pca->lock);
@@ -488,7 +516,7 @@ long dbCaGetLink(struct link *plink, short dbrType, void *pdest,
             ntoget = pca->usedelements;
         *nelements = ntoget;
 
-        memset((void *)&dbAddr, 0, sizeof(dbAddr));
+        memset(&dbAddr, 0, sizeof(dbAddr));
         dbAddr.pfield = pca->pgetNative;
         /*Following will only be used for pca->dbrType == DBR_STRING*/
         dbAddr.field_size = MAX_STRING_SIZE;
@@ -569,7 +597,7 @@ long dbCaPutLinkCallback(struct link *plink,short dbrType,
             long (*aConvert)(struct dbAddr *paddr, const void *from, long nreq, long nfrom, long off);
 
             aConvert = dbPutConvertRoutine[dbrType][newType];
-            memset((void *)&dbAddr, 0, sizeof(dbAddr));
+            memset(&dbAddr, 0, sizeof(dbAddr));
             dbAddr.pfield = pca->pputNative;
             /*Following only used for DBF_STRING*/
             dbAddr.field_size = MAX_STRING_SIZE;
@@ -788,38 +816,6 @@ static long doLocked(struct link *plink, dbLinkUserCallback rtn, void *priv)
     return status;
 }
 
-static void scanComplete(void *raw, dbCommon *prec)
-{
-    caLink *pca = raw;
-    epicsMutexMustLock(pca->lock);
-    if(!pca->plink) {
-        /* IOC shutdown or link re-targeted.  Do nothing. */
-    } else if(pca->scanningOnce==0) {
-        errlogPrintf("dbCa.c complete callback w/ scanningOnce==0\n");
-    } else if(--pca->scanningOnce){
-        /* another scan is queued */
-        if(scanOnceCallback(prec, scanComplete, raw)) {
-            errlogPrintf("dbCa.c failed to re-queue scanOnce\n");
-        } else
-            caLinkInc(pca);
-    }
-    epicsMutexUnlock(pca->lock);
-    caLinkDec(pca);
-}
-
-/* must be called with pca->lock held */
-static void scanLinkOnce(dbCommon *prec, caLink *pca) {
-    if(pca->scanningOnce==0) {
-        if(scanOnceCallback(prec, scanComplete, pca)) {
-            errlogPrintf("dbCa.c failed to queue scanOnce\n");
-        } else
-            caLinkInc(pca);
-    }
-    if(pca->scanningOnce<5)
-        pca->scanningOnce++;
-    /* else too many scans queued */
-}
-
 static lset dbCa_lset = {
     0, 1, /* not Constant, Volatile */
     NULL, dbCaRemoveLink,
@@ -833,6 +829,21 @@ static lset dbCa_lset = {
     dbCaPutLink, dbCaPutAsync,
     scanForward, doLocked
 };
+
+// caller must hold caLink::lock
+static
+short testInitReady(caLink *pca, unsigned clear)
+{
+    if(pca->flags & DBCA_CALLBACK_INIT_WAIT_MASK) {
+        pca->flags &= ~clear;
+        assert(pca->flags & DBCA_CALLBACK_INIT_WAITING); // only cleared by dbCa worker
+        if(!(pca->flags & DBCA_CALLBACK_INIT_WAIT_MASK)) {
+            // all complete
+            return CA_INIT_READY;
+        }
+    }
+    return 0;
+}
 
 static void connectionCallback(struct connection_handler_args arg)
 {
@@ -856,7 +867,9 @@ static void connectionCallback(struct connection_handler_args arg)
         if (precord &&
             ((ppv_link->pvlMask & pvlOptCP) ||
              ((ppv_link->pvlMask & pvlOptCPP) && precord->scan == 0)))
-            scanLinkOnce(precord, pca);
+        {
+            link_action |= CA_DBPROCESS;
+        }
         goto done;
     }
     pca->hasReadAccess = ca_read_access(arg.chid);
@@ -895,9 +908,13 @@ static void connectionCallback(struct connection_handler_args arg)
     pca->dbrType = ca_field_type(arg.chid);
     if ((plink->value.pv_link.pvlMask & pvlOptInpNative) && !pca->pgetNative) {
         link_action |= CA_MONITOR_NATIVE;
+    } else {
+        link_action |= testInitReady(pca, DBCA_CALLBACK_INIT_WAIT_NATIVE);
     }
     if ((plink->value.pv_link.pvlMask & pvlOptInpString) && !pca->pgetString) {
         link_action |= CA_MONITOR_STRING;
+    } else {
+        link_action |= testInitReady(pca, DBCA_CALLBACK_INIT_WAIT_STRING);
     }
     if ((plink->value.pv_link.pvlMask & pvlOptOutNative) && pca->gotOutNative) {
         link_action |= CA_WRITE_NATIVE;
@@ -910,6 +927,7 @@ static void connectionCallback(struct connection_handler_args arg)
         /* will run connect() callback later */
         link_action |= CA_GET_ATTRIBUTES;
     } else {
+        link_action |= testInitReady(pca, DBCA_CALLBACK_INIT_WAIT_ATTRIB);
         connect = pca->connect;
         userPvt = pca->userPvt;
     }
@@ -919,7 +937,7 @@ done:
     if (connect) connect(userPvt);
 }
 
-static void eventCallback(struct event_handler_args arg)
+static void eventCallbackComm(struct event_handler_args arg, unsigned initmask)
 {
     caLink *pca = (caLink *)arg.usr;
     struct link *plink;
@@ -929,6 +947,7 @@ static void eventCallback(struct event_handler_args arg)
     dbCaCallback monitor = 0;
     void *userPvt = 0;
     int doScan = 1;
+    short link_action = 0;
 
     assert(pca);
     epicsMutexMustLock(pca->lock);
@@ -988,11 +1007,25 @@ static void eventCallback(struct event_handler_args arg)
 
         if ((ppv_link->pvlMask & pvlOptCP) ||
             ((ppv_link->pvlMask & pvlOptCPP) && precord->scan == 0))
-        scanLinkOnce(precord, pca);
+        {
+            link_action |= CA_DBPROCESS;
+        }
     }
+    link_action |= testInitReady(pca, initmask);
 done:
+    if (link_action) addAction(pca, link_action);
     epicsMutexUnlock(pca->lock);
     if (monitor) monitor(userPvt);
+}
+
+static void eventCallbackNative(struct event_handler_args arg)
+{
+    eventCallbackComm(arg, DBCA_CALLBACK_INIT_WAIT_NATIVE);
+}
+
+static void eventCallbackString(struct event_handler_args arg)
+{
+    eventCallbackComm(arg, DBCA_CALLBACK_INIT_WAIT_STRING);
 }
 
 static void exceptionCallback(struct exception_handler_args args)
@@ -1061,7 +1094,9 @@ static void accessRightsCallback(struct access_rights_handler_args arg)
     if (precord &&
         ((ppv_link->pvlMask & pvlOptCP) ||
          ((ppv_link->pvlMask & pvlOptCPP) && precord->scan == 0)))
-        scanLinkOnce(precord, pca);
+    {
+        addAction(pca, CA_DBPROCESS);
+    }
 done:
     epicsMutexUnlock(pca->lock);
 }
@@ -1112,6 +1147,9 @@ static void getAttribEventCallback(struct event_handler_args arg)
     pca->alarmLimits[3] = pdbr->upper_alarm_limit;
     pca->precision = pdbr->precision;
     memcpy(pca->units, pdbr->units, MAX_UNITS_SIZE);
+    short link_action = testInitReady(pca, DBCA_CALLBACK_INIT_WAIT_ATTRIB);
+    if (link_action)
+        addAction(pca, link_action);
     epicsMutexUnlock(pca->lock);
     if (getAttributes) getAttributes(getAttributesPvt);
     if (connect) connect(userPvt);
@@ -1126,7 +1164,7 @@ static void dbCaTask(void *arg)
     dbCaClientContext = ca_current_context ();
     SEVCHK(ca_add_exception_event(exceptionCallback,NULL),
         "ca_add_exception_event");
-    epicsEventSignal(startStopEvent);
+    epicsEventSignal(startStopEvent); /* unblock dbCaLinkInitImpl() */
 
     /* channel access event loop */
     while (TRUE){
@@ -1166,7 +1204,7 @@ static void dbCaTask(void *arg)
             }
             if (link_action & CA_CONNECT) {
                 status = ca_create_channel(
-                      pca->pvname,connectionCallback,(void *)pca,
+                      pca->pvname, connectionCallback, pca,
                       CA_PRIORITY_DB_LINKS, &(pca->chid));
                 if (status != ECA_NORMAL) {
                     errlogPrintf("dbCaTask ca_create_channel %s\n",
@@ -1252,7 +1290,7 @@ static void dbCaTask(void *arg)
                 status = ca_add_array_event(
                     dbf_type_to_DBR_TIME(ca_field_type(pca->chid)),
                     0, /* dynamic size */
-                    pca->chid, eventCallback, pca, 0.0, 0.0, 0.0,
+                    pca->chid, eventCallbackNative, pca, 0.0, 0.0, 0.0,
                     &pca->evidNative);
                 if (status != ECA_NORMAL) {
                     errlogPrintf("dbCaTask ca_add_array_event %s\n",
@@ -1265,12 +1303,29 @@ static void dbCaTask(void *arg)
                 pca->pgetString = dbCalloc(1, MAX_STRING_SIZE);
                 epicsMutexUnlock(pca->lock);
                 status = ca_add_array_event(DBR_TIME_STRING, 1,
-                    pca->chid, eventCallback, pca, 0.0, 0.0, 0.0,
+                    pca->chid, eventCallbackString, pca, 0.0, 0.0, 0.0,
                     &pca->evidString);
                 if (status != ECA_NORMAL) {
                     errlogPrintf("dbCaTask ca_add_array_event %s\n",
                         ca_message(status));
                     printLinks(pca);
+                }
+            }
+            if (link_action & CA_DBPROCESS) {
+                dbCommon *prec;
+                epicsMutexMustLock(pca->lock);
+                prec = pca->plink->precord;
+                epicsMutexUnlock(pca->lock);
+                dbScanLock(prec);
+                db_process(prec);
+                dbScanUnlock(prec);
+            }
+            if ((link_action & CA_INIT_READY) && (pca->flags & DBCA_CALLBACK_INIT_WAITING)) {
+                assert(!(pca->flags & DBCA_CALLBACK_INIT_WAIT_MASK));
+                pca->flags &= ~DBCA_CALLBACK_INIT_WAITING;
+                if (epicsAtomicDecrSizeT(&initOutstanding)==0)
+                {
+                    epicsEventSignal(startStopEvent); /* unblock dbCaRun() */
                 }
             }
         }
@@ -1282,5 +1337,5 @@ shutdown:
         ca_context_destroy();
     else
         fprintf(stderr, "dbCa: chan_count = %d at shutdown\n", dbca_chan_count);
-    epicsEventSignal(startStopEvent);
+    epicsEventSignal(startStopEvent); /* unblock dbCaShutdown() */
 }

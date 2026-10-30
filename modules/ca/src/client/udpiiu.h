@@ -59,7 +59,7 @@ LIBCA_API void epicsStdCall caRepeaterRegistrationMessage (
     SOCKET sock, unsigned repeaterPort, unsigned attemptNumber );
 extern "C" LIBCA_API void caRepeaterThread (
     void * pDummy );
-LIBCA_API void ca_repeater ( void );
+LIBCA_API void ca_repeater ( int setDebug = 0 );
 
 class cac;
 class cacContextNotify;
@@ -239,7 +239,9 @@ private:
         unsigned bufLength ) const throw ();
     const char * pHostName (
         epicsGuard < epicsMutex > & ) const throw ();
-        bool ca_v41_ok (
+    unsigned getHostMinorProtocol (
+        epicsGuard < epicsMutex > & ) const throw ();
+    bool ca_v41_ok (
         epicsGuard < epicsMutex > & ) const;
     bool ca_v42_ok (
         epicsGuard < epicsMutex > & ) const;

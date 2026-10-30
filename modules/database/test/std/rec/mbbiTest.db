@@ -1,0 +1,13 @@
+record(mbbi, "test_mbbi_rec") {
+}
+
+record(longout, "test_mbbi_link_rec") {
+
+}
+
+record(mbbi, "test_mbbi_rec2") {
+}
+
+record(longout, "test_mbbi_link_rec2") {
+
+}

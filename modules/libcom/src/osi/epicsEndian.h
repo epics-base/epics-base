@@ -25,11 +25,11 @@
 #include "osdWireConfig.h"
 
 #ifndef EPICS_BYTE_ORDER
-#error osdWireConfig.h didnt define EPICS_BYTE_ORDER
+#error osdWireConfig.h did not define EPICS_BYTE_ORDER
 #endif
 
 #ifndef EPICS_FLOAT_WORD_ORDER
-#error osdWireConfig.h didnt define EPICS_FLOAT_WORD_ORDER
+#error osdWireConfig.h did not define EPICS_FLOAT_WORD_ORDER
 #endif
 
 #endif /* INC_epicsEndian_H */

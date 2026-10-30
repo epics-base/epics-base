@@ -54,7 +54,9 @@ MAIN(asyncproctest)
 
     dbAccessDebugPUTF = 1;
 
+    eltc(0);
     testIocInitOk();
+    eltc(1);
     testDiag("===== Chain 1 ======");
 
     waitFor = 2;

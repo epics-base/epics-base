@@ -299,7 +299,7 @@ void expand_nxt_chk(void)
     nxt = reallocate_integer_array( nxt, current_max_xpairs );
     chk = reallocate_integer_array( chk, current_max_xpairs );
 
-    memset( (char *) (chk + old_max), 0,
+    memset( chk + old_max, 0,
            MAX_XPAIRS_INCREMENT * sizeof( int ) / sizeof( char ) );
     }
 
@@ -423,7 +423,7 @@ void inittbl(void)
 {
     int i;
 
-    memset( (char *) chk, 0,
+    memset( chk, 0,
            current_max_xpairs * sizeof( int ) / sizeof( char ) );
 
     tblend = 0;
@@ -500,7 +500,7 @@ void mkdeftbl(void)
  * (i.e., jam entries) into the table.  It is assumed that by linking to
  * "JAMSTATE" they will be taken care of.  In any case, entries in "state"
  * marking transitions to "SAME_TRANS" are treated as though they will be
- * taken care of by whereever "deflink" points.  "totaltrans" is the total
+ * taken care of by wherever "deflink" points.  "totaltrans" is the total
  * number of transitions out of the state.  If it is below a certain threshold,
  * the tables are searched for an interior spot that will accommodate the
  * state array.

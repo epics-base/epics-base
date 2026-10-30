@@ -93,6 +93,13 @@ testHarness_SRCS += seqTest.c
 TESTFILES += ../seqTest.db
 TESTS += seqTest
 
+TESTPROD_HOST += selTest
+selTest_SRCS += selTest.c
+selTest_SRCS += recTestIoc_registerRecordDeviceDriver.cpp
+testHarness_SRCS += selTest.c
+TESTFILES += ../selTest.db
+TESTS += selTest
+
 TESTPROD_HOST += longoutTest
 longoutTest_SRCS += longoutTest.c
 longoutTest_SRCS += recTestIoc_registerRecordDeviceDriver.cpp
@@ -106,6 +113,13 @@ boTest_SRCS += recTestIoc_registerRecordDeviceDriver.cpp
 testHarness_SRCS += boTest.c
 TESTFILES += ../boTest.db
 TESTS += boTest
+
+TESTPROD_HOST += dfanoutTest
+dfanoutTest_SRCS += dfanoutTest.c
+dfanoutTest_SRCS += recTestIoc_registerRecordDeviceDriver.cpp
+testHarness_SRCS += dfanoutTest.c
+TESTFILES += ../dfanoutTest.db
+TESTS += dfanoutTest
 
 TESTPROD_HOST += biTest
 biTest_SRCS += biTest.c
@@ -188,6 +202,13 @@ testHarness_SRCS += simmTest_registerRecordDeviceDriver.cpp
 TESTFILES += $(COMMON_DIR)/simmTest.dbd $(COMMON_DIR)/simmTest.db
 TESTS += simmTest
 
+TESTPROD_HOST += mbbiTest
+mbbiTest_SRCS += mbbiTest.c
+mbbiTest_SRCS += recTestIoc_registerRecordDeviceDriver.cpp
+testHarness_SRCS += mbbiTest.c
+TESTFILES += ../mbbiTest.db
+TESTS += mbbiTest
+
 TESTPROD_HOST += mbbioDirectTest
 mbbioDirectTest_SRCS += mbbioDirectTest.c
 mbbioDirectTest_SRCS += recTestIoc_registerRecordDeviceDriver.cpp
@@ -221,6 +242,34 @@ testHarness_SRCS += linkFilterTest.c
 TESTFILES += ../linkFilterTest.db
 TESTS += linkFilterTest
 
+TARGETS += $(COMMON_DIR)/epicsExportTestIoc.dbd
+DBDDEPENDS_FILES += epicsExportTestIoc.dbd$(DEP)
+epicsExportTestIoc_DBD += base.dbd
+epicsExportTestIoc_DBD += epicsExportTest.dbd
+TESTFILES += $(COMMON_DIR)/epicsExportTestIoc.dbd ../epicsExportTest.db
+
+TESTLIBRARY += epicsExportTestLib
+epicsExportTestLib_SRCS += epicsExportTest.c
+epicsExportTestLib_LIBS += dbCore Com
+
+TESTPROD_HOST += epicsExportTest
+TESTS += epicsExportTest
+TARGETS += epicsExportTest$(OBJ)
+epicsExportTest_SRCS += epicsExportTestMain.c
+epicsExportTest_SRCS += epicsExportTestIoc_registerRecordDeviceDriver.cpp
+epicsExportTest_LIBS = epicsExportTestLib
+
+TESTLIBRARY += epicsExportTestxxLib
+epicsExportTestxxLib_SRCS += epicsExportTestxx.cpp
+epicsExportTestxxLib_LIBS += dbCore Com
+
+TESTPROD_HOST += epicsExportTestxx
+TESTS += epicsExportTestxx
+TARGETS += epicsExportTestxx$(OBJ)
+epicsExportTestxx_SRCS += epicsExportTestMain.c
+epicsExportTestxx_SRCS += epicsExportTestIoc_registerRecordDeviceDriver.cpp
+epicsExportTestxx_LIBS = epicsExportTestxxLib
+
 # These are compile-time tests, no need to link or run
 TARGETS += dbHeaderTest$(OBJ)
 TARGET_SRCS += dbHeaderTest.cpp
@@ -251,8 +300,8 @@ TESTSPEC_RTEMS = recordTestHarness.boot; epicsRunRecordTests
 
 TESTSCRIPTS_HOST += $(TESTS:%=%.t)
 ifneq ($(filter $(T_A),$(CROSS_COMPILER_RUNTEST_ARCHS)),)
-TESTPROD_RTEMS = $(TESTPROD_HOST)
-TESTSCRIPTS_RTEMS += $(TESTS:%=%.t)
+TESTPROD += $(TESTPROD_HOST)
+TESTSCRIPTS += $(TESTS:%=%.t)
 endif
 
 include $(TOP)/configure/RULES

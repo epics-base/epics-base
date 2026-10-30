@@ -51,7 +51,7 @@ osdReadlineBegin(struct readlineContext *context)
             if (osd->ledId == (LED_ID) ERROR) {
                 context->in = stdin;
                 printf("Warning -- Unabled to allocate space for command-line history.\n");
-                printf("Warning -- Command-line editting disabled.\n");
+                printf("Warning -- Command-line editing disabled.\n");
             }
         }
         context->osd = osd;

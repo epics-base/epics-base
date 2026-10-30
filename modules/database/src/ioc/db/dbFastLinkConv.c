@@ -98,7 +98,7 @@ static long cvt_st_c(const void *f, void *t, const dbAddr *paddr)
         *to = 0;
         return 0;
     }
-    return epicsParseInt8(from, to, 10, &end);
+    return epicsParseInt8(from, to, dbConvertBase, &end);
 }
 
 /* Convert String to Unsigned Char */
@@ -112,7 +112,7 @@ static long cvt_st_uc(const void *f, void *t, const dbAddr *paddr)
         *to = 0;
         return 0;
     }
-    return epicsParseUInt8(from, to, 10, &end);
+    return epicsParseUInt8(from, to, dbConvertBase, &end);
 }
 
 /* Convert String to Short */
@@ -126,7 +126,7 @@ static long cvt_st_s(const void *f, void *t, const dbAddr *paddr)
         *to = 0;
         return 0;
     }
-    return epicsParseInt16(from, to, 10, &end);
+    return epicsParseInt16(from, to, dbConvertBase, &end);
 }
 
 /* Convert String to Unsigned Short */
@@ -140,7 +140,7 @@ static long cvt_st_us(const void *f, void *t, const dbAddr *paddr)
         *to = 0;
         return 0;
     }
-    return epicsParseUInt16(from, to, 10, &end);
+    return epicsParseUInt16(from, to, dbConvertBase, &end);
 }
 
 /* Convert String to Long */
@@ -154,7 +154,7 @@ static long cvt_st_l(const void *f, void *t, const dbAddr *paddr)
          *to = 0;
          return 0;
     }
-    return epicsParseInt32(from, to, 10, &end);
+    return epicsParseInt32(from, to, dbConvertBase, &end);
 }
 
 /* Convert String to Unsigned Long */
@@ -169,7 +169,7 @@ static long cvt_st_ul(const void *f, void *t, const dbAddr *paddr)
        *to = 0;
        return 0;
     }
-    status = epicsParseUInt32(from, to, 10, &end);
+    status = epicsParseUInt32(from, to, dbConvertBase, &end);
     if (status == S_stdlib_noConversion ||
         (!status && (*end == '.' || *end == 'e' || *end == 'E'))) {
         /*
@@ -198,7 +198,7 @@ static long cvt_st_q(const void *f, void *t, const dbAddr *paddr)
          *to = 0;
          return 0;
     }
-    return epicsParseInt64(from, to, 10, &end);
+    return epicsParseInt64(from, to, dbConvertBase, &end);
 }
 
 /* Convert String to UInt64 */
@@ -269,7 +269,7 @@ static long cvt_st_e(const void *f, void *t, const dbAddr *paddr)
     if (!status) {
         epicsEnum16 val;
 
-        status = epicsParseUInt16(from, &val, 10, NULL);
+        status = epicsParseUInt16(from, &val, dbConvertBase, NULL);
         if (!status && val < enumStrs.no_str) {
             *to = val;
             return 0;
@@ -306,7 +306,7 @@ static long cvt_st_menu(const void *f, void *t, const dbAddr *paddr)
             }
         }
 
-        if (!epicsParseUInt16(from, &val, 10, NULL) && val < nChoice) {
+        if (!epicsParseUInt16(from, &val, dbConvertBase, NULL) && val < nChoice) {
             *to = val;
             return 0;
         }
@@ -339,7 +339,7 @@ static long cvt_st_device(const void *f, void *t, const dbAddr *paddr)
             }
         }
 
-        if (!epicsParseUInt16(from, &val, 10, NULL) && val < nChoice) {
+        if (!epicsParseUInt16(from, &val, dbConvertBase, NULL) && val < nChoice) {
             *to = val;
             return 0;
         }
@@ -1217,7 +1217,7 @@ static long cvt_f_st(const void *f, void *t, const dbAddr *paddr)
 {
     const epicsFloat32 *from = (const epicsFloat32 *) f;
     char *to = (char *) t;
-    
+
     rset *prset = 0;
     long status = 0;
     long precision = 6;

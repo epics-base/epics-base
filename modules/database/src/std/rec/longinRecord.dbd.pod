@@ -93,8 +93,8 @@ alarms that are common to all record types.
 These parameters are used to determine when to send monitors placed on the value
 field. The monitors are sent when the value field exceeds the last monitored
 field (see the next section) by the appropriate deadband. If these fields have a
-value of zero, everytime the value changes, a monitor will be triggered; if they
-have a value of -1, everytime the record is scanned, monitors are triggered. The
+value of zero, every time the value changes, a monitor will be triggered; if they
+have a value of -1, every time the record is scanned, monitors are triggered. The
 ADEL field is used by archive monitors and the MDEL field for all other types of
 monitors.
 
@@ -345,53 +345,54 @@ sets UDF to FALSE. read_longin returns the status of C<recGblGetLinkValue>.
 		promptgroup("80 - Display")
 		interest(1)
 		size(16)
-		prop(YES)
+		prop(YES)		# get_units
 	}
 	field(HOPR,DBF_LONG) {
 		prompt("High Operating Range")
 		promptgroup("80 - Display")
 		interest(1)
-		prop(YES)
+		prop(YES)		# get_graphic_double, get_control_double
 	}
 	field(LOPR,DBF_LONG) {
 		prompt("Low Operating Range")
 		promptgroup("80 - Display")
 		interest(1)
-		prop(YES)
+		prop(YES)		# get_graphic_double, get_control_double
 	}
 	field(HIHI,DBF_LONG) {
 		prompt("Hihi Alarm Limit")
 		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
-		prop(YES)
+		prop(YES)		# get_alarm_double
 	}
 	field(LOLO,DBF_LONG) {
 		prompt("Lolo Alarm Limit")
 		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
-		prop(YES)
+		prop(YES)		# get_alarm_double
 	}
 	field(HIGH,DBF_LONG) {
 		prompt("High Alarm Limit")
 		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
-		prop(YES)
+		prop(YES)		# get_alarm_double
 	}
 	field(LOW,DBF_LONG) {
 		prompt("Low Alarm Limit")
 		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
-		prop(YES)
+		prop(YES)		# get_alarm_double
 	}
 	field(HHSV,DBF_MENU) {
 		prompt("Hihi Severity")
 		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
+		prop(YES)		# get_alarm_double
 		menu(menuAlarmSevr)
 	}
 	field(LLSV,DBF_MENU) {
@@ -399,6 +400,7 @@ sets UDF to FALSE. read_longin returns the status of C<recGblGetLinkValue>.
 		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
+		prop(YES)		# get_alarm_double
 		menu(menuAlarmSevr)
 	}
 	field(HSV,DBF_MENU) {
@@ -406,6 +408,7 @@ sets UDF to FALSE. read_longin returns the status of C<recGblGetLinkValue>.
 		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
+		prop(YES)		# get_alarm_double
 		menu(menuAlarmSevr)
 	}
 	field(LSV,DBF_MENU) {
@@ -413,6 +416,7 @@ sets UDF to FALSE. read_longin returns the status of C<recGblGetLinkValue>.
 		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
+		prop(YES)		# get_alarm_double
 		menu(menuAlarmSevr)
 	}
 	field(HYST,DBF_LONG) {

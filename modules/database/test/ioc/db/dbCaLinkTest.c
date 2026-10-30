@@ -29,13 +29,6 @@
 #include "dbEvent.h"
 #include "shareLib.h"
 
-/* Declarations from cadef.h and db_access.h which we can't include here */
-typedef void * chid;
-typedef void * evid;
-epicsShareExtern const unsigned short dbr_value_size[];
-epicsShareExtern short epicsShareAPI ca_field_type (chid chan);
-#define MAX_UNITS_SIZE          8
-
 #include "dbCaPvt.h"
 #include "errlog.h"
 #include "testMain.h"
@@ -144,13 +137,13 @@ static void testNativeLink(void)
 
     nReq = 1;
     temp = 0x0f0f0f0f;
-    testOk1(dbGetLink(psrclnk, DBR_LONG, (void*)&temp, NULL, &nReq)==0);
+    testOk1(dbGetLink(psrclnk, DBR_LONG, &temp, NULL, &nReq)==0);
     testOp("%d",temp,==,42);
     dbScanUnlock((dbCommon*)psrc);
 
     temp = 1010;
     nReq = 1;
-    putLink(psrclnk, DBR_LONG, (void*)&temp, nReq);
+    putLink(psrclnk, DBR_LONG, &temp, nReq);
 
     dbScanLock((dbCommon*)ptarg);
     testOk1(ptarg->val==1010);
@@ -226,12 +219,12 @@ static void testStringLink(void)
 
     nReq = 1;
     memset(temp, '!', sizeof(temp));
-    testOk1(dbGetLink(psrclnk, DBR_STRING, (void*)&temp, NULL, &nReq)==0);
+    testOk1(dbGetLink(psrclnk, DBR_STRING, &temp, NULL, &nReq)==0);
     testOk(strcmp(temp, "hello")==0, "%s == hello", temp);
     dbScanUnlock((dbCommon*)psrc);
 
     strcpy(temp, "world");
-    putLink(psrclnk, DBR_STRING, (void*)&temp, nReq);
+    putLink(psrclnk, DBR_STRING, &temp, nReq);
 
     dbScanLock((dbCommon*)ptarg);
     testOk(strcmp(ptarg->desc, "world")==0, "%s == world", ptarg->desc);
@@ -568,6 +561,7 @@ static void testreTargetTypeChange(void)
 }
 
 void dbCaLinkTest_testCAC(void);
+void dbCaLinkTest_testMacros(void);
 
 static void testCAC(void)
 {
@@ -597,6 +591,7 @@ static void testCAC(void)
     buftarg2= ptarg2->bptr;
 
     dbCaLinkTest_testCAC();
+    dbCaLinkTest_testMacros();
 
     testIocShutdownOk();
 
@@ -612,7 +607,7 @@ static void testCAC(void)
 
 MAIN(dbCaLinkTest)
 {
-    testPlan(101);
+    testPlan(118);
     testNativeLink();
     testStringLink();
     testCP();

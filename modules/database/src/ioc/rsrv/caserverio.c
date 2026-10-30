@@ -303,7 +303,7 @@ int cas_copy_in_header (
         pMsg->m_postsize = htons(((ca_uint16_t) alignedPayloadSize));
         pMsg->m_count = htons(((ca_uint16_t) nElem));
         if (ppPayload)
-            *ppPayload = (void *) (pMsg + 1);
+            *ppPayload = pMsg + 1;
     }
     else {
         ca_uint32_t *pW32 = (ca_uint32_t *) (pMsg + 1);
@@ -312,7 +312,7 @@ int cas_copy_in_header (
         pW32[0] = htonl(alignedPayloadSize);
         pW32[1] = htonl(nElem);
         if (ppPayload)
-            *ppPayload = (void *) (pW32 + 2);
+            *ppPayload = pW32 + 2;
     }
 
     /* zero out pad bytes */
@@ -367,7 +367,7 @@ void cas_commit_msg ( struct client *pClient, ca_uint32_t size )
 
 /*
  * this assumes that we have already checked to see
- * if sufficent bytes are available
+ * if sufficient bytes are available
  */
 ca_uint16_t rsrvGetUInt16 ( struct message_buffer *recv )
 {
@@ -375,7 +375,7 @@ ca_uint16_t rsrvGetUInt16 ( struct message_buffer *recv )
     ca_uint16_t result;
     /*
      * this assumes that we have already checked to see
-     * if sufficent bytes are available
+     * if sufficient bytes are available
      */
     assert ( recv->cnt - recv->stk >= 2u );
     result  = pBuf[recv->stk++] << 8u;
@@ -385,7 +385,7 @@ ca_uint16_t rsrvGetUInt16 ( struct message_buffer *recv )
 
 /*
  * this assumes that we have already checked to see
- * if sufficent bytes are available
+ * if sufficient bytes are available
  */
 ca_uint32_t rsrvGetUInt32 ( struct message_buffer *recv )
 {
@@ -393,7 +393,7 @@ ca_uint32_t rsrvGetUInt32 ( struct message_buffer *recv )
     ca_uint32_t result;
     /*
      * this assumes that we have already checked to see
-     * if sufficent bytes are available
+     * if sufficient bytes are available
      */
     assert ( recv->cnt - recv->stk >= 4u );
     result  = pBuf[recv->stk++] << 24u;

@@ -79,11 +79,11 @@ extern "C" int epicsStdCall ca_sg_delete ( const CA_SYNC_GID gid )
         }
         else {
           //
-          // we will definately stall out here if all of the
+          // we will definitely stall out here if all of the
           // following are true
           //
           // o user creates non-preemptive mode client library context
-          // o user doesnt periodically call a ca function
+          // o user doesn't periodically call a ca function
           // o user calls this function from an auxiliary thread
           //
           CallbackGuard cbGuard ( pcac->cbMutex );
@@ -103,11 +103,11 @@ void sync_group_reset ( ca_client_context & client, CASG & sg )
     }
     else {
         //
-        // we will definately stall out here if all of the
+        // we will definitely stall out here if all of the
         // following are true
         //
         // o user creates non-preemptive mode client library context
-        // o user doesnt periodically call a ca function
+        // o user doesn't periodically call a ca function
         // o user calls this function from an auxiliary thread
         //
         CallbackGuard cbGuard ( client.cbMutex );
@@ -216,11 +216,11 @@ extern "C" int epicsStdCall ca_sg_test ( const CA_SYNC_GID gid )
             }
             else {
               //
-              // we will definately stall out here if all of the
+              // we will definitely stall out here if all of the
               // following are true
               //
               // o user creates non-preemptive mode client library context
-              // o user doesnt periodically call a ca function
+              // o user doesn't periodically call a ca function
               // o user calls this function from an auxiliary thread
               //
               CallbackGuard cbGuard ( pcac->cbMutex );

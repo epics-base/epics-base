@@ -98,12 +98,12 @@ static long init_record(dbCommon *pcommon, int pass)
     recGblInitSimm(pcommon, &prec->sscn, &prec->oldsimm, &prec->simm, &prec->siml);
 
     if(!(pdset = (int64outdset *)(prec->dset))) {
-        recGblRecordError(S_dev_noDSET,(void *)prec,"int64out: init_record");
+        recGblRecordError(S_dev_noDSET, prec, "int64out: init_record");
         return(S_dev_noDSET);
     }
     /* must have  write_int64out functions defined */
     if ((pdset->common.number < 5) || (pdset->write_int64out == NULL)) {
-        recGblRecordError(S_dev_missingSup,(void *)prec,"int64out: init_record");
+        recGblRecordError(S_dev_missingSup, prec, "int64out: init_record");
         return(S_dev_missingSup);
     }
     if (prec->dol.type == CONSTANT) {
@@ -129,7 +129,7 @@ static long process(dbCommon *pcommon)
 
     if( (pdset==NULL) || (pdset->write_int64out==NULL) ) {
         prec->pact=TRUE;
-        recGblRecordError(S_dev_missingSup,(void *)prec,"write_int64out");
+        recGblRecordError(S_dev_missingSup, prec, "write_int64out");
         return(S_dev_missingSup);
     }
     if (!prec->pact) {
@@ -170,7 +170,7 @@ static long process(dbCommon *pcommon)
                 break;
             default :
                 status=-1;
-                recGblRecordError(S_db_badField,(void *)prec,
+                recGblRecordError(S_db_badField, prec,
                         "int64out:process Illegal IVOA field");
         }
     }

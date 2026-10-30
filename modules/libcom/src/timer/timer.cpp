@@ -65,7 +65,11 @@ void timer::start ( epicsTimerNotify & notify, const epicsTime & expire )
 void timer::privateStart ( epicsTimerNotify & notify, const epicsTime & expire )
 {
     this->pNotify = & notify;
-    this->exp = expire - ( this->queue.notify.quantum () / 2.0 );
+    this->exp = expire
+#ifdef TIMER_QUANTUM_BIAS
+            - ( this->queue.notify.quantum () / 2.0 )
+#endif
+            ;
 
     bool reschedualNeeded = false;
     if ( this->curState == stateActive ) {
@@ -128,7 +132,7 @@ void timer::privateStart ( epicsTimerNotify & notify, const epicsTime & expire )
 
     debugPrintf ( ("Start of \"%s\" with delay %f at %p preempting %u\n",
         typeid ( this->pNotify ).name (),
-        expire - epicsTime::getCurrent (), 
+        expire - epicsTime::getCurrent (),
         this, preemptCount ) );
 }
 

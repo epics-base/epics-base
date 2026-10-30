@@ -92,11 +92,6 @@ vpath %.m $(USR_VPATH) $(ALL_SRC_DIRS)
 	$(COMPILE.c) -c $<
 
 #--------------------------------------------------
-# Header dependency file generation
-#
-HDEPENDS_METHOD = MKMF
-
-#--------------------------------------------------
 # Allow site overrides
 -include $(CONFIG)/os/CONFIG_SITE.Common.iosCommon
 -include $(CONFIG)/os/CONFIG_SITE.$(EPICS_HOST_ARCH).iosCommon

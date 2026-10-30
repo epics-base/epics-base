@@ -140,6 +140,8 @@ else {
     ######################################## Code for Unix run-hosts
     print $OUT <<__UNIX__;
 
+use POSIX qw(WIFEXITED WIFSIGNALED WEXITSTATUS);
+
 my \$pid = fork();
 die "\$tool: Can't fork for '$error': \$!\\n"
     unless defined \$pid;
@@ -154,9 +156,19 @@ if (\$pid) {
     };
 
     alarm \$timeout;
-    waitpid \$pid, 0;
-    alarm 0;
-    exit \$? >> 8;
+    while (1) {
+        waitpid \$pid, 0;
+        if (WIFEXITED(\$?)) {
+            # normal exit
+            alarm 0;
+            exit WEXITSTATUS(\$?);
+        } elsif (WIFSIGNALED(\$?)) {
+            # terminated by signal
+            alarm 0;
+            die "\$tool: Test was terminated by signal '\$?'\\n";
+        }
+        # non-terminal change of status, continue waiting
+    }
 }
 else {
     # Child process

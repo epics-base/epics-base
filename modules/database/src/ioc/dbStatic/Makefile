@@ -11,8 +11,6 @@
 
 SRC_DIRS += $(IOCDIR)/dbStatic
 
-USR_CFLAGS += -DUSE_TYPED_DRVET
-
 INC += dbBase.h
 INC += dbFldTypes.h
 INC += dbStaticLib.h
@@ -31,5 +29,7 @@ dbCore_SRCS += dbPvdLib.c
 dbCore_SRCS += dbStaticRun.c
 dbCore_SRCS += dbStaticIocRegister.c
 dbCore_SRCS += dbCompleteRecord.cpp
+
+dbStaticLib_CFLAGS_Linux = -Wa,-I,..
 
 CLEANS += dbLex.c dbYacc.c

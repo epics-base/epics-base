@@ -22,6 +22,8 @@ extern "C" {
 
 #include "dbCoreAPI.h"
 
+struct dbCommon;
+
 DBCORE_API extern struct dbBase *pdbbase;
 DBCORE_API extern volatile int interruptAccept;
 
@@ -36,7 +38,9 @@ DBCORE_API int dbChannel_put(struct dbChannel *chan, int src_type,
     const void *psrc, long no_elements);
 DBCORE_API int dbChannel_get_count(struct dbChannel *chan,
     int buffer_type, void *pbuffer, long *nRequest, void *pfl);
-
+#ifdef EPICS_DBCA_PRIVATE_API
+DBCORE_API void db_process(struct dbCommon *prec);
+#endif
 
 #ifdef __cplusplus
 }

@@ -5,6 +5,8 @@ use warnings;
 
 use base 'Pod::Simple::HTML';
 
+our $VERSION = '1.2.1';
+
 sub encode_entities {
     my ($self, $str) = @_;
     my %entities = (

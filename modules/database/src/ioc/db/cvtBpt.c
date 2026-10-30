@@ -58,7 +58,7 @@ long cvtRawToEngBpt(double *pval, short linr, short init,
         if (!pbrkTable)
             return S_dbLib_badField;
 
-        *ppbrk = (void *)pbrkTable;
+        *ppbrk = pbrkTable;
         *plbrk = 0;
     } else
         pbrkTable = (brkTable *)*ppbrk;
@@ -138,7 +138,7 @@ long cvtEngToRawBpt(double *pval, short linr, short init,
         if (!pbrkTable)
             return S_dbLib_badField;
 
-        *ppbrk = (void *)pbrkTable;
+        *ppbrk = pbrkTable;
         /* start at the beginning */
         *plbrk = 0;
     } else

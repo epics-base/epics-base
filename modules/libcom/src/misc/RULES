@@ -13,6 +13,6 @@ MAKEVERSION_FLAGS += $(if $(EPICS_SITE_VERSION),-v "$(EPICS_SITE_VERSION)")
 
 $(COMMON_DIR)/epicsVersion.h: $(CONFIG)/CONFIG_BASE_VERSION \
 	$(CONFIG)/CONFIG_SITE $(MAKEVERSION)
-	@$(RM) $(notdir $@)
+	$(RM) $(notdir $@)
 	$(PERL) $(MAKEVERSION) $(MAKEVERSION_FLAGS) $<
-	@$(MV) $(notdir $@) $@
+	$(MV) $(notdir $@) $@

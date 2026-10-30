@@ -252,20 +252,22 @@ DBCORE_API void dbCatString(char **string, int *stringLength,
 extern int dbStaticDebug;
 extern int dbConvertStrict;
 
-#define S_dbLib_recordTypeNotFound (M_dbLib|1) /* Record Type does not exist */
-#define S_dbLib_recExists (M_dbLib|3)          /* Record Already exists */
-#define S_dbLib_recNotFound (M_dbLib|5)        /* Record Not Found */
-#define S_dbLib_flddesNotFound (M_dbLib|7)     /* Field Description Not Found */
-#define S_dbLib_fieldNotFound (M_dbLib|9)      /* Field Not Found */
-#define S_dbLib_badField (M_dbLib|11)          /* Bad Field value */
-#define S_dbLib_menuNotFound (M_dbLib|13)      /* Menu not found */
-#define S_dbLib_badLink (M_dbLib|15)           /* Bad Link Field */
-#define S_dbLib_nameLength (M_dbLib|17)        /* Record Name is too long */
-#define S_dbLib_noRecSup (M_dbLib|19)          /* Record support not found */
-#define S_dbLib_strLen (M_dbLib|21)            /* String is too long */
-#define S_dbLib_noSizeOffset (M_dbLib|23)      /* Missing SizeOffset Routine - No record support? */
-#define S_dbLib_outMem (M_dbLib|27)            /* Out of memory */
-#define S_dbLib_infoNotFound (M_dbLib|29)      /* Info item Not Found */
+#define S_dbLib_recordTypeNotFound (M_dbLib|1)   /* Record Type does not exist */
+#define S_dbLib_recExists (M_dbLib|3)            /* Record Already exists */
+#define S_dbLib_recNotFound (M_dbLib|5)          /* Record Not Found */
+#define S_dbLib_flddesNotFound (M_dbLib|7)       /* Field Description Not Found */
+#define S_dbLib_fieldNotFound (M_dbLib|9)        /* Field Not Found */
+#define S_dbLib_badField (M_dbLib|11)            /* Bad Field value */
+#define S_dbLib_menuNotFound (M_dbLib|13)        /* Menu not found */
+#define S_dbLib_badLink (M_dbLib|15)             /* Bad Link Field */
+#define S_dbLib_nameLength (M_dbLib|17)          /* Record Name is too long */
+#define S_dbLib_noRecSup (M_dbLib|19)            /* Record support not found */
+#define S_dbLib_strLen (M_dbLib|21)              /* String is too long */
+#define S_dbLib_noSizeOffset (M_dbLib|23)        /* Missing SizeOffset Routine - No record support? */
+#define S_dbLib_outMem (M_dbLib|27)              /* Out of memory */
+#define S_dbLib_infoNotFound (M_dbLib|29)        /* Info item Not Found */
+#define S_dbLib_postInitRecRegister (M_dbLib|31) /* IOC already initialized - No new records can be added */
+#define S_dbLib_recordNameMissing (M_dbLib|33)   /* Record name is required */
 
 #ifdef __cplusplus
 }

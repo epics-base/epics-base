@@ -32,7 +32,7 @@ ifneq ($(RELEASE_CFG_DIR_RULES),)
   include $(RELEASE_CFG_DIR_RULES)
 endif
 
-# Create EPICS_HOST_ARCH dependancies for GNU make -j option.
+# Create EPICS_HOST_ARCH dependencies for GNU make -j option.
 # Needed in dirs where EPICS_HOST_ARCH build creates a tool used in 
 # cross arch builds
 
@@ -64,6 +64,9 @@ $(BUILD_ARCHS) : % : O.% O.Common
 $(ACTIONS) : % : $(foreach arch, $(BUILD_ARCHS), %$(DIVIDER)$(arch))
 
 $(buildDirs):
+	$(if $(wildcard $(CONFIG)/os/CONFIG.Common.$(archPart) \
+	        $(CONFIG)/os/CONFIG.$(EPICS_HOST_ARCH).$(archPart)),, \
+	    $(error Base not configured to build target $(archPart)))
 	$(PERL) $(TOOLS)/makeMakefile.pl $@ ../$(TOP)
 
 O.Common:

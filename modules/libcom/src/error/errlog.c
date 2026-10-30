@@ -41,9 +41,10 @@
 #include "osiUnistd.h"
 
 
-#define MIN_BUFFER_SIZE 1280
+#define MIN_BUFFER_SIZE 2560
+#define DEFAULT_MAX_MSG_SIZE 512
 #define MIN_MESSAGE_SIZE 256
-#define MAX_MESSAGE_SIZE 0x00ffffff
+#define MAX_MESSAGE_SIZE(bufsize) ((bufsize) / 5)
 
 /* errlog buffers contain null terminated strings, each prefixed
  * with a 1 byte header containing flags.
@@ -76,10 +77,12 @@ typedef struct {
 } buffer_t;
 
 static struct {
-    /* const after errlogInit() */
+    epicsThreadId tid;
+    epicsMutexId bufSizeLock;
+    /* guarded by bufSizeLock, allowing them to be resized after initialisation */
     size_t maxMsgSize;
-    /* alloc size of both buffer_t::base */
     size_t bufSize;
+
     int    errlogInitFailed;
 
     epicsMutexId listenerLock;
@@ -532,10 +535,35 @@ struct initArgs {
     size_t maxMsgSize;
 };
 
+static
+int errlogClampConfig(struct initArgs *config)
+{
+    int clamped = 0;
+
+    if (config->bufsize < MIN_BUFFER_SIZE)
+    {
+        clamped = 1;
+        config->bufsize = MIN_BUFFER_SIZE;
+    }
+
+    if (config->maxMsgSize > MAX_MESSAGE_SIZE(config->bufsize))
+    {
+        clamped = 1;
+        config->maxMsgSize = MAX_MESSAGE_SIZE(config->bufsize);
+    }
+    if (config->maxMsgSize < MIN_MESSAGE_SIZE)
+    {
+        clamped = 1;
+        config->maxMsgSize = MIN_MESSAGE_SIZE;
+    }
+
+    return clamped;
+}
+
 static void errlogInitPvt(void *arg)
 {
     struct initArgs *pconfig = (struct initArgs *) arg;
-    epicsThreadId tid = NULL;
+
     epicsThreadOpts topts = EPICS_THREAD_OPTS_INIT;
 
     topts.priority = epicsThreadPriorityLow;
@@ -546,7 +574,9 @@ static void errlogInitPvt(void *arg)
      * cantProceed() calls us.
      */
 
+    pvt.tid = NULL;
     pvt.errlogInitFailed = TRUE;
+    pvt.bufSizeLock = epicsMutexCreate();
     pvt.bufSize = pconfig->bufsize;
     pvt.maxMsgSize = pconfig->maxMsgSize;
     ellInit(&pvt.listenerList);
@@ -565,50 +595,128 @@ static void errlogInitPvt(void *arg)
     errSymBld();    /* Better not to do this lazily... */
 
     if(pvt.waitForWork
+            && pvt.bufSizeLock
             && pvt.listenerLock
             && pvt.msgQueueLock
             && pvt.waitForSeq
             && pvt.log->base
             && pvt.print->base
             ) {
-        tid = epicsThreadCreateOpt("errlog", (EPICSTHREADFUNC)errlogThread, 0, &topts);
+        pvt.tid = epicsThreadCreateOpt("errlog", (EPICSTHREADFUNC)errlogThread, 0, &topts);
     }
-    if (tid) {
+    if (pvt.tid) {
         pvt.errlogInitFailed = FALSE;
-        epicsAtExit(errlogExitHandler, tid);
+        epicsAtExit(errlogExitHandler, pvt.tid);
     }
 }
 
+// This function must be called with pvt.bufSizeLock held
+static
+void errlogBufResize(struct initArgs config)
+{
+    if (config.bufsize < pvt.bufSize) {
+        fprintf(stderr, ERL_WARNING ": Cannot shrink buffer size.\n");
+        return;
+    }
+
+    char *logbuf = calloc(1, config.bufsize);
+    if (!logbuf) {
+        fprintf(stderr, ERL_ERROR ": Failed to allocated errlog log buffer.\n");
+        return;
+    }
+    char *printbuf = calloc(1, config.bufsize);
+    if (!printbuf) {
+        free(logbuf);
+        fprintf(stderr, ERL_ERROR ": Failed to allocated errlog print buffer.\n");
+        return;
+    }
+
+    epicsMutexMustLock(pvt.msgQueueLock);
+    char *oldlogbuf = pvt.log->base;
+    char *oldprintbuf = pvt.print->base;
+
+    memcpy(logbuf, pvt.log->base, pvt.bufSize);
+    pvt.log->base = logbuf;
+
+    memcpy(printbuf, pvt.print->base, pvt.bufSize);
+    pvt.print->base = printbuf;
+
+    pvt.bufSize = config.bufsize;
+    pvt.maxMsgSize = config.maxMsgSize;
+
+    epicsMutexUnlock(pvt.msgQueueLock);
+
+    free(oldlogbuf);
+    free(oldprintbuf);
+}
 
 int errlogInit2(int bufsize, int maxMsgSize)
 {
     static epicsThreadOnceId errlogOnceFlag = EPICS_THREAD_ONCE_INIT;
-    struct initArgs config;
+    struct initArgs config = {bufsize, maxMsgSize};
 
     if (pvt.atExit)
         return 0;
 
-    if (bufsize < MIN_BUFFER_SIZE)
-        bufsize = MIN_BUFFER_SIZE;
-    config.bufsize = bufsize;
-
-    if (maxMsgSize < MIN_MESSAGE_SIZE)
-        maxMsgSize = MIN_MESSAGE_SIZE;
-    else if (maxMsgSize > MAX_MESSAGE_SIZE)
-        maxMsgSize = MAX_MESSAGE_SIZE;
-    config.maxMsgSize = maxMsgSize;
+    if (errlogClampConfig(&config) && (bufsize != 0)) {
+        // No sense warning for every call to errlogInit(0)
+        fprintf(stderr, ERL_WARNING ": errlog config clamped from (%d, %d) to (%zu, %zu)\n", bufsize, maxMsgSize, config.bufsize, config.maxMsgSize);
+    }
 
     epicsThreadOnce(&errlogOnceFlag, errlogInitPvt, &config);
     if (pvt.errlogInitFailed) {
-        fprintf(stderr,"errlogInit failed\n");
+        fprintf(stderr, ERL_ERROR ": errlogInit failed\n");
         exit(1);
     }
+
+    // Don't resize the buffer for any of the calls to errlogInit(0)
+    if (bufsize == 0) return 0;
+
+    if (epicsThreadGetIdSelf() == pvt.tid) {
+        fprintf(stderr, ERL_ERROR ": Cannot resize buffer from callback function.\n");
+        return -1;
+    }
+
+    epicsMutexMustLock(pvt.bufSizeLock);
+    if (pvt.bufSize != config.bufsize || pvt.maxMsgSize != config.maxMsgSize) {
+        // We are resizing the buffer after initialisation
+        errlogBufResize(config);
+    }
+    epicsMutexUnlock(pvt.bufSizeLock);
     return 0;
 }
 
 int errlogInit(int bufsize)
 {
-    return errlogInit2(bufsize, MIN_MESSAGE_SIZE);
+    return errlogInit2(bufsize, DEFAULT_MAX_MSG_SIZE);
+}
+
+void errlogShow(int level)
+{
+    epicsMutexMustLock(pvt.bufSizeLock);
+    printf("Error log:\n");
+    printf("  buffer size: %zu\n", pvt.bufSize);
+    printf("  max message size: %zu\n", pvt.maxMsgSize);
+    epicsMutexUnlock(pvt.bufSizeLock);
+
+    if (level > 0)
+    {
+        epicsMutexMustLock(pvt.listenerLock);
+        printf("  number of listeners: %u\n", pvt.listenerList.count);
+        epicsMutexUnlock(pvt.listenerLock);
+    }
+
+    if (level > 1)
+    {
+        epicsMutexMustLock(pvt.msgQueueLock);
+        printf("  buffer(log) contents:\n");
+        printf("%s\n", pvt.log->base);
+        printf("%*s^\n", (int)pvt.log->pos, "");
+        printf("  buffer(print) contents:\n");
+        printf("%s\n", pvt.print->base);
+        printf("%*s^\n", (int)pvt.print->pos, "");
+        epicsMutexUnlock(pvt.msgQueueLock);
+    }
 }
 
 void errlogFlush(void)
@@ -624,6 +732,7 @@ void errlogFlush(void)
 static void errlogThread(void)
 {
     int wakeFlusher;
+    epicsMutexMustLock(pvt.bufSizeLock);
     epicsMutexMustLock(pvt.msgQueueLock);
     while (1) {
         pvt.flushSeq++;
@@ -633,9 +742,17 @@ static void errlogThread(void)
                 break;
             wakeFlusher = pvt.nFlushers!=0;
             epicsMutexUnlock(pvt.msgQueueLock);
+            // Allow the buffer size to be modified only at this point
+            epicsMutexUnlock(pvt.bufSizeLock);
+
             if(wakeFlusher)
                 epicsEventMustTrigger(pvt.waitForSeq);
+
             epicsEventMustWait(pvt.waitForWork);
+
+            // Block resizing the buffer size
+            epicsMutexMustLock(pvt.bufSizeLock);
+
             epicsMutexMustLock(pvt.msgQueueLock);
 
         } else {
@@ -653,6 +770,8 @@ static void errlogThread(void)
             }
 
             pvt.nLost = 0u;
+            // Note that we are intentionally still holding the buffer size lock
+            // here. The buffer can only be resized when this thread is idle.
             epicsMutexUnlock(pvt.msgQueueLock);
 
             while(pos < print->pos) {
@@ -662,7 +781,7 @@ static void errlogThread(void)
                 int stripped = 0;
 
                 if((base[0]&ERL_STATE_MASK) != ERL_STATE_READY || mlen>=pvt.bufSize - pos) {
-                    fprintf(stderr, "Logic Error: errlog buffer corruption. %02x, %zu\n",
+                    fprintf(stderr, ERL_ERROR ": errlog buffer corruption. %02x, %zu\n",
                             (unsigned)base[0], mlen);
                     /* try to reset and recover */
                     break;
@@ -716,6 +835,7 @@ static void errlogThread(void)
     }
     wakeFlusher = pvt.nFlushers!=0;
     epicsMutexUnlock(pvt.msgQueueLock);
+    epicsMutexUnlock(pvt.bufSizeLock);
     if(wakeFlusher)
         epicsEventMustTrigger(pvt.waitForSeq);
 }

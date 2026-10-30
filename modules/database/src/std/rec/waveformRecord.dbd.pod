@@ -396,6 +396,7 @@ routine and NORD is also set at that time.
     %    long (*read_wf)(struct waveformRecord *prec); /*returns: (-1,0)=>(failure,success)*/
     %} wfdset;
     %#define HAS_wfdset
+	%#define WF_POSTS_NORD
     %
 	field(VAL,DBF_NOACCESS) {
 		prompt("Value")
@@ -403,7 +404,7 @@ routine and NORD is also set at that time.
 		special(SPC_DBADDR)
 		pp(TRUE)
 		extra("void *		val")
-		#=type Set by FTVL
+		#=type Set by FTVL[NELM]
 		#=read Yes
 		#=write Yes
 	}
@@ -417,7 +418,7 @@ routine and NORD is also set at that time.
 		prompt("Display Precision")
 		promptgroup("80 - Display")
 		interest(1)
-		prop(YES)
+		prop(YES)		# get_precision
 	}
 	field(INP,DBF_INLINK) {
 		prompt("Input Specification")
@@ -429,19 +430,19 @@ routine and NORD is also set at that time.
 		promptgroup("80 - Display")
 		interest(1)
 		size(16)
-		prop(YES)
+		prop(YES)		# get_units
 	}
 	field(HOPR,DBF_DOUBLE) {
 		prompt("High Operating Range")
 		promptgroup("80 - Display")
 		interest(1)
-		prop(YES)
+		prop(YES)		# get_graphic_double, get_control_double
 	}
 	field(LOPR,DBF_DOUBLE) {
 		prompt("Low Operating Range")
 		promptgroup("80 - Display")
 		interest(1)
-		prop(YES)
+		prop(YES)		# get_graphic_double, get_control_double
 	}
 	field(NELM,DBF_ULONG) {
 		prompt("Number of Elements")

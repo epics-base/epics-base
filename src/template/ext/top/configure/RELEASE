@@ -4,7 +4,7 @@
 
 # RELEASE Locations of external modules
 #
-# NOTE: The build does not check dependancies on files
+# NOTE: The build does not check dependencies on files
 # external to this application. Thus you should run
 # "gnumake clean uninstall install" in the top directory
 # each time EPICS_BASE or any other external module that

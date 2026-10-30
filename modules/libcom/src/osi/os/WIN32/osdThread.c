@@ -39,9 +39,9 @@
 
 /* Windows Vista and higher supports fibre functions, but the
  * prototypes only appear in the windows SDK 8 and above.
- * VS2010 supplies sdk 7, but can be upgraded to later SDK 
+ * VS2010 supplies sdk 7, but can be upgraded to later SDK
 
- * To accomodate this we suuply prototypes on, for XP
+ * To accommodate this we supply prototypes on, for XP
  * fall back to Tls*() which will build and run
  * correctly for epicsThreads, but means that TLS allocations from
  * epicsThreadImplicitCreate() will continue to leak (for non-EPICS threads).
@@ -49,13 +49,13 @@
  * Also, WINE circa 5.0.3 provides the FLS storage functions, but doesn't
  * actually run the dtor function.
  *
- * we check for existance of _WIN32_WINNT_WIN8 which will only be defined
+ * we check for existence of _WIN32_WINNT_WIN8 which will only be defined
  * in SDK 8 and above. If Visa is detected and SDK < 8 we will supply
  * the missing prototypes
  */
 
 #if _WIN32_WINNT >= 0x0600 /* VISTA */
-#   ifdef _WIN32_WINNT_WIN8 /* Existance means using SDK 8 or higher */
+#   ifdef _WIN32_WINNT_WIN8 /* Existence means using SDK 8 or higher */
 #       include <fibersapi.h>
 #   else
 #       include <winnt.h> /* for PFLS_CALLBACK_FUNCTION */
@@ -103,6 +103,7 @@ typedef struct epicsThreadOSD {
     char isSuspended;
     int joinable;
     int isRunning;
+    int isOkToBlock;
     HANDLE timer; /* waitable timer */
 } win32ThreadParam;
 
@@ -408,7 +409,7 @@ static unsigned epicsThreadGetOsiPriorityValue ( int osdPriority )
 /*
  * epicsThreadLowestPriorityLevelAbove ()
  */
-LIBCOM_API epicsThreadBooleanStatus epicsStdCall epicsThreadLowestPriorityLevelAbove 
+LIBCOM_API epicsThreadBooleanStatus epicsStdCall epicsThreadLowestPriorityLevelAbove
             ( unsigned int priority, unsigned * pPriorityJustAbove )
 {
     const DWORD priorityClass = GetPriorityClass ( GetCurrentProcess () );
@@ -438,7 +439,7 @@ LIBCOM_API epicsThreadBooleanStatus epicsStdCall epicsThreadLowestPriorityLevelA
 /*
  * epicsThreadHighestPriorityLevelBelow ()
  */
-LIBCOM_API epicsThreadBooleanStatus epicsStdCall epicsThreadHighestPriorityLevelBelow 
+LIBCOM_API epicsThreadBooleanStatus epicsStdCall epicsThreadHighestPriorityLevelBelow
             ( unsigned int priority, unsigned * pPriorityJustBelow )
 {
     const DWORD priorityClass = GetPriorityClass ( GetCurrentProcess () );
@@ -468,7 +469,7 @@ LIBCOM_API epicsThreadBooleanStatus epicsStdCall epicsThreadHighestPriorityLevel
 /*
  * epicsThreadGetStackSize ()
  */
-LIBCOM_API unsigned int epicsStdCall 
+LIBCOM_API unsigned int epicsStdCall
     epicsThreadGetStackSize ( epicsThreadStackSizeClass stackSizeClass )
 {
     #define STACK_SIZE(f) (f * 0x10000 * sizeof(void *))
@@ -588,6 +589,7 @@ static win32ThreadParam * epicsThreadImplicitCreate ( void )
 
         pParm->handle = handle;
         pParm->id = id;
+        pParm->isOkToBlock = 1;
         win32ThreadPriority = GetThreadPriority ( pParm->handle );
         assert ( win32ThreadPriority != THREAD_PRIORITY_ERROR_RETURN );
         pParm->epicsPriority = epicsThreadGetOsiPriorityValue ( win32ThreadPriority );
@@ -778,7 +780,7 @@ LIBCOM_API void epicsStdCall epicsThreadResume ( epicsThreadId id )
 /*
  * epicsThreadGetPriority ()
  */
-LIBCOM_API unsigned epicsStdCall epicsThreadGetPriority (epicsThreadId id) 
+LIBCOM_API unsigned epicsStdCall epicsThreadGetPriority (epicsThreadId id)
 {
     win32ThreadParam * pParm = ( win32ThreadParam * ) id;
     return pParm->epicsPriority;
@@ -787,8 +789,8 @@ LIBCOM_API unsigned epicsStdCall epicsThreadGetPriority (epicsThreadId id)
 /*
  * epicsThreadGetPrioritySelf ()
  */
-LIBCOM_API unsigned epicsStdCall epicsThreadGetPrioritySelf () 
-{ 
+LIBCOM_API unsigned epicsStdCall epicsThreadGetPrioritySelf ()
+{
     win32ThreadParam * pParm = getMyWin32ThreadParam ( NULL );
 
     if ( pParm ) {
@@ -805,7 +807,7 @@ LIBCOM_API unsigned epicsStdCall epicsThreadGetPrioritySelf ()
 /*
  * epicsThreadSetPriority ()
  */
-LIBCOM_API void epicsStdCall epicsThreadSetPriority ( epicsThreadId id, unsigned priority ) 
+LIBCOM_API void epicsStdCall epicsThreadSetPriority ( epicsThreadId id, unsigned priority )
 {
     win32ThreadParam * pParm = ( win32ThreadParam * ) id;
     BOOL stat = SetThreadPriority ( pParm->handle, epicsThreadGetOsdPriorityValue (priority) );
@@ -815,7 +817,7 @@ LIBCOM_API void epicsStdCall epicsThreadSetPriority ( epicsThreadId id, unsigned
 /*
  * epicsThreadIsEqual ()
  */
-LIBCOM_API int epicsStdCall epicsThreadIsEqual ( epicsThreadId id1, epicsThreadId id2 ) 
+LIBCOM_API int epicsStdCall epicsThreadIsEqual ( epicsThreadId id1, epicsThreadId id2 )
 {
     win32ThreadParam * pParm1 = ( win32ThreadParam * ) id1;
     win32ThreadParam * pParm2 = ( win32ThreadParam * ) id2;
@@ -825,7 +827,7 @@ LIBCOM_API int epicsStdCall epicsThreadIsEqual ( epicsThreadId id1, epicsThreadI
 /*
  * epicsThreadIsSuspended ()
  */
-LIBCOM_API int epicsStdCall epicsThreadIsSuspended ( epicsThreadId id ) 
+LIBCOM_API int epicsStdCall epicsThreadIsSuspended ( epicsThreadId id )
 {
     win32ThreadParam *pParm = ( win32ThreadParam * ) id;
     DWORD exitCode;
@@ -874,9 +876,9 @@ LIBCOM_API void epicsStdCall epicsThreadSleep ( double seconds )
     if ( seconds <= 0.0 ) {
         tmo.QuadPart = 0u;
     }
-    else if ( seconds >= INFINITE / mSecPerSec  ) { 
+    else if ( seconds >= INFINITE / mSecPerSec  ) {
         /* we need to apply a maximum wait time to stop an overflow. We choose (INFINITE - 1) milliseconds,
-           to be compatible with previous WaitForSingleObject() implementation */    
+           to be compatible with previous WaitForSingleObject() implementation */
         nIvals = (LONGLONG)(INFINITE - 1) * (ivalPerSec / mSecPerSec);
         tmo.QuadPart = -nIvals; /* negative value means a relative time offset for timer */
     }
@@ -935,7 +937,7 @@ double epicsStdCall epicsThreadSleepQuantum ()
 /*
  * epicsThreadGetIdSelf ()
  */
-LIBCOM_API epicsThreadId epicsStdCall epicsThreadGetIdSelf (void) 
+LIBCOM_API epicsThreadId epicsStdCall epicsThreadGetIdSelf (void)
 {
     win32ThreadParam * pParm = getMyWin32ThreadParam ( NULL );
     assert ( pParm ); /* Don't return a NULL thread id */
@@ -988,7 +990,7 @@ LIBCOM_API const char * epicsStdCall epicsThreadGetNameSelf (void)
 /*
  * epicsThreadGetName ()
  */
-LIBCOM_API void epicsStdCall epicsThreadGetName ( 
+LIBCOM_API void epicsStdCall epicsThreadGetName (
     epicsThreadId id, char * pName, size_t size )
 {
     win32ThreadParam * pParm = ( win32ThreadParam * ) id;
@@ -1042,12 +1044,12 @@ static void epicsThreadShowInfo ( epicsThreadId id, unsigned level )
     if ( pParm ) {
         unsigned long idForFormat = pParm->id;
         fprintf ( epicsGetStdout(), "%-15s %-8p %-8lx %-9u %-9s %-7s", pParm->pName,
-            (void *) pParm, idForFormat, pParm->epicsPriority,
+            pParm, idForFormat, pParm->epicsPriority,
             epics_GetThreadPriorityAsString ( pParm->handle ),
             epicsThreadIsSuspended ( id ) ? "suspend" : "ok" );
         if ( level ) {
             fprintf (epicsGetStdout(), " %-8p %-8p ",
-                (void *) pParm->handle, (void *) pParm->parm );
+                pParm->handle, pParm->parm );
         }
         if(!epicsAtomicGetIntT(&pParm->isRunning))
             fprintf (epicsGetStdout(), " ZOMBIE");
@@ -1187,7 +1189,7 @@ LIBCOM_API void epicsStdCall epicsThreadPrivateDelete ( epicsThreadPrivateId p )
  */
 LIBCOM_API void epicsStdCall epicsThreadPrivateSet ( epicsThreadPrivateId pPvt, void *pVal )
 {
-    BOOL stat = TlsSetValue ( pPvt->key, (void *) pVal );
+    BOOL stat = TlsSetValue ( pPvt->key, pVal );
     assert (stat);
 }
 
@@ -1196,7 +1198,7 @@ LIBCOM_API void epicsStdCall epicsThreadPrivateSet ( epicsThreadPrivateId pPvt, 
  */
 LIBCOM_API void * epicsStdCall epicsThreadPrivateGet ( epicsThreadPrivateId pPvt )
 {
-    return ( void * ) TlsGetValue ( pPvt->key );
+    return TlsGetValue ( pPvt->key );
 }
 
 /*
@@ -1226,3 +1228,17 @@ void testPriorityMapping ()
     return 0;
 }
 #endif
+
+int epicsStdCall epicsThreadIsOkToBlock(void)
+{
+    struct epicsThreadOSD *pthreadInfo = epicsThreadGetIdSelf();
+
+    return(pthreadInfo->isOkToBlock);
+}
+
+void epicsStdCall epicsThreadSetOkToBlock(int isOkToBlock)
+{
+    struct epicsThreadOSD *pthreadInfo = epicsThreadGetIdSelf();
+
+    pthreadInfo->isOkToBlock = !!isOkToBlock;
+}

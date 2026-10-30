@@ -53,5 +53,6 @@ int main(int argc,char **argv)
         status = -1;
     }
     errlogFlush();
+    asFreeAll((ASBASE*)pasbase);
     return status;
 }

@@ -11,6 +11,8 @@
  * \brief Unit test routines
  * \author Andrew Johnson
  *
+ * @section unittest Unit test routines
+ *
  * The unit test routines make it easy for a test program to generate output
  * that is compatible with the Test Anything Protocol and can thus be used with
  * Perl's automated Test::Harness as well as generating human-readable output.
@@ -72,78 +74,40 @@
  * mechanism to generate its result outputs (from an epicsAtExit() callback
  * routine).
  *
- * ### IOC Testing
+ * @see @ref dbunittest
  *
- * Some tests require the context of an IOC to be run. This conflicts with the
- * idea of running multiple tests within a test harness, as iocInit() is only
- * allowed to be called once, and some parts of the full IOC (e.g. the rsrv CA
- * server) can not be shut down cleanly. The function iocBuildIsolated() allows
- * to start an IOC without its Channel Access parts, so that it can be shutdown
- * quite cleanly using iocShutdown(). This feature is only intended to be used
- * from test programs, do not use it on production IOCs. After building the
- * IOC using iocBuildIsolated() or iocBuild(), it has to be started by calling
- * iocRun(). The suggested call sequence in a test program that needs to run the
- * IOC without Channel Access is:
-\code
-#include "iocInit.h"
-
-MAIN(iocTest)
-{
-    testPlan(0);
-    testdbPrepare();
-    testdbReadDatabase("<dbdname>.dbd", 0, 0);
-    <dbdname>_registerRecordDeviceDriver(pdbbase);
-    testdbReadDatabase("some.db", 0, 0);
-    ... test code before iocInit().  eg. dbGetString() ...
-    testIocInitOk();
-    ... test code with IOC running.  eg. dbGet()
-    testIocShutdownOk();
-    testdbCleanup();
-    return testDone();
-}
-\endcode
-
- * The part from iocBuildIsolated() to iocShutdown() can be repeated to
- * execute multiple tests within one executable or harness.
- *
- * To make it easier to create a single test program that can be built for
- * both the embedded and workstation operating system harnesses, the header file
- * testMain.h provides a convenience macro MAIN() that adjusts the name of the
- * test program according to the platform it is running on: main() on
- * workstations and a regular function name on embedded systems.
- *
- * ### Example
+ * @section unittestexample Example
  *
  * The following is a simple example of a test program using the epicsUnitTest
  * routines:
-\code
-#include <math.h>
-#include "epicsUnitTest.h"
-#include "testMain.h"
-
-MAIN(mathTest)
-{
-    testPlan(3);
-    testOk(sin(0.0) == 0.0, "Sine starts");
-    testOk(cos(0.0) == 1.0, "Cosine continues");
-    if (!testOk1(M_PI == 4.0*atan(1.0)))
-        testDiag("4 * atan(1) = %g", 4.0 * atan(1.0));
-    return testDone();
-}
-\endcode
-
+ * \code{.c}
+ * #include <math.h>
+ * #include "epicsUnitTest.h"
+ * #include "testMain.h"
+ *
+ * MAIN(mathTest)
+ * {
+ *     testPlan(3);
+ *     testOk(sin(0.0) == 0.0, "Sine starts");
+ *     testOk(cos(0.0) == 1.0, "Cosine continues");
+ *     if (!testOk1(M_PI == 4.0*atan(1.0)))
+ *         testDiag("4 * atan(1) = %g", 4.0 * atan(1.0));
+ *     return testDone();
+ * }
+ * \endcode
+ *
  * The output from running the above program looks like this:
-\code
-1..3
-ok  1 - Sine starts
-ok  2 - Cosine continues
-ok  3 - M_PI == 4.0*atan(1.0)
-
-    Results
-    =======
-       Tests: 3
-      Passed:  3 = 100%
-\endcode
+ * \code
+ * 1..3
+ * ok  1 - Sine starts
+ * ok  2 - Cosine continues
+ * ok  3 - M_PI == 4.0*atan(1.0)
+ *
+ *     Results
+ *     =======
+ *        Tests: 3
+ *       Passed:  3 = 100%
+ * \endcode
  */
 
 #ifndef INC_epicsUnitTest_H
@@ -223,7 +187,8 @@ LIBCOM_API void testTodoEnd(void);
  * \param fmt A printf-style format string giving the reason for stopping.
  * \param ... Any parameters required for the format string.
  */
-LIBCOM_API void testAbort(EPICS_PRINTF_FMT(const char *fmt), ...)
+LIBCOM_API EPICS_NORETURN
+void testAbort(EPICS_PRINTF_FMT(const char *fmt), ...)
     EPICS_PRINTF_STYLE(1, 2);
 /** @} */
 

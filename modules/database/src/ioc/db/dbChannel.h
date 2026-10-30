@@ -206,7 +206,7 @@ typedef struct chFilterIf {
      *
      * Optional.
      * \param filter Pointer to instance data.
-     * \param stringVal Value, not zero-terminated.
+     * \param stringVal Value, not null terminated.
      * \param stringLen Number of chars in \p stringVal.
      * \returns \p parse_stop on error, or \p parse_continue
      */
@@ -226,7 +226,7 @@ typedef struct chFilterIf {
      *
      * Optional.
      * \param filter Pointer to instance data.
-     * \param key Value not zero-terminated.
+     * \param key Value not null terminated.
      * \param stringLen Number of chars in \p key
      * \returns \p parse_stop on error, or \p parse_continue
      */
@@ -310,7 +310,7 @@ typedef struct chFilterIf {
 } chFilterIf;
 
 /** \brief Filter plugin data
- * 
+ *
  * A chFilterPlugin object holds data about a filter plugin.
  */
 typedef struct chFilterPlugin {
@@ -346,7 +346,7 @@ DBCORE_API void dbChannelInit(void);
 /** \brief Cleanup the dbChannel subsystem. */
 DBCORE_API void dbChannelExit(void);
 
-/** \brief Test the given PV name for existance.
+/** \brief Test the given PV name for existence.
  *
  * This routine looks up the given record and field name, but does not check
  * whether any field modifiers given after the field name are correct.
@@ -511,6 +511,10 @@ DBCORE_API long dbChannelGet(dbChannel *chan, short type,
  * \param[in,out] nRequest Pointer to the element count.
  * \param[in] pfl Pointer to a db_field_log or NULL.
  * \returns 0, or an error status value.
+ *
+ * \since 7.0.10 If pfl is NULL and chan has filters, db_create_read_log() will be called
+ *        internally to create a temporary db_field_log which is passed to dbChannelGet()
+ *        then deallocated.
  */
 DBCORE_API long dbChannelGetField(dbChannel *chan, short type,
         void *pbuffer, long *options, long *nRequest, void *pfl);

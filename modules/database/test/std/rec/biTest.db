@@ -4,3 +4,10 @@ record(bi, "test_bi_rec") {
 record(bo, "test_bi_link_rec") {
 
 }
+
+record(bi, "test_bi_rec2") {
+}
+
+record(bo, "test_bi_link_rec2") {
+
+}

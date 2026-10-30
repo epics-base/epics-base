@@ -109,7 +109,7 @@ static long init_record(struct dbCommon *pcommon, int pass)
         return S_dev_noDSET;
     }
 
-    if ((pdset->common.number < 5) || (pdset->write_mbbo == NULL)) {
+    if ((pdset->common.number < 5) || (pdset->write_mbboDirect == NULL)) {
         recGblRecordError(S_dev_missingSup, prec, "mbboDirect: init_record");
         return S_dev_missingSup;
     }
@@ -170,9 +170,9 @@ static long process(struct dbCommon *pcommon)
     long status = 0;
     int pact = prec->pact;
 
-    if ((pdset == NULL) || (pdset->write_mbbo == NULL)) {
+    if ((pdset == NULL) || (pdset->write_mbboDirect == NULL)) {
         prec->pact = TRUE;
-        recGblRecordError(S_dev_missingSup, prec, "write_mbbo");
+        recGblRecordError(S_dev_missingSup, prec, "write_mbboDirect");
         return S_dev_missingSup;
     }
 
@@ -360,7 +360,7 @@ static long writeValue(mbboDirectRecord *prec)
 
     switch (prec->simm) {
     case menuSimmNO:
-        status = pdset->write_mbbo(prec);
+        status = pdset->write_mbboDirect(prec);
         break;
 
     case menuSimmYES:

@@ -35,7 +35,7 @@ LIBCOM_API FILE * epicsStdCall epicsTempFile ()
          * condition where two programs end up receiving the
          * same temporary file name.
          *
-         * _O_CREAT create if non-existant
+         * _O_CREAT create if non-existent
          * _O_EXCL file must not exist
          * _O_RDWR read and write the file
          * _O_TEMPORARY delete file on close

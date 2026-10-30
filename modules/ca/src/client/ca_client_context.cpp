@@ -117,7 +117,7 @@ ca_client_context::ca_client_context ( bool enablePreemptiveCallback ) :
     // the local port number below
     {
         osiSockAddr addr;
-        memset ( (char *)&addr, 0 , sizeof ( addr ) );
+        memset ( &addr, 0 , sizeof ( addr ) );
         addr.ia.sin_family = AF_INET;
         addr.ia.sin_addr.s_addr = htonl ( INADDR_ANY );
         addr.ia.sin_port = htons ( PORT_ANY );
@@ -728,6 +728,12 @@ epicsMutex & ca_client_context::mutexRef () const
     return this->mutex;
 }
 
+void ca_client_context::sync()
+{
+    // bounce through vtable
+    this->pServiceContext->sync();
+}
+
 cacContext & ca_client_context::createNetworkContext (
     epicsMutex & mutexIn, epicsMutex & cbMutexIn )
 {
@@ -775,11 +781,11 @@ LIBCA_API int epicsStdCall ca_clear_subscription ( evid pMon )
     }
     else {
       //
-      // we will definately stall out here if all of the
+      // we will definitely stall out here if all of the
       // following are true
       //
       // o user creates non-preemptive mode client library context
-      // o user doesnt periodically call a ca function
+      // o user doesn't periodically call a ca function
       // o user calls this function from an auxiliary thread
       //
       CallbackGuard cbGuard ( cac.cbMutex );

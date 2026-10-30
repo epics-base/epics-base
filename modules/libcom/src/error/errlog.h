@@ -205,18 +205,25 @@ LIBCOM_API int eltc(int yesno);
 LIBCOM_API int errlogSetConsole(FILE *stream);
 
 /**
- * Can be used to initialize the error logging system with a larger buffer. The default buffer size is 1280 bytes.
+ * Can be used to initialize the error logging system with a larger buffer. The default buffer size is 2560 bytes.
  *
  * \param bufsize The desired buffer size
+ * \return 0 if successful, -1 if called from callback function
+ *
+ * \since 7.0.11 the default buffer size is 2560.
  */
 LIBCOM_API int errlogInit(int bufsize);
 
 /**
  * errlogInit2 can be used to initialize the error logging system with a larger buffer and maximum message size.
- * The default buffer size is 1280 bytes, and the default maximum message size is 256.
+ * The default buffer size is 2560 bytes, and the default maximum message size is 512.
  *
  * \param bufsize The desired buffer size
  * \param maxMsgSize The desired max message size
+ * \return 0 if successful, -1 if called from callback function
+ *
+ * \since 7.0.11 It is possible to enlarge the error log buffer size after initialisation.
+ *                   The default buffer size is 2560 and the default maximum message size is 512.
  */
 LIBCOM_API int errlogInit2(int bufsize, int maxMsgSize);
 
@@ -241,7 +248,7 @@ LIBCOM_API void errlogFlush(void);
  * ::errVerbose determines if the filename and line number are shown.
  */
 LIBCOM_API void errPrintf(
-    long status, const char *pFileName, int lineno, 
+    long status, const char *pFileName, int lineno,
     EPICS_PRINTF_FMT(const char *pformat), ...
 ) EPICS_PRINTF_STYLE(4,5);
 

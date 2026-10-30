@@ -64,6 +64,8 @@ public:
         chid pChan, char * pBuf, unsigned bufLength );
     friend const char * epicsStdCall ca_host_name (
         chid pChan );
+    friend unsigned epicsStdCall ca_host_minor_protocol (
+        chid pChan );
     friend const char * epicsStdCall ca_name (
         chid pChan );
     friend void epicsStdCall ca_set_puser (
@@ -347,6 +349,7 @@ public:
     void destroyPutCallback ( epicsGuard < epicsMutex > &, putCallback & );
     void destroySubscription ( epicsGuard < epicsMutex > &, oldSubscription & );
     epicsMutex & mutexRef () const;
+    void sync();
 
     template < class T >
     void whenThereIsAnExceptionDestroySyncGroupIO ( epicsGuard < epicsMutex > &, T & );
@@ -595,11 +598,11 @@ void ca_client_context :: whenThereIsAnExceptionDestroySyncGroupIO (
         epicsGuardRelease < epicsMutex > guardRelease ( guard );
         {
             //
-            // we will definately stall out here if all of the
+            // we will definitely stall out here if all of the
             // following are true
             //
             // o user creates non-preemptive mode client library context
-            // o user doesnt periodically call a ca function
+            // o user doesn't periodically call a ca function
             // o user calls this function from an auxiliary thread
             //
             CallbackGuard cbGuard ( this->cbMutex );

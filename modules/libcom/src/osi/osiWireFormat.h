@@ -161,7 +161,7 @@ inline void WireGet ( const epicsUInt8 * pWireSrc, T & dst )
 {
     // copy through union here
     // a) prevents over-aggressive optimization under strict aliasing rules
-    // b) doesnt preclude extra copy operation being optimized away
+    // b) doesn't preclude extra copy operation being optimized away
     WireAlias < T > tmp;
     WireGet ( pWireSrc, tmp._u );
     dst = tmp._o;
@@ -198,7 +198,7 @@ inline void WireSet ( const T & src, epicsUInt8 * pWireDst )
 {
     // copy through union here
     // a) prevents over-aggressive optimization under strict aliasing rules
-    // b) doesnt preclude extra copy operation being optimized away
+    // b) doesn't preclude extra copy operation being optimized away
     WireAlias < T > tmp;
     tmp._o = src;
     WireSet ( tmp._u, pWireDst );
@@ -234,7 +234,7 @@ inline void AlignedWireGet ( const T & src, T & dst )
 {
     // copy through union here
     // a) prevents over-aggressive optimization under strict aliasing rules
-    // b) doesnt preclude extra copy operation being optimized away
+    // b) doesn't preclude extra copy operation being optimized away
     WireAlias < T > srcu, dstu;
     srcu._o = src;
     AlignedWireGet ( srcu._u, dstu._u );
@@ -246,7 +246,7 @@ inline void AlignedWireSet ( const T & src, T & dst )
 {
     // copy through union here
     // a) prevents over-aggressive optimization under strict aliasing rules
-    // b) doesnt preclude extra copy operation being optimized away
+    // b) doesn't preclude extra copy operation being optimized away
     WireAlias < T > srcu, dstu;
     srcu._o = src;
     AlignedWireSet ( srcu._u, dstu._u );

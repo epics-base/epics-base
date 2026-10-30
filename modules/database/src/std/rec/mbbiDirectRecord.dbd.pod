@@ -68,7 +68,7 @@ determine VAL as follows:
 
 Each of the fields, B0-BF and B10-B1F, represents one bit of the word.
 
-=fields VAL, INP, RVAL, SHFT, B0, B1, B2, B3, B4, B5, B6, B7, B8, B9, BA, BB, BC, BD, BE, BF, B10, B11, B12, B13, B14, B15, B16, B17, B18, B19, B1A, B1B, B1C, B1D, B1E, B1F
+=fields VAL, INP, RVAL, SHFT, B0 - B9, BA - BF, B10 - B1F
 
 =head3 Operator Display Parameters
 
@@ -87,7 +87,7 @@ Parameters> for more on the record name (NAME) and description (DESC) fields.
     %struct mbbiDirectRecord;
     %typedef struct mbbidirectdset {
     %    dset common; /* init_record returns: (-1,0) => (failure, success)*/
-    %    long (*read_mbbi)(struct mbbiDirectRecord *prec); /* (0, 2) => (success, success no convert)*/
+    %    long (*read_mbbiDirect)(struct mbbiDirectRecord *prec); /* (0, 2) => (success, success no convert)*/
     %} mbbidirectdset;
     %#define HAS_mbbidirectdset
     %
@@ -102,6 +102,7 @@ Parameters> for more on the record name (NAME) and description (DESC) fields.
         promptgroup("40 - Input")
         special(SPC_NOMOD)
         interest(1)
+        prop(YES)       # get_precision
     }
     field(INP,DBF_INLINK) {
         prompt("Input Specification")
@@ -590,7 +591,7 @@ read_mbbiDirect calls recGblGetLinkValue to read the current value of VAL.
 
 See L<Input Records> for a further explanation.
 
-If the return status of recGblGetLinkValue is zero, then read_mbbi sets UDF to
+If the return status of recGblGetLinkValue is zero, then read_mbbiDirect sets UDF to
 FALSE. The status of recGblGetLinkValue is returned.
 
 =head4 Raw Soft Channel

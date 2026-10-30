@@ -22,10 +22,10 @@
 #elif defined ( _BIG_ENDIAN )
 #   define EPICS_BYTE_ORDER EPICS_ENDIAN_BIG
 #else
-#   error EPICS hasnt been ported to byte order specified by <sys/isa_defs.h> on Solaris
+#   error EPICS has not been ported to byte order specified by <sys/isa_defs.h> on Solaris
 #endif
 
-/* for now, assume that Solaris doesnt run on weird arch like ARM NWFP */
+/* for now, assume that Solaris doesn't run on weird arch like ARM NWFP */
 #define EPICS_FLOAT_WORD_ORDER EPICS_BYTE_ORDER
 
 #endif /* ifdef osdWireConfig_h */

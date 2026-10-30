@@ -37,7 +37,7 @@ epicsExportAddress(dset, devBiSoft);
 
 static long init_record(dbCommon *pcommon)
 {
-	biRecord *prec = (biRecord *)pcommon;
+    biRecord *prec = (biRecord *)pcommon;
 
     if (recGblInitConstantLink(&prec->inp, DBF_ENUM, &prec->val))
         prec->udf = FALSE;

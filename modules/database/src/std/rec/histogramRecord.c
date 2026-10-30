@@ -111,7 +111,7 @@ static void wdogCallback(epicsCallback *arg)
     if (prec->mcnt > 0){
         dbScanLock((struct dbCommon *)prec);
         recGblGetTimeStamp(prec);
-        db_post_events(prec, (void*)&prec->val, DBE_VALUE | DBE_LOG);
+        db_post_events(prec, &prec->val, DBE_VALUE | DBE_LOG);
         prec->mcnt = 0;
         dbScanUnlock((struct dbCommon *)prec);
     }
@@ -291,7 +291,7 @@ static void monitor(histogramRecord *prec)
     }
     /* send out monitors connected to the value field */
     if (monitor_mask)
-        db_post_events(prec, (void*)&prec->val, monitor_mask);
+        db_post_events(prec, &prec->val, monitor_mask);
 
     return;
 }
@@ -338,7 +338,8 @@ static long add_count(histogramRecord *prec)
         return 0;
 
     temp = prec->sgnl - prec->llim;
-    for (i = 1; i <= prec->nelm; i++){
+    /* stop at nelm-1 so a rounded wdth can't push i past the last bin */
+    for (i = 1; i < prec->nelm; i++){
         if (temp <= (double) i * prec->wdth)
             break;
     }

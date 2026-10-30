@@ -312,8 +312,7 @@ void rsrv_build_addr_lists(void)
                 char sockErrBuf[64];
                 epicsSocketConvertErrnoToString (
                             sockErrBuf, sizeof ( sockErrBuf ) );
-                errlogPrintf("CAS: failed to set mcast loopback: %s\n",
-                    sockErrBuf);
+                errlogPrintf("rsrv: failed to set mcast loopback: %s (%d)\n", sockErrBuf, errno);
             }
         }
 #endif
@@ -860,7 +859,7 @@ static void log_one_client (struct client *client, unsigned level)
         recv_delay = epicsTimeDiffInSeconds(&current,&client->time_at_last_recv);
 
         printf ("\tTask Id = %p, Socket FD = %d\n",
-            (void *) client->tid, (int)client->sock);
+            client->tid, (int)client->sock);
         printf(
         "\t%.2f secs since last send, %.2f secs since last receive\n",
             send_delay, recv_delay);
@@ -1137,6 +1136,7 @@ void destroy_client ( struct client *client )
         free ( client->pHostName );
     }
 
+    free ( client->sssb );
     freeListFree ( rsrvClientFreeList, client );
 }
 
@@ -1276,7 +1276,7 @@ struct client * create_client ( SOCKET sock, int proto )
     ellInit ( & client->chanList );
     ellInit ( & client->chanPendingUpdateARList );
     ellInit ( & client->putNotifyQue );
-    memset ( (char *)&client->addr, 0, sizeof (client->addr) );
+    memset ( &client->addr, 0, sizeof (client->addr) );
     client->tid = 0;
 
     if ( proto == IPPROTO_TCP ) {

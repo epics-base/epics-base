@@ -37,7 +37,7 @@ epicsExportAddress(dset, devBiSoftRaw);
 
 static long init_record(dbCommon *pcommon)
 {
-	biRecord *prec = (biRecord *)pcommon;
+    biRecord *prec = (biRecord *)pcommon;
 
     recGblInitConstantLink(&prec->inp, DBF_ULONG, &prec->rval);
 

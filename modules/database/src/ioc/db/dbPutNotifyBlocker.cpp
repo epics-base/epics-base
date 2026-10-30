@@ -164,7 +164,7 @@ void dbPutNotifyBlocker::initiatePutNotify (
         throw cacChannel::outOfBounds();
     }
 
-    if ( type > SHRT_MAX ) {
+    if ( INVALID_DB_REQ(type) ) {
         throw cacChannel::badType();
     }
 

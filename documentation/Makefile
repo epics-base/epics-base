@@ -11,124 +11,7 @@ EXPAND_ME += RTD_SRC
 
 DOXYGEN ?= doxygen
 
-libcom_HEADERS += adjustment
-libcom_HEADERS += alarm
-libcom_HEADERS += alarmString
-libcom_HEADERS += asTrapWrite
-libcom_HEADERS += bucketLib
-libcom_HEADERS += cantProceed
-libcom_HEADERS += compilerDependencies
-libcom_HEADERS += cvtFast
-libcom_HEADERS += dbmf
-libcom_HEADERS += devLibVME
-libcom_HEADERS += devLibVMEImpl
-libcom_HEADERS += ellLib
-libcom_HEADERS += envDefs
-libcom_HEADERS += epicsAlgorithm
-libcom_HEADERS += epicsAssert
-libcom_HEADERS += epicsAtomic
-libcom_HEADERS += epicsEvent
-libcom_HEADERS += epicsExit
-libcom_HEADERS += epicsExport
-libcom_HEADERS += epicsGeneralTime
-libcom_HEADERS += epicsGuard
-libcom_HEADERS += epicsMessageQueue
-libcom_HEADERS += epicsMutex
-libcom_HEADERS += epicsReadline
-libcom_HEADERS += epicsRingBytes
-libcom_HEADERS += epicsRingPointer
-libcom_HEADERS += epicsSignal
-libcom_HEADERS += epicsSpin
-libcom_HEADERS += epicsStackTrace
-libcom_HEADERS += epicsStdio
-libcom_HEADERS += epicsStdlib
-libcom_HEADERS += epicsString
-libcom_HEADERS += epicsTempFile
-libcom_HEADERS += epicsThread
-libcom_HEADERS += epicsTime
-libcom_HEADERS += epicsTypes
-libcom_HEADERS += epicsUnitTest
-libcom_HEADERS += errlog
-libcom_HEADERS += freeList
-libcom_HEADERS += iocsh
-libcom_HEADERS += ipAddrToAsciiAsynchronous
-libcom_HEADERS += logClient
-libcom_HEADERS += macLib
-libcom_HEADERS += osiPoolStatus
-libcom_HEADERS += osiProcess
-libcom_HEADERS += osiSock
-libcom_HEADERS += postfix
-libcom_HEADERS += shareLib
-libcom_HEADERS += testMain
-libcom_HEADERS += yajl_alloc
-libcom_HEADERS += yajl_common
-libcom_HEADERS += yajl_gen
-libcom_HEADERS += yajl_parse
-
-database_HEADERS += chfPlugin
-database_HEADERS += dbChannel
-database_HEADERS += dbCommon
-database_HEADERS += dbDefs
-database_HEADERS += dbExtractArray
-database_HEADERS += dbLink
-database_HEADERS += dbServer
-database_HEADERS += dbState
-database_HEADERS += dbStaticLib
-database_HEADERS += dbUnitTest
-database_HEADERS += devLib
-database_HEADERS += devSup
-database_HEADERS += drvSup
-database_HEADERS += initHooks
-
-record_HEADERS += aaiRecord
-record_HEADERS += aaoRecord
-record_HEADERS += aiRecord
-record_HEADERS += aoRecord
-record_HEADERS += aSubRecord
-record_HEADERS += biRecord
-record_HEADERS += boRecord
-record_HEADERS += calcRecord
-record_HEADERS += calcoutRecord
-record_HEADERS += compressRecord
-record_HEADERS += dfanoutRecord
-record_HEADERS += eventRecord
-record_HEADERS += fanoutRecord
-record_HEADERS += histogramRecord
-record_HEADERS += int64inRecord
-record_HEADERS += int64outRecord
-record_HEADERS += longinRecord
-record_HEADERS += longoutRecord
-record_HEADERS += lsiRecord
-record_HEADERS += lsoRecord
-record_HEADERS += mbbiRecord
-record_HEADERS += mbbiDirectRecord
-record_HEADERS += mbboRecord
-record_HEADERS += mbboDirectRecord
-record_HEADERS += permissiveRecord
-record_HEADERS += printfRecord
-record_HEADERS += selRecord
-record_HEADERS += seqRecord
-record_HEADERS += stateRecord
-record_HEADERS += stringinRecord
-record_HEADERS += stringoutRecord
-record_HEADERS += subRecord
-record_HEADERS += subArrayRecord
-record_HEADERS += waveformRecord
-
-menu_HEADERS += menuAlarmSevr
-menu_HEADERS += menuAlarmStat
-menu_HEADERS += menuConvert
-menu_HEADERS += menuFtype
-menu_HEADERS += menuIvoa
-menu_HEADERS += menuOmsl
-menu_HEADERS += menuPini
-menu_HEADERS += menuPost
-menu_HEADERS += menuPriority
-menu_HEADERS += menuScan
-menu_HEADERS += menuSimm
-menu_HEADERS += menuYesNo
-
-HEADER_TYPES = libcom database record menu
+include $(TOP)/documentation/Makefile.headers
 
 HEADER_MD_FILES = $(foreach t, $(HEADER_TYPES), \
     $(addsuffix _h.md, $($t_HEADERS)))
@@ -137,38 +20,136 @@ API_RST_FILES = $(addsuffix -api.rst, $(HEADER_TYPES))
 RTD_SRC = $(COMMON_DIR)/rtd-src
 
 DOCS += README.md
+DOCS += ca-cli.md
 DOCS += RELEASE_NOTES.md
+DOCS += ReleaseChecklist.md
+DOCS += gdb.md
+
+OLD_NOTES = $(wildcard ../RELEASE-*.md)
+DOCS += $(OLD_NOTES:../%=%)
+
+NOTES_FILE = RELEASE-$(EPICS_SHORT_VERSION).md
+# NOTES_PATH works in both source and build directories
+ifdef T_A
+  NOTES_PATH = ../$(NOTES_FILE)
+else
+  NOTES_PATH = $(NOTES_FILE)
+endif
+
+ifneq ($(EPICS_DEV_SNAPSHOT),)
+  # Between releases, our special release targets are disabled
+  REASON = EPICS_DEV_SNAPSHOT not empty
+  NOTES_PATH =
+else
+  # Not a snapshot. User could be creating a new release,
+  # or this is a build of an already-tagged release.
+
+  # Are we in the process of releasing?
+  NOTES_STAT := $(and $(wildcard $(TOP)/.git), $(shell which git), \
+      $(firstword $(shell git status --porcelain $(NOTES_PATH))))
+  ifeq ($(NOTES_STAT),A)
+    # New file was added to the Git index; allow unrelease
+  else ifeq ($(NOTES_STAT),AD)
+    # File was added to the Git index but deleted; allow unrelease
+  else ifeq ($(wildcard $(NOTES_PATH)),)
+    # No file yet, "make release" creates it
+  else ifeq ($(NOTES_STAT),)
+    # File in repo, unchanged
+    REASON := file $(NOTES_FILE) exists
+    NOTES_PATH =
+  endif
+endif
 
 include $(TOP)/configure/RULES
 
-$(HEADER_MD_FILES): %_h.md: ../HEADER_h.md
-	$(EXPAND_TOOL) -t $(INSTALL_LOCATION) -DHEADER=$* $< $@
-
-$(API_RST_FILES): %-api.rst: ../%-API.rst
-	@$(RM) $@
-	@$(ECHO) Creating $@
-	@$(CP) $< $@
-	@$(foreach h, $($*_HEADERS), \
-	    echo "   $h_h.rst" >> $@;)
+help:
+	@echo "Makefile targets for documentation:"
+	@echo "    all       - install some files (default)"
+	@echo "    help      - Print this list of make targets"
+	@echo "    release   - Create RELEASE-<ver>.md, add to git"
+	@echo "    unrelease - Undo 'make release'"
+	@echo "    doxygen   - Generate Doxygen HTML output"
+	@echo "    rtd       - Install files used by read-the-docs"
+	@echo "    sphinx    - Run Sphinx for all release docs"
 
 ifndef T_A
-doxygen rtd sphinx: inc
+  # Delegate these targets to the O.$(T_A) build directory
+  release unrelease doxygen rtd sphinx: inc
 	$(MAKE) -C O.$(EPICS_HOST_ARCH) $@
-else
 
-doxygen: Doxyfile
-	@$(MKDIR) $(RTD_SRC)
+else
+  # Special release target rules
+  MAKENOTES = ../make-notes.pl
+  NEW_DIR = ../new-notes
+  NEW_NOTES = $(wildcard $(NEW_DIR)/*.md)
+
+  ifneq ($(NOTES_PATH),)
+    $(NOTES_PATH): $(NEW_NOTES) $(MAKENOTES)
+	$(RM) $@
+	$(PERL) $(MAKENOTES) -o $@ -V $(EPICS_SHORT_VERSION) \
+	    -d $(abspath $(NEW_DIR)) $(OLD_NOTES)
+    release-git: $(NOTES_PATH)
+	$(if $(NEW_NOTES), \
+	    git rm -q $(NEW_NOTES))
+	git add $<
+    release: $(INSTALL_DOC)/RELEASE_NOTES.md $(INSTALL_DOC)/$(NOTES_FILE)
+
+    unrelease:
+	$(if $(wildcard $(NOTES_PATH)), \
+	    git restore --staged $(NOTES_PATH); \
+	    $(RM) $(NOTES_PATH))
+	git restore --staged $(NEW_DIR)
+	git restore $(NEW_DIR)
+
+    REL_DEPS = release-git $(NOTES_PATH)
+  else
+    DEV_FLAG = -D
+    release unrelease:
+	$(error "make $@" not available, $(REASON))
+  endif
+
+  # Rules to create RELEASE_NOTES.md
+  ifeq ($(wildcard ../$(NOTES_FILE)),)
+    # No RELEASE-<ver>.md file, add new-notes to RELEASE_NOTES.md
+    $(COMMON_DIR)/RELEASE_NOTES.md: $(REL_DEPS) $(NEW_NOTES) $(MAKENOTES)
+	$(RM) $@
+	$(PERL) $(MAKENOTES) -o $@ -V $(EPICS_SHORT_VERSION) $(DEV_FLAG) \
+	    -d $(abspath $(NEW_DIR)) $(OLD_NOTES) $(NOTES_PATH)
+  else
+    # RELEASE-<ver>.md exists, we're building a tagged version
+    $(COMMON_DIR)/RELEASE_NOTES.md: ../$(NOTES_FILE)
+	$(RM) $@
+	$(PERL) $(MAKENOTES) -o $@ -V $(EPICS_SHORT_VERSION) $(OLD_NOTES)
+  endif
+
+  $(HEADER_MD_FILES): %_h.md: ../HEADER_h.md
+	$(EXPAND_TOOL) -t $(INSTALL_LOCATION) -DHEADER=$* $< $@
+
+  $(API_RST_FILES): %-api.rst: ../%-API.rst
+	$(ECHO) Creating $@
+	$(RM) $@
+	$(CP) $< $@
+	$(foreach h, $($*_HEADERS), \
+	    echo "   $h_h.rst" >> $@;)
+
+  DOX = doxygen
+  doxygen: Doxyfile
+	$(MKDIR) $(RTD_SRC)
 	$(DOXYGEN)
 
-rtd: doxygen $(API_RST_FILES) $(HEADER_MD_FILES)
-	rsync -av $(INSTALL_DOC)/ $(RTD_SRC)/
+  # Use "make sphinx DOX=" to skip running doxygen
+  RTD = rtd
+  rtd: $(DOX) $(API_RST_FILES) $(HEADER_MD_FILES)
+	rsync -av --exclude=RELEASE-*.md $(INSTALL_DOC)/ $(RTD_SRC)/
 	rsync -av $(HEADER_MD_FILES) $(RTD_SRC)/
 	rsync -av $(API_RST_FILES) $(RTD_SRC)/
 	rsync -av ../index.rst ../conf.py $(RTD_SRC)/
 
-sphinx: rtd
+  # Use "make sphinx RTD=" to skip earlier steps
+  sphinx: $(RTD)
 	cd $(COMMON_DIR); $(PYTHON) -m sphinx rtd-src readthedocs
 	rsync -av $(COMMON_DIR)/readthedocs $(INSTALL_HTML)/
 endif
 
-.PHONY: doxygen rtd sphinx
+.PHONY: release help release-git unrelease doxygen rtd sphinx
+.NOTPARALLEL: release unrelease doxygen rtd sphinx

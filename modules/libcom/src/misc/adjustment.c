@@ -20,19 +20,19 @@
 
 size_t adjustToWorstCaseAlignment(size_t size)
 {
-    union aline {
-        /* largest primative types (so far...) */
+    union align {
+        /* largest primitive types (so far...) */
         double dval;
         size_t uval;
         char *ptr;
     };
 
     /* assert that alignment size is a power of 2 */
-    STATIC_ASSERT((sizeof(union aline) & (sizeof(union aline)-1))==0);
+    STATIC_ASSERT((sizeof(union align) & (sizeof(union align)-1))==0);
 
-    /* round up to aligment size */
+    /* round up to alignment size */
     size--;
-    size |= sizeof(union aline)-1;
+    size |= sizeof(union align)-1;
     size++;
 
     return size;

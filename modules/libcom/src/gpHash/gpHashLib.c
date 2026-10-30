@@ -163,7 +163,7 @@ void epicsStdCall gphDelete(gphPvt *pgphPvt, const char *name, void *pvtid)
         if (pvtid == pgphNode->pvtid &&
             strcmp(name, pgphNode->name) == 0) {
             ellDelete(plist, (ELLNODE*)pgphNode);
-            free((void *)pgphNode);
+            free(pgphNode);
             break;
         }
         pgphNode = (GPHENTRY *) ellNext((ELLNODE*)pgphNode);

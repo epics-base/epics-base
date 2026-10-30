@@ -125,7 +125,7 @@ static long init_record(struct dbCommon *pcommon, int pass)
     prec->lalm = prec->val;
     prec->pval = prec->val;
     prec->outpvt = EXEC_OUTPUT;
-    
+
     return 0;
 }
 
@@ -139,7 +139,7 @@ static long process(struct dbCommon *pcommon)
 
     if( (pdset==NULL) || (pdset->write_longout==NULL) ) {
         prec->pact=TRUE;
-        recGblRecordError(S_dev_missingSup,(void *)prec,"write_longout");
+        recGblRecordError(S_dev_missingSup, prec, "write_longout");
         return(S_dev_missingSup);
     }
     if (!prec->pact) {
@@ -179,7 +179,7 @@ static long process(struct dbCommon *pcommon)
                 break;
             default :
                 status=-1;
-                recGblRecordError(S_db_badField,(void *)prec,
+                recGblRecordError(S_db_badField, prec,
                         "longout:process Illegal IVOA field");
         }
     }
@@ -450,14 +450,14 @@ static long conditional_write(longoutRecord *prec)
     long status = 0;
     int doDevSupWrite = 0;
 
-    switch (prec->oopt) 
+    switch (prec->oopt)
     {
     case longoutOOPT_On_Change:
         /* Forces a write op if a change in the OUT field is detected OR is first process */
         if (prec->outpvt == EXEC_OUTPUT) {
             doDevSupWrite = 1;
         } else {
-            /* Only write if value is different from the previous one */ 
+            /* Only write if value is different from the previous one */
             doDevSupWrite = (prec->val != prec->pval);
         }
         break;
@@ -479,7 +479,7 @@ static long conditional_write(longoutRecord *prec)
         break;
 
     case longoutOOPT_Transition_To_Non_zero:
-        doDevSupWrite = ((prec->val != 0)&&(prec->pval == 0));      
+        doDevSupWrite = ((prec->val != 0)&&(prec->pval == 0));
         break;
 
     default:

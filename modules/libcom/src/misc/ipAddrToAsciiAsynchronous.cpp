@@ -155,7 +155,7 @@ void ipAddrToAsciiEngine::cleanup()
     ipAddrToAsciiEnginePrivate::pEngine = 0;
 }
 
-// for now its probably sufficent to allocate one
+// for now its probably sufficient to allocate one
 // DNS transaction thread for all codes sharing
 // the same process that need DNS services but we
 // leave our options open for the future

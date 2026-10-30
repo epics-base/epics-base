@@ -18,9 +18,11 @@ stringchar  [^"\n\\]
 name        [a-zA-Z0-9_\-+:.\[\]<>;]
 digit       [0-9]
 punctuation [(){},]
-link        [A-L]
+link        [A-U]
 
 %{
+#include "epicsStdlib.h"
+
 static ASINPUTFUNCPTR *my_yyinput;
 #undef YY_INPUT
 #define YY_INPUT(b,r,ms) (r=(*my_yyinput)((char *)b,ms))
@@ -43,14 +45,31 @@ RULE    { return(tokenRULE);    }
 CALC    { return(tokenCALC);    }
 
 INP{link} {
-        yylval.Int = (unsigned char)yytext[3];
-        yylval.Int -= 'A';
+        yylval.Int64 = (unsigned char)yytext[3];
+        yylval.Int64 -= 'A';
         return(tokenINP);
 }
 
-{digit}+ { /*integer*/
-        yylval.Int = atoi((char *)yytext);
-        return(tokenINTEGER);
+[-+]?{digit}*\.{digit}+([eE][-+]?{digit}+)? {
+        char *end;
+        if (epicsParseDouble((char *)yytext, &yylval.Float64, &end) ) {
+            char message[40];
+            sprintf(message, "Error parsing Float64: %s", (char *)yytext);
+            yyerror(message);
+        } else {
+            return(tokenFLOAT64);
+        }
+}
+
+[-+]?{digit}+ { /*integer 64*/
+        char *end;
+        if (epicsParseInt64((char *)yytext, &yylval.Int64, 10, &end) ) {
+            char message[40];
+            sprintf(message, "Error parsing Int64: %s", (char *)yytext);
+            yyerror(message);
+        } else {
+            return(tokenINT64);
+        }
 }
 
 {name}+ { /*unquoted string*/
@@ -60,7 +79,7 @@ INP{link} {
 
 {doublequote}({stringchar}|{escape})*{doublequote} { /* quoted string */
         yylval.Str=asStrdup(yytext+1);
-        yylval.Str[strlen(yylval.Str)-1] = '\0';
+        yylval.Str[strlen(yylval.Str)-1] = '\0'; /* overwrite trailing '"' */
         return(tokenSTRING);
 }
 

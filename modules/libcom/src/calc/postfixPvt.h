@@ -13,7 +13,7 @@
  */
 
 /* Notes:
- *  1. The FETCH_A through FETCH_L and STORE_A through STORE_L opcodes must
+ *  1. The FETCH_A through FETCH_U and STORE_A through STORE_U opcodes must
  *     be contiguous.
  *  2. The LITERAL opcodes are followed by a binary representation of their
  *     values, but these are not aligned properly.
@@ -34,9 +34,13 @@ typedef enum {
     LITERAL_DOUBLE, LITERAL_INT, FETCH_VAL,
     FETCH_A, FETCH_B, FETCH_C, FETCH_D, FETCH_E, FETCH_F,
     FETCH_G, FETCH_H, FETCH_I, FETCH_J, FETCH_K, FETCH_L,
+    FETCH_M, FETCH_N, FETCH_O, FETCH_P, FETCH_Q, FETCH_R,
+    FETCH_S, FETCH_T, FETCH_U,
     /* Assignment */
     STORE_A, STORE_B, STORE_C, STORE_D, STORE_E, STORE_F,
     STORE_G, STORE_H, STORE_I, STORE_J, STORE_K, STORE_L,
+    STORE_M, STORE_N, STORE_O, STORE_P, STORE_Q, STORE_R,
+    STORE_S, STORE_T, STORE_U,
     /* Trigonometry Constants */
     CONST_PI,
     CONST_D2R,

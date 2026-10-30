@@ -20,6 +20,12 @@ extern "C" {
 
 LIBCOM_API float epicsConvertDoubleToFloat(double value);
 
+/* dbConvertBase is used in dbPut and dbGet string to integer conversions.
+   It defaults to 0 but is set to 10 if the EPICS_DB_CONVERT_DECIMAL_ONLY
+   environment variable is YES (case insensitive).
+*/
+LIBCOM_API extern int dbConvertBase;
+
 #ifdef __cplusplus
 }
 #endif

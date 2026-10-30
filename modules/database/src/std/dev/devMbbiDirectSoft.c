@@ -27,17 +27,17 @@
 
 /* Create the dset for devMbbiDirectSoft */
 static long init_record(dbCommon *pcommon);
-static long read_mbbi(mbbiDirectRecord *prec);
+static long read_mbbiDirect(mbbiDirectRecord *prec);
 
 mbbidirectdset devMbbiDirectSoft = {
     {5, NULL, NULL, init_record, NULL},
-    read_mbbi
+    read_mbbiDirect
 };
 epicsExportAddress(dset, devMbbiDirectSoft);
 
 static long init_record(dbCommon *pcommon)
 {
-	mbbiDirectRecord *prec = (mbbiDirectRecord *)pcommon;
+    mbbiDirectRecord *prec = (mbbiDirectRecord *)pcommon;
 
     if (recGblInitConstantLink(&prec->inp, DBR_ULONG, &prec->val))
         prec->udf = FALSE;
@@ -60,7 +60,7 @@ static long readLocked(struct link *pinp, void *dummy)
     return 2;
 }
 
-static long read_mbbi(mbbiDirectRecord *prec)
+static long read_mbbiDirect(mbbiDirectRecord *prec)
 {
     long status = dbLinkDoLocked(&prec->inp, readLocked, NULL);
 

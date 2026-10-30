@@ -115,7 +115,7 @@ int main ( int argc, char ** argv )
         return -1;
     }
 
-    memset ( (char *) &addr, 0 , sizeof (addr) );
+    memset ( &addr, 0 , sizeof (addr) );
     addr.ia.sin_family = AF_INET;
     addr.ia.sin_addr.s_addr = htonl ( INADDR_ANY );
     addr.ia.sin_port = htons ( 0 );  // any port

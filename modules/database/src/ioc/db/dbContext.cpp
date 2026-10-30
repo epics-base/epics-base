@@ -399,6 +399,23 @@ void dbContext::flush (
     }
 }
 
+static
+void dbContextDummyExtraLabor(void *) {}
+
+void dbContext::sync()
+{
+    // ctx created lazily on first subscription
+    {
+        epicsGuard<epicsMutex> G(mutex);
+        if(!ctx)
+            return;
+    }
+    // assumes dbContext makes no other use of extra labor
+    db_add_extra_labor_event(ctx, dbContextDummyExtraLabor, NULL);
+    db_post_extra_labor(ctx);
+    db_flush_extra_labor_event(ctx);
+}
+
 unsigned dbContext::circuitCount (
     epicsGuard < epicsMutex > & guard ) const
 {

@@ -62,16 +62,32 @@ LIBCOM_API void epicsStdCall epicsMessageQueueDestroy(
 {
   int rv;
   rv = mq_close(id->id);
-  if( rv ) { 
+  if( rv ) {
     fprintf(stderr, "epicsMessageQueueDestroy mq_close failed: %s\n",
                          strerror(rv));
   }
   rv = mq_unlink(id->name);
-  if( rv ) { 
+  if( rv ) {
     fprintf(stderr,"epicsMessageQueueDestroy mq_unlink %s failed: %s\n",
                          id->name, strerror(rv));
   }
   free(id);
+}
+
+LIBCOM_API int epicsStdCall epicsMessageQueueSend(
+        epicsMessageQueueId id,
+        void *message,
+        unsigned int messageSize)
+{
+    return mq_send(id->id, (const char*)message, messageSize, 0);
+}
+
+LIBCOM_API int epicsStdCall epicsMessageQueueReceive(
+        epicsMessageQueueId id,
+        void *message,
+        unsigned int messageSize)
+{
+    return mq_receive(id->id, (char*)message, messageSize, NULL);
 }
 
 

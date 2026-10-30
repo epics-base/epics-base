@@ -25,6 +25,12 @@ typedef struct registryFunctionRef {
 } registryFunctionRef;
 
 
+/** @brief Add named function to global registry
+ *
+ * Most users will prefer epicsRegisterFunction()
+ *
+ * @return 1 on success, 0 on error
+ */
 DBCORE_API int registryFunctionAdd(
     const char *name, REGISTRYFUNCTION func);
 DBCORE_API REGISTRYFUNCTION registryFunctionFind(

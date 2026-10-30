@@ -57,7 +57,7 @@
     else \
         flags |= F_BADLNK
 
-#ifdef __GNUC__
+#if __GNUC__ >= 5 || defined(__clang__)
 #  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Wformat-security"
 /* Intentionally passing non-const format string to epicsSnprintf() below.
@@ -250,6 +250,8 @@ static void doPrintf(printfRecord *prec)
                             int padding;
 
                             /* Terminate string and measure its length */
+                            if (n > vspace)
+                                n = vspace;
                             pval[n] = 0;
                             added = strlen(pval);
                             padding = width - added;
@@ -322,7 +324,7 @@ static void doPrintf(printfRecord *prec)
     prec->len = pval - prec->val;
 }
 
-#ifdef __GNUC__
+#if __GNUC__ >= 5 || defined(__clang__)
 #  pragma GCC diagnostic pop
 #endif
 

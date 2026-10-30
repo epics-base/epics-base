@@ -58,7 +58,7 @@
 #undef BOOST_SP_HAS_SYNC
 #endif
 
-#if defined(__PATHSCALE__) && ((__PATHCC__ == 4) && (__PATHCC_MINOR__ < 9)) 
+#if defined(__PATHSCALE__) && ((__PATHCC__ == 4) && (__PATHCC_MINOR__ < 9))
 #undef BOOST_SP_HAS_SYNC
 #endif
 

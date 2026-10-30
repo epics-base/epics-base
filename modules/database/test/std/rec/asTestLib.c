@@ -137,8 +137,9 @@ static void hookPass0(initHookState state)
     dbFinishEntry(&entry);
 }
 
-static long initRec0(aoRecord *prec)
+static long initRecAO(dbCommon *pr)
 {
+    aoRecord *prec = (aoRecord *) pr;
     DBLINK *plink = &prec->out;
     testDiag("init_record(%s)", prec->name);
     testOk(prec->val==2, "VAL %d==2 (pass0 value)", (int)prec->val);
@@ -165,8 +166,9 @@ static long initRec0(aoRecord *prec)
     return 2; /* we set .VAL, so don't use RVAL */
 }
 
-static long initRec1(waveformRecord *prec)
+static long initRecWF(dbCommon *pr)
 {
+    waveformRecord *prec = (waveformRecord *) pr;
     testDiag("init_record(%s)", prec->name);
     testOk(prec->nord==0, "NORD %d==0", (int)prec->nord);
     iran |= 2;
@@ -277,16 +279,17 @@ void testRestore(void)
     testdbCleanup();
 }
 
-struct dset6 {
-    dset common;
-    DEVSUPFUN proc;
-    DEVSUPFUN linconv;
+static long write_ao(struct aoRecord *prec) {return 0;}
+static long read_wf(struct waveformRecord *prec) {return 0;}
+
+static struct aodset devAOasTest = {
+    {6, NULL, NULL, initRecAO, NULL},
+    write_ao, NULL
 };
-
-static long noop() {return 0;}
-
-static struct dset6 devAOasTest = { {6, NULL, NULL, (DEVSUPFUN)initRec0, NULL}, (DEVSUPFUN)noop, NULL};
-static struct dset6 devWFasTest = { {6, NULL, NULL, (DEVSUPFUN)initRec1, NULL}, (DEVSUPFUN)noop, NULL};
+static struct wfdset devWFasTest = {
+    {5, NULL, NULL, initRecWF, NULL},
+    read_wf
+};
 
 epicsExportAddress(dset, devAOasTest);
 epicsExportAddress(dset, devWFasTest);

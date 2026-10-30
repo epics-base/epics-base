@@ -46,7 +46,7 @@ input data should come from.
 The format for the INP field value depends on the device support layer that is
 selected by the DTYP field.
 See L<Address
-Specification|https://docs.epics-controls.org/en/latest/guides/EPICS_Process_Database_Concepts.html#address-specification>
+Specification|https://docs.epics-controls.org/en/latest/process-database/EPICS_Process_Database_Concepts.html#address-specification>
 for a description of the various hardware address formats supported.
 
 =head3 Units Conversion
@@ -67,23 +67,29 @@ converted into engineering units and placed in the VAL field as follows:
 =over
 
 =item 1.
+
 RVAL is converted to a double and ROFF is added to it.
 
 =item 2.
+
 If ASLO is non-zero the value is multiplied by ASLO.
 
 =item 3.
+
 AOFF is added.
 
 =item 4.
+
 If LINR is C<NO CONVERSION> the units conversion is finished after the above
 steps.
 
 =item 5.
+
 If LINR is C<LINEAR> or C<SLOPE>, the value from step 3 above is multiplied by
 ESLO and EOFF is added to complete the units conversion process.
 
 =item 6.
+
 Any other value for LINR selects a particular breakpoint table to be used on the
 value from step 3 above.
 
@@ -206,7 +212,7 @@ positive number of seconds will delay the record going into or out of a minor
 alarm severity or from minor to major severity until the input signal has been
 in the alarm range for that number of seconds.
 
-See L<Alarm Specification|https://docs.epics-controls.org/en/latest/guides/EPICS_Process_Database_Concepts.html#alarm-specification>
+See L<Alarm Specification|https://docs.epics-controls.org/en/latest/process-database/EPICS_Process_Database_Concepts.html#alarm-specification>
 for a complete explanation of record alarms and of the standard fields.
 L<Alarm Fields|dbCommonRecord/Alarm Fields> lists other fields related
 to alarms that are common to all record types.
@@ -259,7 +265,7 @@ monitoring functionality.
         prompt("Display Precision")
         promptgroup("80 - Display")
         interest(1)
-        prop(YES)
+        prop(YES)       # get_precision
     }
     field(LINR,DBF_MENU) {
         prompt("Linearization")
@@ -288,19 +294,19 @@ monitoring functionality.
         promptgroup("80 - Display")
         interest(1)
         size(16)
-        prop(YES)
+        prop(YES)       # get_units
     }
     field(HOPR,DBF_DOUBLE) {
         prompt("High Operating Range")
         promptgroup("80 - Display")
         interest(1)
-        prop(YES)
+        prop(YES)       # get_graphic_double, get_control_double
     }
     field(LOPR,DBF_DOUBLE) {
         prompt("Low Operating Range")
         promptgroup("80 - Display")
         interest(1)
-        prop(YES)
+        prop(YES)       # get_graphic_double, get_control_double
     }
     field(AOFF,DBF_DOUBLE) {
         prompt("Adjustment Offset")
@@ -325,35 +331,35 @@ monitoring functionality.
         promptgroup("70 - Alarm")
         pp(TRUE)
         interest(1)
-        prop(YES)
+        prop(YES)       # get_alarm_double
     }
     field(LOLO,DBF_DOUBLE) {
         prompt("Lolo Alarm Limit")
         promptgroup("70 - Alarm")
         pp(TRUE)
         interest(1)
-        prop(YES)
+        prop(YES)       # get_alarm_double
     }
     field(HIGH,DBF_DOUBLE) {
         prompt("High Alarm Limit")
         promptgroup("70 - Alarm")
         pp(TRUE)
         interest(1)
-        prop(YES)
+        prop(YES)       # get_alarm_double
     }
     field(LOW,DBF_DOUBLE) {
         prompt("Low Alarm Limit")
         promptgroup("70 - Alarm")
         pp(TRUE)
         interest(1)
-        prop(YES)
+        prop(YES)       # get_alarm_double
     }
     field(HHSV,DBF_MENU) {
         prompt("Hihi Severity")
         promptgroup("70 - Alarm")
         pp(TRUE)
         interest(1)
-        prop(YES)
+        prop(YES)       # get_alarm_double
         menu(menuAlarmSevr)
     }
     field(LLSV,DBF_MENU) {
@@ -361,7 +367,7 @@ monitoring functionality.
         promptgroup("70 - Alarm")
         pp(TRUE)
         interest(1)
-        prop(YES)
+        prop(YES)       # get_alarm_double
         menu(menuAlarmSevr)
     }
     field(HSV,DBF_MENU) {
@@ -369,7 +375,7 @@ monitoring functionality.
         promptgroup("70 - Alarm")
         pp(TRUE)
         interest(1)
-        prop(YES)
+        prop(YES)       # get_alarm_double
         menu(menuAlarmSevr)
     }
     field(LSV,DBF_MENU) {
@@ -377,7 +383,7 @@ monitoring functionality.
         promptgroup("70 - Alarm")
         pp(TRUE)
         interest(1)
-        prop(YES)
+        prop(YES)       # get_alarm_double
         menu(menuAlarmSevr)
     }
     field(HYST,DBF_DOUBLE) {

@@ -198,7 +198,7 @@ Except when it doesn't.
 		prompt("Display Precision")
 		promptgroup("80 - Display")
 		interest(1)
-		prop(YES)
+		prop(YES)		# get_precision
 	}
 
 =head3 Output Event Flag
@@ -226,7 +226,7 @@ This flag controls value, log (archive) and alarm change events.
 The input links from where the values of A,...,U are fetched
 during record processing.
 
-=fields INPA, INPB, INPC, INPD, INPE, INPF, INPG, INPH, INPI, INPJ, INPK, INPL, INPM, INPN, INPO, INPP, INPQ, INPR, INPS, INPT, INPU
+=fields INPA - INPU
 
 =cut
 
@@ -338,10 +338,10 @@ during record processing.
 
 =head3 Input Value Fields
 
-Thse fields hold the scalar or array values fetched through the input links
+These fields hold the scalar or array values fetched through the input links
 INPA,...,INPU.
 
-=fields A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U
+=fields A - U
 
 =cut
 
@@ -353,7 +353,7 @@ INPA,...,INPU.
 		extra("void *a")
 		#=read Yes
 		#=write Yes
-		#=type Set by FTA
+		#=type Set by FTA[NOA]
 	}
 	field(B,DBF_NOACCESS) {
 		prompt("Input value B")
@@ -363,7 +363,7 @@ INPA,...,INPU.
 		extra("void *b")
 		#=read Yes
 		#=write Yes
-		#=type Set by FTB
+		#=type Set by FTB[NOB]
 	}
 	field(C,DBF_NOACCESS) {
 		prompt("Input value C")
@@ -373,7 +373,7 @@ INPA,...,INPU.
 		extra("void *c")
 		#=read Yes
 		#=write Yes
-		#=type Set by FTC
+		#=type Set by FTC[NOC]
 	}
 	field(D,DBF_NOACCESS) {
 		prompt("Input value D")
@@ -383,7 +383,7 @@ INPA,...,INPU.
 		extra("void *d")
 		#=read Yes
 		#=write Yes
-		#=type Set by FTD
+		#=type Set by FTD[NOD]
 	}
 	field(E,DBF_NOACCESS) {
 		prompt("Input value E")
@@ -393,7 +393,7 @@ INPA,...,INPU.
 		extra("void *e")
 		#=read Yes
 		#=write Yes
-		#=type Set by FTE
+		#=type Set by FTE[NOE]
 	}
 	field(F,DBF_NOACCESS) {
 		prompt("Input value F")
@@ -403,7 +403,7 @@ INPA,...,INPU.
 		extra("void *f")
 		#=read Yes
 		#=write Yes
-		#=type Set by FTF
+		#=type Set by FTF[NOF]
 	}
 	field(G,DBF_NOACCESS) {
 		prompt("Input value G")
@@ -413,7 +413,7 @@ INPA,...,INPU.
 		extra("void *g")
 		#=read Yes
 		#=write Yes
-		#=type Set by FTG
+		#=type Set by FTG[NOG]
 	}
 	field(H,DBF_NOACCESS) {
 		prompt("Input value H")
@@ -423,7 +423,7 @@ INPA,...,INPU.
 		extra("void *h")
 		#=read Yes
 		#=write Yes
-		#=type Set by FTH
+		#=type Set by FTH[NOH]
 	}
 	field(I,DBF_NOACCESS) {
 		prompt("Input value I")
@@ -433,7 +433,7 @@ INPA,...,INPU.
 		extra("void *i")
 		#=read Yes
 		#=write Yes
-		#=type Set by FTI
+		#=type Set by FTI[NOI]
 	}
 	field(J,DBF_NOACCESS) {
 		prompt("Input value J")
@@ -443,7 +443,7 @@ INPA,...,INPU.
 		extra("void *j")
 		#=read Yes
 		#=write Yes
-		#=type Set by FTJ
+		#=type Set by FTJ[NOJ]
 	}
 	field(K,DBF_NOACCESS) {
 		prompt("Input value K")
@@ -453,7 +453,7 @@ INPA,...,INPU.
 		extra("void *k")
 		#=read Yes
 		#=write Yes
-		#=type Set by FTK
+		#=type Set by FTK[NOK]
 	}
 	field(L,DBF_NOACCESS) {
 		prompt("Input value L")
@@ -463,7 +463,7 @@ INPA,...,INPU.
 		extra("void *l")
 		#=read Yes
 		#=write Yes
-		#=type Set by FTL
+		#=type Set by FTL[NOL]
 	}
 	field(M,DBF_NOACCESS) {
 		prompt("Input value M")
@@ -473,7 +473,7 @@ INPA,...,INPU.
 		extra("void *m")
 		#=read Yes
 		#=write Yes
-		#=type Set by FTM
+		#=type Set by FTM[NOM]
 	}
 	field(N,DBF_NOACCESS) {
 		prompt("Input value N")
@@ -483,7 +483,7 @@ INPA,...,INPU.
 		extra("void *n")
 		#=read Yes
 		#=write Yes
-		#=type Set by FTN
+		#=type Set by FTN[NON]
 	}
 	field(O,DBF_NOACCESS) {
 		prompt("Input value O")
@@ -493,7 +493,7 @@ INPA,...,INPU.
 		extra("void *o")
 		#=read Yes
 		#=write Yes
-		#=type Set by FTO
+		#=type Set by FTO[NOO]
 	}
 	field(P,DBF_NOACCESS) {
 		prompt("Input value P")
@@ -503,7 +503,7 @@ INPA,...,INPU.
 		extra("void *p")
 		#=read Yes
 		#=write Yes
-		#=type Set by FTP
+		#=type Set by FTP[NOP]
 	}
 	field(Q,DBF_NOACCESS) {
 		prompt("Input value Q")
@@ -513,7 +513,7 @@ INPA,...,INPU.
 		extra("void *q")
 		#=read Yes
 		#=write Yes
-		#=type Set by FTQ
+		#=type Set by FTQ[NOQ]
 	}
 	field(R,DBF_NOACCESS) {
 		prompt("Input value R")
@@ -523,7 +523,7 @@ INPA,...,INPU.
 		extra("void *r")
 		#=read Yes
 		#=write Yes
-		#=type Set by FTR
+		#=type Set by FTR[NOR]
 	}
 	field(S,DBF_NOACCESS) {
 		prompt("Input value S")
@@ -533,7 +533,7 @@ INPA,...,INPU.
 		extra("void *s")
 		#=read Yes
 		#=write Yes
-		#=type Set by FTS
+		#=type Set by FTS[NOS]
 	}
 	field(T,DBF_NOACCESS) {
 		prompt("Input value T")
@@ -543,7 +543,7 @@ INPA,...,INPU.
 		extra("void *t")
 		#=read Yes
 		#=write Yes
-		#=type Set by FTT
+		#=type Set by FTT[NOT]
 	}
 	field(U,DBF_NOACCESS) {
 		prompt("Input value U")
@@ -553,7 +553,7 @@ INPA,...,INPU.
 		extra("void *u")
 		#=read Yes
 		#=write Yes
-		#=type Set by FTU
+		#=type Set by FTU[NOU]
 	}
 
 =head3 Input Value Data Types
@@ -561,7 +561,7 @@ INPA,...,INPU.
 Field types of the input value fields.
 The choices can be found by following the link to the menuFtype definition.
 
-=fields FTA, FTB, FTC, FTD, FTE, FTF, FTG, FTH, FTI, FTJ, FTK, FTL, FTM, FTN, FTO, FTP, FTQ, FTR, FTS, FTT, FTU
+=fields FTA - FTU
 
 =cut
 
@@ -742,7 +742,7 @@ Note that access to the C<NOT> field from C code must use the field name in
 upper case, e.g. C<< prec->NOT >> since the lower-case C<not> is a reserved
 word in C++ and cannot be used as an identifier.
 
-=fields NOA, NOB, NOC, NOD, NOE, NOF, NOG, NOH, NOI, NOJ, NOK, NOL, NOM, NON, NOO, NOP, NOQ, NOR, NOS, NOT, NOU
+=fields NOA - NOU
 
 =cut
 
@@ -899,7 +899,7 @@ word in C++ and cannot be used as an identifier.
 These fields specify how many array elements the input value fields currently
 contain.
 
-=fields NEA, NEB, NEC, NED, NEE, NEF, NEG, NEH, NEI, NEJ, NEK, NEL, NEM, NEN, NEO, NEP, NEQ, NER, NES, NET, NEU
+=fields NEA - NEU
 
 =cut
 
@@ -1035,7 +1035,7 @@ contain.
 The output links through which the VALA ... VALU field values are sent
 during record processing, provided the subroutine returned 0.
 
-=fields OUTA, OUTB, OUTC, OUTD, OUTE, OUTF, OUTG, OUTH, OUTI, OUTJ, OUTK, OUTL, OUTM, OUTN, OUTO, OUTP, OUTQ, OUTR, OUTS, OUTT, OUTU
+=fields OUTA - OUTU
 
 =cut
 	field(OUTA,DBF_OUTLINK) {
@@ -1149,7 +1149,7 @@ during record processing, provided the subroutine returned 0.
 These fields hold scalar or array data generated by the subroutine which will
 be sent through the OUTA ... OUTU links during record processing.
 
-=fields VALA, VALB, VALC, VALD, VALE, VALF, VALG, VALH, VALI, VALJ, VALK, VALL, VALM, VALN, VALO, VALP, VALQ, VALR, VALS, VALT, VALU
+=fields VALA - VALU
 
 =cut
 
@@ -1161,7 +1161,7 @@ be sent through the OUTA ... OUTU links during record processing.
 		extra("void *vala")
 		#=read Yes
 		#=write Yes
-		#=type Set by FTVA
+		#=type Set by FTVA[NOVA]
 	}
 	field(VALB,DBF_NOACCESS) {
 		prompt("Output value B")
@@ -1171,7 +1171,7 @@ be sent through the OUTA ... OUTU links during record processing.
 		extra("void *valb")
 		#=read Yes
 		#=write Yes
-		#=type Set by FTVB
+		#=type Set by FTVB[NOVB]
 	}
 	field(VALC,DBF_NOACCESS) {
 		prompt("Output value C")
@@ -1181,7 +1181,7 @@ be sent through the OUTA ... OUTU links during record processing.
 		extra("void *valc")
 		#=read Yes
 		#=write Yes
-		#=type Set by FTVC
+		#=type Set by FTVC[NOVC]
 	}
 	field(VALD,DBF_NOACCESS) {
 		prompt("Output value D")
@@ -1191,7 +1191,7 @@ be sent through the OUTA ... OUTU links during record processing.
 		extra("void *vald")
 		#=read Yes
 		#=write Yes
-		#=type Set by FTVD
+		#=type Set by FTVD[NOVD]
 	}
 	field(VALE,DBF_NOACCESS) {
 		prompt("Output value E")
@@ -1201,7 +1201,7 @@ be sent through the OUTA ... OUTU links during record processing.
 		extra("void *vale")
 		#=read Yes
 		#=write Yes
-		#=type Set by FTVE
+		#=type Set by FTVE[NOVE]
 	}
 	field(VALF,DBF_NOACCESS) {
 		prompt("Output value F")
@@ -1211,7 +1211,7 @@ be sent through the OUTA ... OUTU links during record processing.
 		extra("void *valf")
 		#=read Yes
 		#=write Yes
-		#=type Set by FTVF
+		#=type Set by FTVF[NOVF]
 	}
 	field(VALG,DBF_NOACCESS) {
 		prompt("Output value G")
@@ -1221,7 +1221,7 @@ be sent through the OUTA ... OUTU links during record processing.
 		extra("void *valg")
 		#=read Yes
 		#=write Yes
-		#=type Set by FTVG
+		#=type Set by FTVG[NOVG]
 	}
 	field(VALH,DBF_NOACCESS) {
 		prompt("Output value H")
@@ -1231,7 +1231,7 @@ be sent through the OUTA ... OUTU links during record processing.
 		extra("void *valh")
 		#=read Yes
 		#=write Yes
-		#=type Set by FTVH
+		#=type Set by FTVH[NOVH]
 	}
 	field(VALI,DBF_NOACCESS) {
 		prompt("Output value I")
@@ -1241,7 +1241,7 @@ be sent through the OUTA ... OUTU links during record processing.
 		extra("void *vali")
 		#=read Yes
 		#=write Yes
-		#=type Set by FTVI
+		#=type Set by FTVI[NOVI]
 	}
 	field(VALJ,DBF_NOACCESS) {
 		prompt("Output value J")
@@ -1251,7 +1251,7 @@ be sent through the OUTA ... OUTU links during record processing.
 		extra("void *valj")
 		#=read Yes
 		#=write Yes
-		#=type Set by FTVJ
+		#=type Set by FTVJ[NOVJ]
 	}
 	field(VALK,DBF_NOACCESS) {
 		prompt("Output value K")
@@ -1261,7 +1261,7 @@ be sent through the OUTA ... OUTU links during record processing.
 		extra("void *valk")
 		#=read Yes
 		#=write Yes
-		#=type Set by FTVK
+		#=type Set by FTVK[NOVK]
 	}
 	field(VALL,DBF_NOACCESS) {
 		prompt("Output value L")
@@ -1271,7 +1271,7 @@ be sent through the OUTA ... OUTU links during record processing.
 		extra("void *vall")
 		#=read Yes
 		#=write Yes
-		#=type Set by FTVL
+		#=type Set by FTVL[NOVL]
 	}
 	field(VALM,DBF_NOACCESS) {
 		prompt("Output value M")
@@ -1281,7 +1281,7 @@ be sent through the OUTA ... OUTU links during record processing.
 		extra("void *valm")
 		#=read Yes
 		#=write Yes
-		#=type Set by FTVM
+		#=type Set by FTVM[NOVM]
 	}
 	field(VALN,DBF_NOACCESS) {
 		prompt("Output value N")
@@ -1291,7 +1291,7 @@ be sent through the OUTA ... OUTU links during record processing.
 		extra("void *valn")
 		#=read Yes
 		#=write Yes
-		#=type Set by FTVN
+		#=type Set by FTVN[NOVN]
 	}
 	field(VALO,DBF_NOACCESS) {
 		prompt("Output value O")
@@ -1301,7 +1301,7 @@ be sent through the OUTA ... OUTU links during record processing.
 		extra("void *valo")
 		#=read Yes
 		#=write Yes
-		#=type Set by FTVO
+		#=type Set by FTVO[NOVO]
 	}
 	field(VALP,DBF_NOACCESS) {
 		prompt("Output value P")
@@ -1311,7 +1311,7 @@ be sent through the OUTA ... OUTU links during record processing.
 		extra("void *valp")
 		#=read Yes
 		#=write Yes
-		#=type Set by FTVP
+		#=type Set by FTVP[NOVP]
 	}
 	field(VALQ,DBF_NOACCESS) {
 		prompt("Output value Q")
@@ -1321,7 +1321,7 @@ be sent through the OUTA ... OUTU links during record processing.
 		extra("void *valq")
 		#=read Yes
 		#=write Yes
-		#=type Set by FTVQ
+		#=type Set by FTVQ[NOVQ]
 	}
 	field(VALR,DBF_NOACCESS) {
 		prompt("Output value R")
@@ -1331,7 +1331,7 @@ be sent through the OUTA ... OUTU links during record processing.
 		extra("void *valr")
 		#=read Yes
 		#=write Yes
-		#=type Set by FTVR
+		#=type Set by FTVR[NOVR]
 	}
 	field(VALS,DBF_NOACCESS) {
 		prompt("Output value S")
@@ -1341,7 +1341,7 @@ be sent through the OUTA ... OUTU links during record processing.
 		extra("void *vals")
 		#=read Yes
 		#=write Yes
-		#=type Set by FTVS
+		#=type Set by FTVS[NOVS]
 	}
 	field(VALT,DBF_NOACCESS) {
 		prompt("Output value T")
@@ -1351,7 +1351,7 @@ be sent through the OUTA ... OUTU links during record processing.
 		extra("void *valt")
 		#=read Yes
 		#=write Yes
-		#=type Set by FTVT
+		#=type Set by FTVT[NOVT]
 	}
 	field(VALU,DBF_NOACCESS) {
 		prompt("Output value U")
@@ -1361,7 +1361,7 @@ be sent through the OUTA ... OUTU links during record processing.
 		extra("void *valu")
 		#=read Yes
 		#=write Yes
-		#=type Set by FTVU
+		#=type Set by FTVU[NOVU]
 	}
 
 =head3 Old Value Fields
@@ -1369,7 +1369,7 @@ be sent through the OUTA ... OUTU links during record processing.
 The previous values of the output fields.
 These are used to determine when to post events if EFLG is set to C<ON CHANGE>.
 
-=fields OVLA, OVLB, OVLC, OVLD, OVLE, OVLF, OVLG, OVLH, OVLI, OVLJ, OVLK, OVLL, OVLM, OVLN, OVLO, OVLP, OVLQ, OVLR, OVLS, OVLT, OVLU
+=fields OVLA - OVLU
 
 =cut
 
@@ -1526,7 +1526,7 @@ These are used to determine when to post events if EFLG is set to C<ON CHANGE>.
 Field types of the output value fields.
 The choices can be found by following a link to the menuFtype definition.
 
-=fields FTVA, FTVB, FTVC, FTVD, FTVE, FTVF, FTVG, FTVH, FTVI, FTVJ, FTVK, FTVL, FTVM, FTVN, FTVO, FTVP, FTVQ, FTVR, FTVS, FTVT, FTVU
+=fields FTVA - FTVU
 
 =cut
 
@@ -1703,7 +1703,7 @@ The choices can be found by following a link to the menuFtype definition.
 
 These fields specify how many array elements the output value fields may hold.
 
-=fields NOVA, NOVB, NOVC, NOVD, NOVE, NOVF, NOVG, NOVH, NOVI, NOVJ, NOVK, NOVL, NOVM, NOVN, NOVO, NOVP, NOVQ, NOVR, NOVS, NOVT, NOVU
+=fields NOVA - NOVU
 
 =cut
 
@@ -1860,7 +1860,7 @@ These fields specify how many array elements the output value fields may hold.
 These fields specify how many array elements the output value fields currently
 contain.
 
-=fields NEVA, NEVB, NEVC, NEVD, NEVE, NEVF, NEVG, NEVH, NEVI, NEVJ, NEVK, NEVL, NEVM, NEVN, NEVO, NEVP, NEVQ, NEVR, NEVS, NEVT, NEVU
+=fields NEVA - NEVU
 
 =cut
 
@@ -1996,7 +1996,7 @@ contain.
 These fields specify how many array elements the old value fields currently
 contain.
 
-=fields ONVA, ONVB, ONVC, ONVD, ONVE, ONVF, ONVG, ONVH, ONVI, ONVJ, ONVK, ONVL, ONVM, ONVN, ONVO, ONVP, ONVQ, ONVR, ONVS, ONVT, ONVU
+=fields ONVA - ONVU
 
 =cut
 
@@ -2378,7 +2378,7 @@ record can locate them.  The simplest way is as follows:
 
     #include <registryFunction.h>
     #include <epicsExport.h>
-    
+
     static long my_asub_routine(aSubRecord *prec) {
         ...
     }

@@ -193,9 +193,8 @@ void testLinkSevr(void)
 
     startRegressTestIoc("regressLinkSevr.db");
 
-    /* wait for CA links to connect and receive an initial update */
-    testdbCaWaitForUpdateCount(dbGetDevLink(testdbRecordPtr("si2")), 1);
-    testdbCaWaitForUpdateCount(dbGetDevLink(testdbRecordPtr("li2")), 1);
+    testOk1(dbIsLinkConnected(dbGetDevLink(testdbRecordPtr("si2"))));
+    testOk1(dbIsLinkConnected(dbGetDevLink(testdbRecordPtr("li2"))));
 
     chan = dbChannelCreate("ai.SEVR");
     if(!chan)
@@ -228,7 +227,7 @@ void testLinkSevr(void)
 
 MAIN(regressTest)
 {
-    testPlan(68);
+    testPlan(70);
     testArrayLength1();
     testHexConstantLinks();
     testLinkMS();

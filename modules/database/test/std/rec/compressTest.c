@@ -653,7 +653,7 @@ void
 testAIAveragePartial(void) {
     double buf = 0.;
     double data[5] = {1., 2., 3., 4., 5.};
-    /* 
+    /*
      * Note that the fifth dbPut essentially resets the circular buffer, so the
      * average is once again the average of the _first_ entry alone.
      */

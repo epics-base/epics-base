@@ -115,9 +115,9 @@ yajl_gen_alloc(const yajl_alloc_funcs * afs)
     g = (yajl_gen) YA_MALLOC(afs, sizeof(struct yajl_gen_t));
     if (!g) return NULL;
 
-    memset((void *) g, 0, sizeof(struct yajl_gen_t));
+    memset(g, 0, sizeof(struct yajl_gen_t));
     /* copy in pointers to allocation routines */
-    memcpy((void *) &(g->alloc), (void *) afs, sizeof(yajl_alloc_funcs));
+    memcpy(&(g->alloc), afs, sizeof(yajl_alloc_funcs));
 
     g->print = (yajl_print_t)&yajl_buf_append;
     g->ctx = yajl_buf_alloc(&(g->alloc));
@@ -130,7 +130,7 @@ void
 yajl_gen_reset(yajl_gen g, const char * sep)
 {
     g->depth = 0;
-    memset((void *) &(g->state), 0, sizeof(g->state));
+    memset(&(g->state), 0, sizeof(g->state));
     if (sep != NULL) g->print(g->ctx, sep, strlen(sep));
 }
 

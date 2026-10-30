@@ -812,7 +812,7 @@ tcpiiu::tcpiiu (
         pSearchDest->setCircuit ( this );
     }
 
-    memset ( (void *) &this->curMsg, '\0', sizeof ( this->curMsg ) );
+    memset ( &this->curMsg, '\0', sizeof ( this->curMsg ) );
 }
 
 // this must always be called by the udp thread when it holds
@@ -1804,6 +1804,13 @@ const char * tcpiiu::pHostName (
     return this->hostNameCacheInstance.pointer ();
 }
 
+unsigned tcpiiu::getHostMinorProtocol (
+    epicsGuard < epicsMutex > & guard) const throw ()
+{
+    guard.assertIdenticalMutex ( this->mutex );
+    return this->minorProtocolVersion;
+}
+
 void tcpiiu::disconnectAllChannels (
     epicsGuard < epicsMutex > & cbGuard,
     epicsGuard < epicsMutex > & guard,
@@ -1817,7 +1824,7 @@ void tcpiiu::disconnectAllChannels (
     }
 
     while ( nciu * pChan = this->createRespPend.get () ) {
-        // we don't yet know the server's id so we cant
+        // we don't yet know the server's id so we can't
         // send a channel delete request and will instead
         // trust that the server can do the proper cleanup
         // when the circuit disconnects
@@ -1883,7 +1890,7 @@ void tcpiiu::unlinkAllChannels (
     while ( nciu * pChan = this->createRespPend.get () ) {
         pChan->channelNode::listMember =
             channelNode::cs_none;
-        // we don't yet know the server's id so we cant
+        // we don't yet know the server's id so we can't
         // send a channel delete request and will instead
         // trust that the server can do the proper cleanup
         // when the circuit disconnects

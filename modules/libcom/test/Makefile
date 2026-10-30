@@ -10,6 +10,9 @@
 TOP = ../../..
 include $(TOP)/configure/CONFIG
 
+# allow tests to peek at private headers
+USR_CPPFLAGS += -I$(TOP)/modules/libcom/src
+
 PROD_LIBS += Com
 PROD_SYS_LIBS_WIN32 += ws2_32 advapi32 user32
 PROD_SYS_LIBS_solaris += socket nsl
@@ -209,6 +212,11 @@ aslibtest_SRCS += aslibtest.c
 testHarness_SRCS += aslibtest.c
 TESTS += aslibtest
 
+TESTPROD_HOST += fdManagerTest
+fdManagerTest_SRCS += fdManagerTest.cpp
+testHarness_SRCS += fdManagerTest.cpp
+TESTS += fdManagerTest
+
 # Perl module tests:
 TESTS += macLib
 
@@ -250,6 +258,11 @@ TESTPROD_HOST += osiSockTest
 osiSockTest_SRCS += osiSockTest.c
 testHarness_SRCS += osiSockTest.c
 TESTS += osiSockTest
+
+TESTPROD_HOST += afterIocRunningTest
+afterIocRunningTest_SRCS += afterIocRunningTest.cpp
+TESTS += afterIocRunningTest
+testHarness_SRCS += afterIocRunningTest.cpp
 
 TESTPROD_HOST += testexecname
 testexecname_SRCS += testexecname.c
@@ -295,7 +308,7 @@ TESTSPEC_RTEMS = libComTestHarness.boot; epicsRunLibComTests
 
 TESTSCRIPTS_HOST += $(TESTS:%=%.t)
 ifneq ($(filter $(T_A),$(CROSS_COMPILER_RUNTEST_ARCHS)),)
-TESTPROD = $(TESTPROD_HOST)
+TESTPROD += $(TESTPROD_HOST)
 TESTSCRIPTS += $(filter-out epicsUnitTestTest.t, $(TESTS:%=%.t))
 endif
 
@@ -314,11 +327,6 @@ testHarness_SRCS += epicsMaxThreads.c
 TESTPROD_HOST += buckTest
 buckTest_SRCS += buckTest.c
 testHarness_SRCS += buckTest.c
-
-#TESTPROD_HOST += fdmgrTest
-fdmgrTest_SRCS += fdmgrTest.c
-fdmgrTest_LIBS += ca
-# FIXME: program never exits.
 
 TESTPROD_HOST += epicsAtomicPerform
 epicsAtomicPerform_SRCS += epicsAtomicPerform.cpp
@@ -339,6 +347,13 @@ TESTS += nonEpicsThreadPriorityTest
 endif
 endif
 
+ifneq ($(filter READLINE EPICS,$(COMMANDLINE_LIBRARY)),)
+TESTPROD_HOST += readlineTest
+readlineTest_SRCS += readlineTest.c
+TESTS += readlineTest
+TESTFILES += ../multiline-input.txt ../multiline-expect.txt
+endif
+
 include $(TOP)/configure/RULES
 
 rtemsTestData.c : $(TESTFILES) $(TOOLS)/epicsMakeMemFs.pl
@@ -349,4 +364,5 @@ epicsLoadTest$(DEP): epicsInstallDir.h
 # use INSTALL_LOCATION instead of FINAL_LOCATION since test executables are not installed.
 epicsInstallDir.h: $(TOP)/configure/CONFIG_SITE*
 	$(ECHO) "INSTALL_LOCATION=$(INSTALL_LOCATION)"
-	$(PERL) $(TOP)/modules/database/src/std/softIoc/makeInstallDir.pl "$(INSTALL_LOCATION)" > $@
+	$(PERL) $(TOP)/modules/database/src/std/softIoc/makeInstallDir.pl "$(INSTALL_LOCATION)" > $@.stdout
+	$(MV) $@.stdout $@

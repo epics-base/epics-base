@@ -17,7 +17,7 @@
  * Provides routines for converting various numeric types into an ascii string.
  * They off a combination of speed and convenience not available with sprintf().
  *
- * All functions return the number of characters in the output 
+ * All functions return the number of characters in the output
  */
 
 #ifndef INCcvtFasth

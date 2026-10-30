@@ -78,7 +78,7 @@ channel access link. If the link is a constant, the result is no output. The
 DTYP field must then specify the C<<< Soft Channel >>> device support routine.
 
 See L<Address
-Specification|https://docs.epics-controls.org/en/latest/guides/EPICS_Process_Database_Concepts.html#address-specification>
+Specification|https://docs.epics-controls.org/en/latest/process-database/EPICS_Process_Database_Concepts.html#address-specification>
 for information on the format of hardware addresses and database links.
 
 =fields OUT, DTYP, OOPT, OOCH
@@ -187,33 +187,33 @@ Parameters> for more on the record name (NAME) and description (DESC) fields.
 		promptgroup("80 - Display")
 		interest(1)
 		size(16)
-		prop(YES)
+		prop(YES)		# get_units
 	}
 	field(DRVH,DBF_LONG) {
 		prompt("Drive High Limit")
 		promptgroup("30 - Action")
 		pp(TRUE)
 		interest(1)
-		prop(YES)
+		prop(YES)		# get_control_double
 	}
 	field(DRVL,DBF_LONG) {
 		prompt("Drive Low Limit")
 		promptgroup("30 - Action")
 		pp(TRUE)
 		interest(1)
-		prop(YES)
+		prop(YES)		# get_control_double
 	}
 	field(HOPR,DBF_LONG) {
 		prompt("High Operating Range")
 		promptgroup("80 - Display")
 		interest(1)
-		prop(YES)
+		prop(YES)		# get_graphic_double, get_control_double
 	}
 	field(LOPR,DBF_LONG) {
 		prompt("Low Operating Range")
 		promptgroup("80 - Display")
 		interest(1)
-		prop(YES)
+		prop(YES)		# get_graphic_double, get_control_double
 	}
 
 =head3 Alarm Parameters
@@ -233,7 +233,7 @@ The HYST field sets an alarm deadband around each limit alarm.
 For an explanation of the IVOA and IVOV fields, see
 L<Invalid Output Action Fields|dbCommonOutput/Invalid Output Action Fields>.
 
-See L<Alarm Specification|https://docs.epics-controls.org/en/latest/guides/EPICS_Process_Database_Concepts.html#alarm-specification>
+See L<Alarm Specification|https://docs.epics-controls.org/en/latest/process-database/EPICS_Process_Database_Concepts.html#alarm-specification>
 for a complete explanation of record alarms and of the standard fields.
 L<Alarm Fields|dbCommonRecord/Alarm Fields> lists other fields related
 to alarms that are common to all record types.
@@ -247,34 +247,35 @@ to alarms that are common to all record types.
 		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
-		prop(YES)
+		prop(YES)		# get_alarm_double
 	}
 	field(LOLO,DBF_LONG) {
 		prompt("Lolo Alarm Limit")
 		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
-		prop(YES)
+		prop(YES)		# get_alarm_double
 	}
 	field(HIGH,DBF_LONG) {
 		prompt("High Alarm Limit")
 		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
-		prop(YES)
+		prop(YES)		# get_alarm_double
 	}
 	field(LOW,DBF_LONG) {
 		prompt("Low Alarm Limit")
 		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
-		prop(YES)
+		prop(YES)		# get_alarm_double
 	}
 	field(HHSV,DBF_MENU) {
 		prompt("Hihi Severity")
 		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
+		prop(YES)		# get_alarm_double
 		menu(menuAlarmSevr)
 	}
 	field(LLSV,DBF_MENU) {
@@ -282,6 +283,7 @@ to alarms that are common to all record types.
 		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
+		prop(YES)		# get_alarm_double
 		menu(menuAlarmSevr)
 	}
 	field(HSV,DBF_MENU) {
@@ -289,6 +291,7 @@ to alarms that are common to all record types.
 		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
+		prop(YES)		# get_alarm_double
 		menu(menuAlarmSevr)
 	}
 	field(LSV,DBF_MENU) {
@@ -296,6 +299,7 @@ to alarms that are common to all record types.
 		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
+		prop(YES)		# get_alarm_double
 		menu(menuAlarmSevr)
 	}
 	field(HYST,DBF_LONG) {
@@ -308,9 +312,9 @@ to alarms that are common to all record types.
 
 These parameters are used to determine when to send monitors placed on the value
 field. The monitors are sent when the value field exceeds the last monitored
-field by the appropriate delta. If these fields have a value of zero, everytime
+field by the appropriate delta. If these fields have a value of zero, every time
 the value changes, a monitor will be triggered; if they have a value of -1,
-everytime the record is scanned, monitors are triggered. The ADEL field is the
+every time the record is scanned, monitors are triggered. The ADEL field is the
 delta for archive monitors, and the MDEL field is the delta for all other types
 of monitors. See L<Monitor Specification> for a complete explanation of
 monitors.

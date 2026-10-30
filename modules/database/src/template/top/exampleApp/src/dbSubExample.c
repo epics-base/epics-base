@@ -16,7 +16,7 @@ static long mySubInit(subRecord *precord)
 {
     if (mySubDebug)
         printf("Record %s called mySubInit(%p)\n",
-               precord->name, (void*) precord);
+               precord->name, precord);
     return 0;
 }
 
@@ -24,7 +24,7 @@ static long mySubProcess(subRecord *precord)
 {
     if (mySubDebug)
         printf("Record %s called mySubProcess(%p)\n",
-               precord->name, (void*) precord);
+               precord->name, precord);
     return 0;
 }
 
@@ -32,7 +32,7 @@ static long myAsubInit(aSubRecord *precord)
 {
     if (mySubDebug)
         printf("Record %s called myAsubInit(%p)\n",
-               precord->name, (void*) precord);
+               precord->name, precord);
     return 0;
 }
 
@@ -40,7 +40,7 @@ static long myAsubProcess(aSubRecord *precord)
 {
     if (mySubDebug)
         printf("Record %s called myAsubProcess(%p)\n",
-               precord->name, (void*) precord);
+               precord->name, precord);
     return 0;
 }
 

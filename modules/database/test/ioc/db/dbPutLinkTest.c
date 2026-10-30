@@ -92,13 +92,13 @@ static void testLinkParse(void)
     for (;td->str; td++) {
         int i, N;
         testDiag("Parsing \"%s\"", td->str);
-        testOk(dbParseLink(td->str, DBF_INLINK, &info) == 0, "Parser returned OK");
+        testOk(dbParseLink(td->str, DBF_INLINK, &info, "dummy","INP") == 0, "Parser returned OK");
         if (!testOk(info.ltype == td->info.ltype, "Link type value"))
             testDiag("Expected %d, got %d", td->info.ltype, info.ltype);
         if (td->info.target && info.target)
             testStrcmp(0, info.target, td->info.target);
         else if(!!td->info.target ^ !!info.target)
-            testFail("info target NULL mis-match %s %s", info.target, td->info.target);
+            testFail("info target NULL mismatch %s %s", info.target, td->info.target);
         else
             testPass("info target NULL as expected");
         if (info.ltype == td->info.ltype) {
@@ -120,6 +120,16 @@ static void testLinkParse(void)
         }
         dbFreeLinkInfo(&info);
     }
+
+    info.modifiers |= pvlOptCPP;
+    dbParseLink("something CPP", DBF_OUTLINK, &info, "dummy","OUT");
+    testOk(info.modifiers == 0, "CPP modifier was discarded");
+    dbFreeLinkInfo(&info);
+
+    info.modifiers |= pvlOptCP;
+    dbParseLink("something CP", DBF_OUTLINK, &info, "dummy","OUT");
+    testOk(info.modifiers == 0, "CP modifier was discarded");
+    dbFreeLinkInfo(&info);
 
     testIocShutdownOk();
 
@@ -155,7 +165,7 @@ static void testLinkFailParse(void)
     eltc(1);
 
     for(;*td; td++) {
-        testOk(dbParseLink(*td, DBF_INLINK, &info) == S_dbLib_badField,
+        testOk(dbParseLink(*td, DBF_INLINK, &info, "dummy","INP") == S_dbLib_badField,
             "dbParseLink correctly rejected \"%s\"", *td);
     }
 
@@ -705,7 +715,7 @@ void testTSEL(void)
 
 MAIN(dbPutLinkTest)
 {
-    testPlan(352);
+    testPlan(354);
     testLinkParse();
     testLinkFailParse();
     testCADBSet();

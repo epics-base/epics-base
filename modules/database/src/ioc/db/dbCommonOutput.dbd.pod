@@ -11,7 +11,7 @@ These fields usually have the same meaning whenever they are used.
 See also L<Fields Common to All Record Types|dbCommonRecord> and L<Fields Common to
 Input Records|dbCommonInput>.
 
-=head3 Output and Value Fields
+=head2 Output and Value Fields
 
 The B<OUT> field specifies an output link. It is used by the device support
 routines to decide where to send output. For soft records, it can be a
@@ -38,7 +38,7 @@ The B<RBV> field contains - whenever possible - the actual read back value
 obtained from the hardware itself or from the associated device driver.
 
 
-=head3 Device Support for Soft Records
+=head2 Device Support for Soft Records
 
 Normally two soft output device support modules are provided, Soft Channel and
 and Raw Soft Channel. Both write a value through the output link OUT.
@@ -50,7 +50,7 @@ The device support write routine normally calls C<dbPutLink()> which writes a
 value through the OUT link, and returns the status from that call.
 
 
-=head3 Input and Mode Select Fields
+=head2 Input and Mode Select Fields
 
 The B<DOL> field is a link from which the desired output value can be fetched.
 DOL can be a constant, a database link, or a channel access link. If DOL is a
@@ -63,7 +63,7 @@ value C<closed_loop>. By setting this field a record can be switched between
 supervisory and closed loop mode of operation. While in closed loop mode, the
 VAL field cannot be set via dbPuts.
 
-=head3 Output Mode Selection
+=head2 Output Mode Selection
 
 The fields DOL and OMSL are used to allow the output record to be part of a
 closed loop control algorithm. OMSL is meaningful only if DOL refers to a
@@ -76,7 +76,7 @@ types with an OIF field and OIF is Full, VAL is set equal to the value obtained
 from the location referenced by DOL; if OIF is Incremental VAL is incremented by
 the value obtained from DOL.
 
-=head3 Invalid Output Action Fields
+=head2 Invalid Output Action Fields
 
 The B<IVOA> field specifies the output action for the case that the record is
 put into an INVALID alarm severity. IVOA can be one of the following actions:
@@ -102,7 +102,7 @@ in engineering units. If a new severity has been set to INVALID  and IVOA is
 C<Set output to IVOV>, then VAL is set to IVOV and converted to RVAL before
 device support is called.
 
-=head3 Invalid Alarm Output Action
+=head2 Invalid Alarm Output Action
 
 Whenever an output record is put into INVALID alarm severity, IVOA specifies
 an action to take. The record support process routine for each output record
@@ -142,7 +142,7 @@ If IVOA not one of the above, an error message is generated.
 =back
 
 
-=head3 Output Simulation Fields
+=head2 Output Simulation Fields
 
 The B<SIMM> field controls simulation mode. It has either the value YES or NO.
 By setting this field to YES, the record can be switched into simulation mode
@@ -171,7 +171,7 @@ The B<SSCN> field specifies the SCAN mechanism to be used in simulation mode.
 This is specifically useful for 'I/O Intr' scanned records, which would
 otherwise never be scanned in simulation mode.
 
-=head3 Simulation Mode for Output Records
+=head2 Simulation Mode for Output Records
 
 An output record can be switched into simulation mode of operation by setting
 the value of SIMM to YES. During simulation, the record will be put into alarm

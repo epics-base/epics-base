@@ -52,7 +52,7 @@ LIBCOM_API epicsRingBytesId  epicsStdCall epicsRingBytesCreate(int size)
     pring->nextGet = 0;
     pring->nextPut = 0;
     pring->lock    = 0;
-    return((void *)pring);
+    return pring;
 }
 
 LIBCOM_API epicsRingBytesId  epicsStdCall epicsRingBytesLockedCreate(int size)
@@ -61,14 +61,14 @@ LIBCOM_API epicsRingBytesId  epicsStdCall epicsRingBytesLockedCreate(int size)
     if(!pring)
         return NULL;
     pring->lock = epicsSpinCreate();
-    return((void *)pring);
+    return pring;
 }
 
 LIBCOM_API void epicsStdCall epicsRingBytesDelete(epicsRingBytesId id)
 {
     ringPvt *pring = (ringPvt *)id;
     if (pring->lock) epicsSpinDestroy(pring->lock);
-    free((void *)pring);
+    free(pring);
 }
 
 LIBCOM_API int epicsStdCall epicsRingBytesGet(
@@ -244,7 +244,7 @@ LIBCOM_API void epicsStdCall epicsRingBytesResetHighWaterMark(epicsRingBytesId i
     ringPvt *pring = (ringPvt *)id;
     int used;
     if (pring->lock) epicsSpinLock(pring->lock);
-    used = pring->nextGet - pring->nextPut;
+    used = pring->nextPut - pring->nextGet;
     if (used < 0) used += pring->size;
     pring->highWaterMark = used;
     if (pring->lock) epicsSpinUnlock(pring->lock);

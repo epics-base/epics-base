@@ -1,9 +1,9 @@
 //  Boost compiler configuration selection header file
 
-//  (C) Copyright John Maddock 2001 - 2002. 
-//  (C) Copyright Jens Maurer 2001. 
-//  Use, modification and distribution are subject to the 
-//  Boost Software License, Version 1.0. (See accompanying file 
+//  (C) Copyright John Maddock 2001 - 2002.
+//  (C) Copyright Jens Maurer 2001.
+//  Use, modification and distribution are subject to the
+//  Boost Software License, Version 1.0. (See accompanying file
 //  LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 
 //  See http://www.boost.org for most recent version.
@@ -65,17 +65,17 @@
 // vxWorks:
 #  define BOOST_PLATFORM_CONFIG "boost/config/platform/vxworks.hpp"
 
-#elif defined(__SYMBIAN32__) 
-// Symbian: 
-#  define BOOST_PLATFORM_CONFIG "boost/config/platform/symbian.hpp" 
+#elif defined(__SYMBIAN32__)
+// Symbian:
+#  define BOOST_PLATFORM_CONFIG "boost/config/platform/symbian.hpp"
 
 #elif defined(_CRAYC)
 // Cray:
-#  define BOOST_PLATFORM_CONFIG "boost/config/platform/cray.hpp" 
+#  define BOOST_PLATFORM_CONFIG "boost/config/platform/cray.hpp"
 
-#elif defined(__VMS) 
+#elif defined(__VMS)
 // VMS:
-#  define BOOST_PLATFORM_CONFIG "boost/config/platform/vms.hpp" 
+#  define BOOST_PLATFORM_CONFIG "boost/config/platform/vms.hpp"
 #else
 
 #  if defined(unix) \

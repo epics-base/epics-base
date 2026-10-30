@@ -20,7 +20,7 @@ ARCH_DEP_CFLAGS += -DRTEMS_HAS_ALTIVEC
 #ARCH_DEP_CFLAGS += -I$(RTEMS_BASE)/powerpc-rtems5/qoriq_e500/lib/include
 
 #OP_SYS_LDLIBS += -lbspExt #does not use posix stuff ... want to ignore
-OP_SYS_LDLIBS += -Wl,--gc-sections
+OP_SYS_LDFLAGS += -Wl,--gc-sections
 #ARCH_DEP_LDFLAGS = -mcpu=8540 -meabi -msdata=sysv -mstrict-align -mspe -mabi=spe -mfloat-gprs=double 
 ARCH_DEP_LDFLAGS = -L$(RTEMS_BASE)/$(GNU_TARGET)$(RTEMS_VERSION)/$(RTEMS_BSP)/lib
 

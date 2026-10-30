@@ -5,7 +5,7 @@
 # in file LICENSE that is included with this distribution.
 #*************************************************************************
 
-# This is a Makefile fragment, see src/libCom/Makefile.
+# This is a Makefile fragment, see libCom/src/Makefile.
 
 envData.c: $(LIBCOM)/env/envDefs.h \
     $(INSTALL_HOST_BIN)/bldEnvData.pl \

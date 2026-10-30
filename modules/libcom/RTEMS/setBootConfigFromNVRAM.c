@@ -14,6 +14,11 @@
 #include <unistd.h>
 #ifdef RTEMS_LEGACY_STACK
 #include <rtems/rtems_bsdnet.h>
+#else
+#include <stdio.h>
+#include <net/if.h>
+#include <sysexits.h>
+#include <rtems/bsd/bsd.h>
 #endif
 #include <bsp.h>
 #include <string.h>
@@ -27,6 +32,8 @@
 char *env_nfsServer;
 char *env_nfsPath;
 char *env_nfsMountPoint;
+
+#if defined(HAVE_MOTLOAD) || defined(HAVE_PPCBUG) || defined(__mcf528x__)
 
 extern char* rtems_bsdnet_bootp_cmdline;
 /*
@@ -66,6 +73,7 @@ splitRtemsBsdnetBootpCmdline(void)
     }
 }
 
+#if defined(HAVE_MOTLOAD) || defined(__mcf528x__)
 /*
  * Split NFS mount information of the form nfs_server:host_path:local_path
  */
@@ -91,6 +99,74 @@ splitNfsMountPath(char *nfsString)
         }
     }
 }
+#endif /* HAVE_MOTLOAD || __mcf528x__ */
+
+struct boot_net_config {
+    char *ip_address;           /* static IP address of this device */
+    char *netmask;              /* subnet mask */
+    char *gateway;              /* default gateway */
+    char *server;               /* boot server; used as NTP/DNS fallback if not overridden */
+    char *ntp_server;           /* NTP server (falls back to server if NULL) */
+    char *hostname;             /* this device's hostname */
+    char *dns_server;           /* DNS resolver (falls back to server if NULL) */
+    char *domainname;           /* DNS domain name */
+    char *bootp_boot_file;      /* boot filename reported via BOOTP */
+    uint32_t bootp_server_addr; /* server IPv4 address as stored in PPCBUG NVRAM */
+};
+
+/* Configure network from boot_net_config.
+ * RTEMS_LEGACY_STACK: populate rtems_bsdnet_config fields.
+ * libbsd: configure the first hardware interface (index 1) with a static IP.
+ * Returns 0 on success, -1 on failure. */
+static int
+applyNetConfig(const struct boot_net_config *cfg,
+               char *ntp_server_ip, size_t ntp_server_ip_size)
+{
+#ifdef RTEMS_LEGACY_STACK
+    (void)ntp_server_ip;
+    (void)ntp_server_ip_size;
+    rtems_bsdnet_bootp_server_name           = cfg->server;
+    rtems_bsdnet_config.name_server[0]       = cfg->dns_server ? cfg->dns_server : cfg->server;
+    rtems_bsdnet_config.ntp_server[0]        = cfg->ntp_server ? cfg->ntp_server : cfg->server;
+    rtems_bsdnet_config.gateway              = cfg->gateway;
+    rtems_bsdnet_config.ifconfig->ip_netmask = cfg->netmask;
+    rtems_bsdnet_config.ifconfig->ip_address = cfg->ip_address;
+    rtems_bsdnet_config.hostname             = cfg->hostname ? cfg->hostname : cfg->ip_address;
+    if (cfg->domainname)
+        rtems_bsdnet_config.domainname = cfg->domainname;
+    if (cfg->bootp_boot_file)
+        rtems_bsdnet_bootp_boot_file_name = cfg->bootp_boot_file;
+    if (cfg->bootp_server_addr)
+        rtems_bsdnet_bootp_server_address.s_addr = cfg->bootp_server_addr;
+#else
+    char ifnamebuf[IF_NAMESIZE];
+    char *ifname = if_indextoname(1, ifnamebuf);
+    if (ifname == NULL) {
+        printf("No network interface found\n");
+        return -1;
+    }
+    printf("Configuring ifconfig with ip=%s, netmask=%s, gateway=%s\n",
+           cfg->ip_address ? cfg->ip_address : "NULL",
+           cfg->netmask    ? cfg->netmask    : "NULL",
+           cfg->gateway    ? cfg->gateway    : "NULL");
+    if (cfg->ip_address && cfg->netmask) {
+        int exit_code = rtems_bsd_ifconfig(ifname, cfg->ip_address,
+                                           cfg->netmask, cfg->gateway);
+        if (exit_code != EX_OK) {
+            printf("rtems_bsd_ifconfig failed (exit code %d)\n", exit_code);
+            return -1;
+        }
+    } else {
+        printf("Skipping static IP address and netmask from NVRAM\n");
+        return -1;
+    }
+    if (ntp_server_ip != NULL && ntp_server_ip_size > 0 && cfg->ntp_server != NULL)
+        snprintf(ntp_server_ip, ntp_server_ip_size, "%s", cfg->ntp_server);
+#endif
+    return 0;
+}
+
+#endif /* HAVE_MOTLOAD || HAVE_PPCBUG || __mcf528x__ */
 
 #if defined(HAVE_MOTLOAD)
 
@@ -158,26 +234,27 @@ motScriptParm(const char *mot_script_boot, char parm)
     return NULL;
 }
 
-void
-setBootConfigFromNVRAM(void)
+int
+setBootConfigFromNVRAM(char *ntp_server_ip, size_t ntp_server_ip_size)
 {
-    char *cp;
     const char *mot_script_boot;
-    char *nvp;
+    volatile char *nvp;
+    struct boot_net_config cfg = {0};
 
 # if defined(BSP_NVRAM_BASE_ADDR)
-    nvp = (volatile unsigned char *)(BSP_NVRAM_BASE_ADDR+0x70f8);
+    nvp = (volatile char *)(BSP_NVRAM_BASE_ADDR+0x70f8);
 # elif defined(BSP_I2C_VPD_EEPROM_DEV_NAME)
     char gev_buf[3592];
     int fd;
     if ((fd = open(BSP_I2C_VPD_EEPROM_DEV_NAME, 0)) < 0) {
         printf("Can't open %s: %s\n", BSP_I2C_VPD_EEPROM_DEV_NAME, strerror(errno));
-        return;
+        return -1;
     }
     lseek(fd, 0x10f8, SEEK_SET);
     if (read(fd, gev_buf, sizeof gev_buf) != sizeof gev_buf) {
         printf("Can't read %s: %s\n", BSP_I2C_VPD_EEPROM_DEV_NAME, strerror(errno));
-        return;
+        close(fd);
+        return -1;
     }
     close(fd);
     nvp = gev_buf;
@@ -185,39 +262,57 @@ setBootConfigFromNVRAM(void)
 #  error "No way to read GEV!"
 # endif
 
-    if (rtems_bsdnet_config.bootp != NULL)
-        return;
     mot_script_boot = gev("mot-script-boot", nvp);
-    if ((rtems_bsdnet_bootp_server_name = gev("mot-/dev/enet0-sipa", nvp)) == NULL)
-        rtems_bsdnet_bootp_server_name = motScriptParm(mot_script_boot, 's');
-    if ((rtems_bsdnet_config.gateway = gev("mot-/dev/enet0-gipa", nvp)) == NULL)
-        rtems_bsdnet_config.gateway = motScriptParm(mot_script_boot, 'g');
-    if  ((rtems_bsdnet_config.ifconfig->ip_netmask = gev("mot-/dev/enet0-snma", nvp)) == NULL)
-        rtems_bsdnet_config.ifconfig->ip_netmask = motScriptParm(mot_script_boot, 'm');
 
-    rtems_bsdnet_config.name_server[0] = gev("rtems-dns-server", nvp);
-    if (rtems_bsdnet_config.name_server[0] == NULL)
-        rtems_bsdnet_config.name_server[0] = rtems_bsdnet_bootp_server_name;
-    cp = gev("rtems-dns-domainname", nvp);
-    if (cp)
-        rtems_bsdnet_config.domainname = cp;
+    /*
+     * Read network parameters from NVRAM
+     */
+    if ((cfg.ip_address = gev("mot-/dev/enet0-cipa", nvp)) == NULL) {
+        cfg.ip_address = motScriptParm(mot_script_boot, 'c');
+    }
 
-    if ((rtems_bsdnet_config.ifconfig->ip_address = gev("mot-/dev/enet0-cipa", nvp)) == NULL)
-        rtems_bsdnet_config.ifconfig->ip_address = motScriptParm(mot_script_boot, 'c');
-    rtems_bsdnet_config.hostname = gev("rtems-client-name", nvp);
-    if (rtems_bsdnet_config.hostname == NULL)
-        rtems_bsdnet_config.hostname = rtems_bsdnet_config.ifconfig->ip_address;
+    if ((cfg.netmask = gev("mot-/dev/enet0-snma", nvp)) == NULL) {
+        cfg.netmask = motScriptParm(mot_script_boot, 'm');
+    }
+    if ((cfg.gateway = gev("mot-/dev/enet0-gipa", nvp)) == NULL) {
+        cfg.gateway = motScriptParm(mot_script_boot, 'g');
+    }
 
-    if ((rtems_bsdnet_bootp_boot_file_name = gev("mot-/dev/enet0-file", nvp)) == NULL)
-        rtems_bsdnet_bootp_boot_file_name = motScriptParm(mot_script_boot, 'f');
+    if ((cfg.server = gev("mot-/dev/enet0-sipa", nvp)) == NULL) {
+        cfg.server = motScriptParm(mot_script_boot, 's');
+    }
+
+
+    {
+        char *ntp_gev = gev("epics-ntpserver", nvp);
+        cfg.ntp_server = ntp_gev ? ntp_gev : cfg.server;
+    }
+    cfg.hostname   = gev("rtems-client-name", nvp);
+    cfg.dns_server = gev("rtems-dns-server", nvp);
+    cfg.domainname = gev("rtems-dns-domainname", nvp);
+    cfg.bootp_boot_file  = gev("mot-/dev/enet0-file", nvp);
+    if (cfg.bootp_boot_file == NULL)
+        cfg.bootp_boot_file = motScriptParm(mot_script_boot, 'f');
+
+    /*
+     * Apply network configuration
+     */
+#ifdef RTEMS_LEGACY_STACK
+    if (rtems_bsdnet_config.bootp != NULL)
+        return 0;
+#endif
+    if (applyNetConfig(&cfg, ntp_server_ip, ntp_server_ip_size) != 0)
+        return -1;
+
     rtems_bsdnet_bootp_cmdline = gev("epics-script", nvp);
     splitRtemsBsdnetBootpCmdline();
     splitNfsMountPath(gev("epics-nfsmount", nvp));
-    rtems_bsdnet_config.ntp_server[0] = gev("epics-ntpserver", nvp);
-    if (rtems_bsdnet_config.ntp_server[0] == NULL)
-        rtems_bsdnet_config.ntp_server[0] = rtems_bsdnet_bootp_server_name;
-    if ((cp = gev("epics-tz", nvp)) != NULL)
-        epicsEnvSet("TZ", cp);
+    {
+        char *tz = gev("epics-tz", nvp);
+        if (tz != NULL)
+            epicsEnvSet("TZ", tz);
+    }
+    return 0;
 }
 
 #elif defined(HAVE_PPCBUG)
@@ -254,17 +349,14 @@ static char *addr(char *cbuf, uint32_t addr)
     return (char *)inet_ntop(AF_INET, &a, cbuf, INET_ADDRSTRLEN);
 }
 
-void
-setBootConfigFromNVRAM(void)
+int
+setBootConfigFromNVRAM(char *ntp_server_ip, size_t ntp_server_ip_size)
 {
     static struct ppcbug_nvram nvram;
     static char ip_address[INET_ADDRSTRLEN];
     static char ip_netmask[INET_ADDRSTRLEN];
     static char server[INET_ADDRSTRLEN];
     static char gateway[INET_ADDRSTRLEN];
-
-    if (rtems_bsdnet_config.bootp != NULL)
-        return;
 
     /*
      * Get network configuration from PPCBUG.
@@ -299,25 +391,30 @@ setBootConfigFromNVRAM(void)
         *d++ = *s++;
     }
 #endif
-    /*
-     * Assume that the boot server is also the name, log and ntp server!
-     */
-    rtems_bsdnet_config.name_server[0] =
-    rtems_bsdnet_config.ntp_server[0]  =
-      rtems_bsdnet_bootp_server_name   = addr(server, nvram.ServerIPAddress);
-    rtems_bsdnet_bootp_server_address.s_addr = nvram.ServerIPAddress;
-    /*
-     * Nothing better to use as host name!
-     */
-    rtems_bsdnet_config.ifconfig->ip_address =
-      rtems_bsdnet_config.hostname = addr(ip_address, nvram.ClientIPAddress);
 
-    rtems_bsdnet_config.gateway = addr(gateway, nvram.GatewayIPAddress);
-    rtems_bsdnet_config.ifconfig->ip_netmask = addr(ip_netmask, nvram.SubnetIPAddressMask);
+    char * serverp = addr(server, nvram.ServerIPAddress);
+    struct boot_net_config cfg = {
+        addr(ip_address, nvram.ClientIPAddress),
+        addr(ip_netmask, nvram.SubnetIPAddressMask),
+        addr(gateway,    nvram.GatewayIPAddress),
+        serverp,
+        serverp,               /* ntp_server defaults to server */
+        NULL,                  /* hostname */
+        NULL,                  /* dns_server */
+        NULL,                  /* domainname */
+        nvram.BootFilenameString, /* bootp_boot_file */
+        nvram.ServerIPAddress,    /* bootp_server_addr */
+    };
 
-    rtems_bsdnet_bootp_boot_file_name = nvram.BootFilenameString;
+#ifdef RTEMS_LEGACY_STACK
+    if (rtems_bsdnet_config.bootp != NULL)
+        return 0;
+#endif
+    if (applyNetConfig(&cfg, ntp_server_ip, ntp_server_ip_size) != 0)
+        return -1;
     rtems_bsdnet_bootp_cmdline = nvram.ArgumentFilenameString;
     splitRtemsBsdnetBootpCmdline();
+    return 0;
 }
 
 #elif defined(__mcf528x__)
@@ -336,39 +433,49 @@ env(const char *parm, const char *defaultValue)
     return epicsStrDup(cp);
 }
 
-void
-setBootConfigFromNVRAM(void)
+int
+setBootConfigFromNVRAM(char *ntp_server_ip, size_t ntp_server_ip_size)
 {
-    const char *cp1;
+    char *server_str = env("SERVER", "192.168.0.1");
+    struct boot_net_config cfg = {
+        env("IPADDR0",   "192.168.0.2"),
+        env("NETMASK",   "255.255.252.0"),
+        env("GATEWAY",   NULL),
+        server_str,
+        env("NTPSERVER", server_str),
+        env("HOSTNAME",  "iocNobody"),
+        env("NAMESERVER", server_str),
+        env("DOMAIN",    NULL),
+        env("BOOTFILE",  "uC5282App.boot"),
+        0,  /* bootp_server_addr */
+    };
 
+#ifdef RTEMS_LEGACY_STACK
     if (rtems_bsdnet_config.bootp != NULL)
-        return;
-    rtems_bsdnet_config.gateway = env("GATEWAY", NULL);
-    rtems_bsdnet_config.ifconfig->ip_netmask = env("NETMASK", "255.255.252.0");
-
-    rtems_bsdnet_bootp_server_name = env("SERVER", "192.168.0.1");
-    rtems_bsdnet_config.name_server[0] = env("NAMESERVER", rtems_bsdnet_bootp_server_name);
-    rtems_bsdnet_config.ntp_server[0] = env("NTPSERVER", rtems_bsdnet_bootp_server_name);
-    cp1 = env("DOMAIN", NULL);
-    if (cp1 != NULL)
-        rtems_bsdnet_config.domainname = cp1;
-    rtems_bsdnet_config.hostname = env("HOSTNAME", "iocNobody");
-    rtems_bsdnet_config.ifconfig->ip_address = env("IPADDR0", "192.168.0.2");
-    rtems_bsdnet_bootp_boot_file_name = env("BOOTFILE", "uC5282App.boot");
+        return 0;
+#endif
+    if (applyNetConfig(&cfg, ntp_server_ip, ntp_server_ip_size) != 0)
+        return -1;
     rtems_bsdnet_bootp_cmdline = env("CMDLINE", "epics/iocBoot/iocNobody/st.cmd");
+    splitRtemsBsdnetBootpCmdline();
     splitNfsMountPath(env("NFSMOUNT", NULL));
-    if ((cp1 = env("TZ", NULL)) != NULL)
-        epicsEnvSet("TZ", cp1);
+    {
+        char *tz = env("TZ", NULL);
+        if (tz != NULL)
+            epicsEnvSet("TZ", tz);
+    }
+    return 0;
 }
 
 #else
 /*
  * Placeholder for systems without NVRAM
  */
-void
-setBootConfigFromNVRAM(void)
+int
+setBootConfigFromNVRAM(char *ntp_server_ip, size_t ntp_server_ip_size)
 {
     printf("SYSTEM HAS NO NON-VOLATILE RAM!\n");
     printf("YOU MUST USE SOME OTHER METHOD TO OBTAIN NETWORK CONFIGURATION\n");
+    return -1;
 }
 #endif

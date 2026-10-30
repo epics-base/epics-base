@@ -45,7 +45,7 @@ dbSubscriptionIO::dbSubscriptionIO (
     {
         epicsGuardRelease < epicsMutex > unguard ( guard );
         this->es = db_add_event ( ctx, dbch,
-            dbSubscriptionEventCallback, (void *) this, maskIn );
+            dbSubscriptionEventCallback, this, maskIn );
         if ( this->es == 0 ) {
             throw std::bad_alloc();
         }

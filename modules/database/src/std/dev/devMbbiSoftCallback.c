@@ -85,7 +85,7 @@ static long add_record(dbCommon *pcommon)
     if (plink->type != PV_LINK) {
         long status = S_db_badField;
 
-        recGblRecordError(status, (void *)prec,
+        recGblRecordError(status, prec,
             "devMbbiSoftCallback (add_record) Illegal INP field");
         return status;
     }
@@ -94,7 +94,7 @@ static long add_record(dbCommon *pcommon)
     if (!chan) {
         long status = S_db_notFound;
 
-        recGblRecordError(status, (void *)prec,
+        recGblRecordError(status, prec,
             "devMbbiSoftCallback (add_record) linked record not found");
         return status;
     }
@@ -103,7 +103,7 @@ static long add_record(dbCommon *pcommon)
     if (!pdevPvt) {
         long status = S_db_noMemory;
 
-        recGblRecordError(status, (void *)prec,
+        recGblRecordError(status, prec,
             "devMbbiSoftCallback (add_record) out of memory, calloc() failed");
         return status;
     }
@@ -154,7 +154,7 @@ static long init(int pass)
 
 static long init_record(dbCommon *pcommon)
 {
-	mbbiRecord *prec = (mbbiRecord *)pcommon;
+    mbbiRecord *prec = (mbbiRecord *)pcommon;
 
     if (recGblInitConstantLink(&prec->inp, DBR_ENUM, &prec->val))
         prec->udf = FALSE;

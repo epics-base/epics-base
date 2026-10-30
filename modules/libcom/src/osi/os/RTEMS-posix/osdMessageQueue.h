@@ -5,7 +5,7 @@
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE Versions 3.13.7
 * and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /*
  *      Author  W. Eric Norum
@@ -23,6 +23,4 @@ struct epicsMessageQueueOSD {
     mqd_t   id;
     char    name[24];
 };
-#define epicsMessageQueueSend(q,m,l) (mq_send((q)->id, (const char*)(m), (l), 0))
-#define epicsMessageQueueReceive(q,m,s) (mq_receive((q)->id, (char*)(m), (s), NULL))
 

@@ -353,7 +353,7 @@ void searchTimer::uninstallChanDueToSuccessfulSearchResponse (
                     // when we get 100% success immediately
                     // send another search request
                     //
-                    debugPrintf ( ( "All requests succesful, set timer delay to zero\n" ) );
+                    debugPrintf ( ( "All requests successful, set timer delay to zero\n" ) );
                     this->timer.start ( *this, currentTime );
                 }
             }

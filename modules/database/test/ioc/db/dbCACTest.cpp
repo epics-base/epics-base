@@ -83,3 +83,32 @@ void dbCaLinkTest_testCAC(void)
         testAbort("Unexpected exception in testCAC: %s", e.what());
     }
 }
+
+extern "C"
+void dbCaLinkTest_testMacros()
+{
+#define testEq(A,B) do { \
+    epicsInt64 a = (A), b = (B); \
+    testOk(a==b, #A " (%lld) == " #B " (%lld)", a, b); \
+}while(0)
+    testEq(dbr_size_n(DBR_STRING, 2), 2*MAX_STRING_SIZE);
+    testEq(dbr_size_n(DBR_STRING, 1), MAX_STRING_SIZE);
+    testEq(dbr_size_n(DBR_STRING, 0), 0);
+    testTodoBegin("overflow");
+    testEq(dbr_size_n(DBR_INT, 0xffffffff), 0x1fffffffellu); // result truncated to 0xfffffffe
+    testEq(dbr_size_n(DBR_INT, 0x7fffffff), 0xfffffffe); // underflows in intermediate, on some targets
+    testTodoEnd();
+    testEq(dbr_size_n(DBR_INT, 0x3fffffff), 0x7ffffffe);
+    testEq(dbr_size_n(DBR_INT, 2), 4);
+    testEq(dbr_size_n(DBR_INT, 1), 2);
+    testEq(dbr_size_n(DBR_INT, 0), 0);
+    testEq(dbr_size_n(DBR_STS_INT, 2), 4+2*2);
+    testEq(dbr_size_n(DBR_STS_INT, 1), 4+2);
+    testEq(dbr_size_n(DBR_STS_INT, 0), 4);
+    testEq(dbr_size_n(DBR_CHAR, 0xffffffff), 0xffffffff);
+    testEq(dbr_size_n(DBR_CHAR, 0x7fffffff), 0x7fffffff);
+    testEq(dbr_size_n(DBR_CHAR, 2), 2);
+    testEq(dbr_size_n(DBR_CHAR, 1), 1);
+    testEq(dbr_size_n(DBR_CHAR, 0), 0);
+#undef testEq
+}

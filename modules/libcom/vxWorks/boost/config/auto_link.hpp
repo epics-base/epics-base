@@ -80,7 +80,7 @@ BOOST_LIB_VERSION:    The Boost version, in the form x_y, for Boost version x.y.
 #  endif
 #elif defined(_MSC_VER) && !defined(__MWERKS__) && !defined(__EDG_VERSION__)
 //
-// C language compatability (no, honestly)
+// C language compatibility (no, honestly)
 //
 #  define BOOST_MSVC _MSC_VER
 #  define BOOST_STRINGIZE(X) BOOST_DO_STRINGIZE(X)
@@ -400,7 +400,7 @@ BOOST_LIB_VERSION:    The Boost version, in the form x_y, for Boost version x.y.
 #if defined(BOOST_LIB_NAME)
 #  undef BOOST_LIB_NAME
 #endif
-// Don't undef this one: it can be set by the user and should be the 
+// Don't undef this one: it can be set by the user and should be the
 // same for all libraries:
 //#if defined(BOOST_LIB_TOOLSET)
 //#  undef BOOST_LIB_TOOLSET

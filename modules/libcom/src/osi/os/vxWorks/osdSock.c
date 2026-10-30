@@ -34,7 +34,7 @@ void osiSockRelease()
 {
 }
 
-LIBCOM_API SOCKET epicsStdCall epicsSocketCreate ( 
+LIBCOM_API SOCKET epicsStdCall epicsSocketCreate (
     int domain, int type, int protocol )
 {
     SOCKET sock = socket ( domain, type, protocol );
@@ -70,7 +70,7 @@ LIBCOM_API void epicsStdCall epicsSocketDestroy ( SOCKET s )
 /*
  * ipAddrToHostName
  */
-LIBCOM_API unsigned epicsStdCall ipAddrToHostName 
+LIBCOM_API unsigned epicsStdCall ipAddrToHostName
             (const struct in_addr *pAddr, char *pBuf, unsigned bufSize)
 {
     int             status;

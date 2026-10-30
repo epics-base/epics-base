@@ -20,6 +20,7 @@
 #include "epicsStdio.h"
 #include "dbDefs.h"
 #include "epicsThread.h"
+#include "epicsString.h"
 #include "cantProceed.h"
 #include "epicsMutex.h"
 #include "errlog.h"
@@ -66,6 +67,7 @@ static long asAsgAddRuleOptions(ASGRULE *pasgrule,int trapMask);
 static long asAsgRuleUagAdd(ASGRULE *pasgrule,const char *name);
 static long asAsgRuleHagAdd(ASGRULE *pasgrule,const char *name);
 static long asAsgRuleCalc(ASGRULE *pasgrule,const char *calc);
+static long asAsgRuleDisable(ASGRULE *pasgrule);
 
 /*
   asInitialize can be called while access security is already active.
@@ -96,7 +98,7 @@ long epicsStdCall asInitialize(ASINPUTFUNCPTR inputfunction)
     HAGNAME     *phagname;
     static epicsThreadOnceId asInitializeOnceFlag = EPICS_THREAD_ONCE_INIT;
 
-    epicsThreadOnce(&asInitializeOnceFlag,asInitializeOnce,(void *)0);
+    epicsThreadOnce(&asInitializeOnceFlag,asInitializeOnce,NULL);
     LOCK;
     pasbasenew = asCalloc(1,sizeof(ASBASE));
     if(!freeListPvt) freeListInitPvt(&freeListPvt,sizeof(ASGCLIENT),20);
@@ -585,8 +587,8 @@ int epicsStdCall asDumpFP(
             pasginp = (ASGINP *)ellNext(&pasginp->node);
         }
         while(pasgrule) {
-            int print_end_brace;
-
+            int print_rule_end_brace = FALSE;
+            if (pasgrule->ignore) goto next_rule;
             fprintf(fp,"\tRULE(%d,%s,%s)",
                 pasgrule->level,asAccessName[pasgrule->access],
                 asTrapOption[pasgrule->trapMask]);
@@ -594,10 +596,10 @@ int epicsStdCall asDumpFP(
             pasghag = (ASGHAG *)ellFirst(&pasgrule->hagList);
             if(pasguag || pasghag || pasgrule->calc) {
                 fprintf(fp," {\n");
-                print_end_brace = TRUE;
+                print_rule_end_brace = TRUE;
             } else {
                 fprintf(fp,"\n");
-                print_end_brace = FALSE;
+                print_rule_end_brace = FALSE;
             }
             if(pasguag) fprintf(fp,"\t\tUAG(");
             while(pasguag) {
@@ -605,7 +607,6 @@ int epicsStdCall asDumpFP(
                 pasguag = (ASGUAG *)ellNext(&pasguag->node);
                 if(pasguag) fprintf(fp,","); else fprintf(fp,")\n");
             }
-            pasghag = (ASGHAG *)ellFirst(&pasgrule->hagList);
             if(pasghag) fprintf(fp,"\t\tHAG(");
             while(pasghag) {
                 fprintf(fp,"%s",pasghag->phag->name);
@@ -618,7 +619,8 @@ int epicsStdCall asDumpFP(
                     fprintf(fp," result=%s",(pasgrule->result==1 ? "TRUE" : "FALSE"));
                 fprintf(fp,"\n");
             }
-            if(print_end_brace) fprintf(fp,"\t}\n");
+next_rule:
+            if(print_rule_end_brace) fprintf(fp,"\t}\n");
             pasgrule = (ASGRULE *)ellNext(&pasgrule->node);
         }
         pasgmember = (ASGMEMBER *)ellFirst(&pasg->memberList);
@@ -655,6 +657,14 @@ int epicsStdCall asDumpFP(
     }
     return(0);
 }
+
+static
+void asDumpQuoted(FILE *fp, const char *s)
+{
+    fprintf(fp, "\"");
+    (void)epicsStrPrintEscaped(fp, s, strlen(s));
+    fprintf(fp, "\"");
+}
 
 int epicsStdCall asDumpUag(const char *uagname)
 {
@@ -678,7 +688,7 @@ int epicsStdCall asDumpUagFP(FILE *fp,const char *uagname)
         puagname = (UAGNAME *)ellFirst(&puag->list);
         if(puagname) fprintf(fp," {"); else fprintf(fp,"\n");
         while(puagname) {
-            fprintf(fp,"%s",puagname->user);
+            asDumpQuoted(fp, puagname->user);
             puagname = (UAGNAME *)ellNext(&puagname->node);
             if(puagname) fprintf(fp,","); else fprintf(fp,"}\n");
         }
@@ -709,7 +719,7 @@ int epicsStdCall asDumpHagFP(FILE *fp,const char *hagname)
         phagname = (HAGNAME *)ellFirst(&phag->list);
         if(phagname) fprintf(fp," {"); else fprintf(fp,"\n");
         while(phagname) {
-            fprintf(fp,"%s",phagname->host);
+            asDumpQuoted(fp, phagname->host);
             phagname = (HAGNAME *)ellNext(&phagname->node);
             if(phagname) fprintf(fp,","); else fprintf(fp,"}\n");
         }
@@ -735,7 +745,7 @@ int epicsStdCall asDumpRulesFP(FILE *fp,const char *asgname)
     pasg = (ASG *)ellFirst(&pasbase->asgList);
     if(!pasg) fprintf(fp,"No ASGs\n");
     while(pasg) {
-        int print_end_brace;
+        int print_end_brace = FALSE;
 
         if(asgname && strcmp(asgname,pasg->name)!=0) {
             pasg = (ASG *)ellNext(&pasg->node);
@@ -761,8 +771,8 @@ int epicsStdCall asDumpRulesFP(FILE *fp,const char *asgname)
             pasginp = (ASGINP *)ellNext(&pasginp->node);
         }
         while(pasgrule) {
-            int print_end_brace;
-
+            int print_rule_end_brace = FALSE;
+            if ( pasgrule->ignore) goto next_rule;
             fprintf(fp,"\tRULE(%d,%s,%s)",
                 pasgrule->level,asAccessName[pasgrule->access],
                 asTrapOption[pasgrule->trapMask]);
@@ -770,10 +780,10 @@ int epicsStdCall asDumpRulesFP(FILE *fp,const char *asgname)
             pasghag = (ASGHAG *)ellFirst(&pasgrule->hagList);
             if(pasguag || pasghag || pasgrule->calc) {
                 fprintf(fp," {\n");
-                print_end_brace = TRUE;
+                print_rule_end_brace = TRUE;
             } else {
                 fprintf(fp,"\n");
-                print_end_brace = FALSE;
+                print_rule_end_brace = FALSE;
             }
             if(pasguag) fprintf(fp,"\t\tUAG(");
             while(pasguag) {
@@ -793,7 +803,8 @@ int epicsStdCall asDumpRulesFP(FILE *fp,const char *asgname)
                 fprintf(fp," result=%s",(pasgrule->result==1 ? "TRUE" : "FALSE"));
                 fprintf(fp,"\n");
             }
-            if(print_end_brace) fprintf(fp,"\t}\n");
+next_rule:
+            if(print_rule_end_brace) fprintf(fp,"\t}\n");
             pasgrule = (ASGRULE *)ellNext(&pasgrule->node);
         }
         if(print_end_brace) fprintf(fp,"}\n");
@@ -948,6 +959,7 @@ static long asComputeAsgPvt(ASG *pasg)
     if(!asActive) return(S_asLib_asNotActive);
     pasgrule = (ASGRULE *)ellFirst(&pasg->ruleList);
     while(pasgrule) {
+        if ( pasgrule->ignore) goto next_rule;
         double  result = pasgrule->result;  /* set for VAL */
         long    status;
 
@@ -960,6 +972,8 @@ static long asComputeAsgPvt(ASG *pasg)
                 pasgrule->result = ((result>.99) && (result<1.01)) ? 1 : 0;
             }
         }
+
+next_rule:
         pasgrule = (ASGRULE *)ellNext(&pasgrule->node);
     }
     pasg->inpChanged = FALSE;
@@ -995,6 +1009,7 @@ static long asComputePvt(ASCLIENTPVT asClientPvt)
     oldaccess=pasgclient->access;
     pasgrule = (ASGRULE *)ellFirst(&pasg->ruleList);
     while(pasgrule) {
+        if (pasgrule->ignore) goto next_rule;
         if(access == asWRITE) break;
         if(access>=pasgrule->access) goto next_rule;
         if(pasgclient->level > pasgrule->level) goto next_rule;
@@ -1058,6 +1073,9 @@ void asFreeAll(ASBASE *pasbase)
     ASGHAG      *pasghag;
     ASGUAG      *pasguag;
     void        *pnext;
+
+    if(!pasbase)
+        return;
 
     puag = (UAG *)ellFirst(&pasbase->uagList);
     while(puag) {
@@ -1225,7 +1243,7 @@ static long asHagAddHost(HAG *phag,const char *host)
         if(aToIPAddr(host, 0, &addr)) {
             static const char unresolved[] = "unresolved:";
 
-            errlogPrintf("ACF: Unable to resolve host '%s'\n", host);
+            errlogPrintf(ERL_ERROR ": ACF: Unable to resolve host '%s'.  Ignoring.\n", host);
 
             phagname = asCalloc(1, sizeof(*phagname) + sizeof(unresolved)-1+strlen(host));
             strcpy(phagname->host, unresolved);
@@ -1407,4 +1425,15 @@ static long asAsgRuleCalc(ASGRULE *pasgrule,const char *calc)
                      calc);
     }
     return(status);
+}
+
+/**
+ * @brief Disable a rule if it contains unsupported elements
+ * @param pasgrule the rule to disable
+ * @return Non-zero if rule was not disabled
+ */
+static long asAsgRuleDisable(ASGRULE *pasgrule) {
+    if (!pasgrule) return 1;
+    pasgrule->ignore = 1;
+    return 0;
 }

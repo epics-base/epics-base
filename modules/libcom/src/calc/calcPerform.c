@@ -20,6 +20,7 @@
 #include "osiUnistd.h"
 #include "dbDefs.h"
 #include "epicsMath.h"
+#include "epicsTime.h"
 #include "epicsTypes.h"
 #include "errlog.h"
 #include "postfix.h"
@@ -40,7 +41,7 @@ static int cond_search(const char **ppinst, int match);
 
 /* calcPerform
  *
- * Evalutate the postfix expression
+ * Evaluate the postfix expression
  */
 LIBCOM_API long
     calcPerform(double *parg, double *presult, const char *pinst)
@@ -86,6 +87,15 @@ LIBCOM_API long
         case FETCH_J:
         case FETCH_K:
         case FETCH_L:
+        case FETCH_M:
+        case FETCH_N:
+        case FETCH_O:
+        case FETCH_P:
+        case FETCH_Q:
+        case FETCH_R:
+        case FETCH_S:
+        case FETCH_T:
+        case FETCH_U:
             *++ptop = parg[op - FETCH_A];
             break;
 
@@ -101,6 +111,15 @@ LIBCOM_API long
         case STORE_J:
         case STORE_K:
         case STORE_L:
+        case STORE_M:
+        case STORE_N:
+        case STORE_O:
+        case STORE_P:
+        case STORE_Q:
+        case STORE_R:
+        case STORE_S:
+        case STORE_T:
+        case STORE_U:
             parg[op - STORE_A] = *ptop--;
             break;
 
@@ -441,6 +460,15 @@ calcArgUsage(const char *pinst, unsigned long *pinputs, unsigned long *pstores)
         case FETCH_J:
         case FETCH_K:
         case FETCH_L:
+        case FETCH_M:
+        case FETCH_N:
+        case FETCH_O:
+        case FETCH_P:
+        case FETCH_Q:
+        case FETCH_R:
+        case FETCH_S:
+        case FETCH_T:
+        case FETCH_U:
             /* Don't claim to use an arg we already stored to */
             inputs |= (1 << (op - FETCH_A)) & ~stores;
             break;
@@ -457,6 +485,15 @@ calcArgUsage(const char *pinst, unsigned long *pinputs, unsigned long *pstores)
         case STORE_J:
         case STORE_K:
         case STORE_L:
+        case STORE_M:
+        case STORE_N:
+        case STORE_O:
+        case STORE_P:
+        case STORE_Q:
+        case STORE_R:
+        case STORE_S:
+        case STORE_T:
+        case STORE_U:
             stores |= (1 << (op - STORE_A));
             break;
 
@@ -469,22 +506,18 @@ calcArgUsage(const char *pinst, unsigned long *pinputs, unsigned long *pstores)
     return 0;
 }
 
-/* Generate a random number between 0 and 1 using the algorithm
- * seed = (multy * seed) + addy         Random Number Generator by Knuth
- *                                              SemiNumerical Algorithms
- *                                              Chapter 1
- * randy = seed / 65535.0          To normalize the number between 0 - 1
- */
-static unsigned short seed = 0xa3bf;
-static unsigned short multy = 191 * 8 + 5;  /* 191 % 8 == 5 */
-static unsigned short addy = 0x3141;
-
 static double calcRandom(void)
 {
-    seed = (seed * multy) + addy;
-
+    static int seeded = 0;
+    static struct epicsTimeStamp ts;
+    if(!seeded)
+    {
+        epicsTimeGetMonotonic(&ts);
+        srand((unsigned) ts.nsec);
+        seeded = 1;
+    }
     /* between 0 - 1 */
-    return (double) seed / 65535.0;
+    return (double) rand() / RAND_MAX;
 }
 
 /* Search the instruction stream for a matching operator, skipping any

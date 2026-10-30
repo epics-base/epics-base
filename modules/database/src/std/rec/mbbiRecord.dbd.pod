@@ -276,7 +276,7 @@ Parameters> for more on the record name (NAME) and description (DESC) fields.
 		pp(TRUE)
 		interest(1)
 		size(26)
-		prop(YES)
+		prop(YES)		# get_enum_str, get_enum_strs, put_enum_str
 	}
 	field(ONST,DBF_STRING) {
 		prompt("One String")
@@ -285,7 +285,7 @@ Parameters> for more on the record name (NAME) and description (DESC) fields.
 		pp(TRUE)
 		interest(1)
 		size(26)
-		prop(YES)
+		prop(YES)		# get_enum_str, get_enum_strs, put_enum_str
 	}
 	field(TWST,DBF_STRING) {
 		prompt("Two String")
@@ -294,7 +294,7 @@ Parameters> for more on the record name (NAME) and description (DESC) fields.
 		pp(TRUE)
 		interest(1)
 		size(26)
-		prop(YES)
+		prop(YES)		# get_enum_str, get_enum_strs, put_enum_str
 	}
 	field(THST,DBF_STRING) {
 		prompt("Three String")
@@ -303,7 +303,7 @@ Parameters> for more on the record name (NAME) and description (DESC) fields.
 		pp(TRUE)
 		interest(1)
 		size(26)
-		prop(YES)
+		prop(YES)		# get_enum_str, get_enum_strs, put_enum_str
 	}
 	field(FRST,DBF_STRING) {
 		prompt("Four String")
@@ -312,7 +312,7 @@ Parameters> for more on the record name (NAME) and description (DESC) fields.
 		pp(TRUE)
 		interest(1)
 		size(26)
-		prop(YES)
+		prop(YES)		# get_enum_str, get_enum_strs, put_enum_str
 	}
 	field(FVST,DBF_STRING) {
 		prompt("Five String")
@@ -321,7 +321,7 @@ Parameters> for more on the record name (NAME) and description (DESC) fields.
 		pp(TRUE)
 		interest(1)
 		size(26)
-		prop(YES)
+		prop(YES)		# get_enum_str, get_enum_strs, put_enum_str
 	}
 	field(SXST,DBF_STRING) {
 		prompt("Six String")
@@ -330,7 +330,7 @@ Parameters> for more on the record name (NAME) and description (DESC) fields.
 		pp(TRUE)
 		interest(1)
 		size(26)
-		prop(YES)
+		prop(YES)		# get_enum_str, get_enum_strs, put_enum_str
 	}
 	field(SVST,DBF_STRING) {
 		prompt("Seven String")
@@ -339,7 +339,7 @@ Parameters> for more on the record name (NAME) and description (DESC) fields.
 		pp(TRUE)
 		interest(1)
 		size(26)
-		prop(YES)
+		prop(YES)		# get_enum_str, get_enum_strs, put_enum_str
 	}
 	field(EIST,DBF_STRING) {
 		prompt("Eight String")
@@ -348,7 +348,7 @@ Parameters> for more on the record name (NAME) and description (DESC) fields.
 		pp(TRUE)
 		interest(1)
 		size(26)
-		prop(YES)
+		prop(YES)		# get_enum_str, get_enum_strs, put_enum_str
 	}
 	field(NIST,DBF_STRING) {
 		prompt("Nine String")
@@ -357,7 +357,7 @@ Parameters> for more on the record name (NAME) and description (DESC) fields.
 		pp(TRUE)
 		interest(1)
 		size(26)
-		prop(YES)
+		prop(YES)		# get_enum_str, get_enum_strs, put_enum_str
 	}
 	field(TEST,DBF_STRING) {
 		prompt("Ten String")
@@ -366,7 +366,7 @@ Parameters> for more on the record name (NAME) and description (DESC) fields.
 		pp(TRUE)
 		interest(1)
 		size(26)
-		prop(YES)
+		prop(YES)		# get_enum_str, get_enum_strs, put_enum_str
 	}
 	field(ELST,DBF_STRING) {
 		prompt("Eleven String")
@@ -375,7 +375,7 @@ Parameters> for more on the record name (NAME) and description (DESC) fields.
 		pp(TRUE)
 		interest(1)
 		size(26)
-		prop(YES)
+		prop(YES)		# get_enum_str, get_enum_strs, put_enum_str
 	}
 	field(TVST,DBF_STRING) {
 		prompt("Twelve String")
@@ -384,7 +384,7 @@ Parameters> for more on the record name (NAME) and description (DESC) fields.
 		pp(TRUE)
 		interest(1)
 		size(26)
-		prop(YES)
+		prop(YES)		# get_enum_str, get_enum_strs, put_enum_str
 	}
 	field(TTST,DBF_STRING) {
 		prompt("Thirteen String")
@@ -393,7 +393,7 @@ Parameters> for more on the record name (NAME) and description (DESC) fields.
 		pp(TRUE)
 		interest(1)
 		size(26)
-		prop(YES)
+		prop(YES)		# get_enum_str, get_enum_strs, put_enum_str
 	}
 	field(FTST,DBF_STRING) {
 		prompt("Fourteen String")
@@ -402,7 +402,7 @@ Parameters> for more on the record name (NAME) and description (DESC) fields.
 		pp(TRUE)
 		interest(1)
 		size(26)
-		prop(YES)
+		prop(YES)		# get_enum_str, get_enum_strs, put_enum_str
 	}
 	field(FFST,DBF_STRING) {
 		prompt("Fifteen String")
@@ -411,7 +411,7 @@ Parameters> for more on the record name (NAME) and description (DESC) fields.
 		pp(TRUE)
 		interest(1)
 		size(26)
-		prop(YES)
+		prop(YES)		# get_enum_str, get_enum_strs, put_enum_str
 	}
 
 =head3 Alarm Parameters
@@ -436,7 +436,7 @@ state occurs, if set to MAJOR or MINOR.
 The other fields, when set to MAJOR or MINOR, trigger an alarm when VAL equals
 the corresponding state.
 
-See L<Alarm Specification|https://docs.epics-controls.org/en/latest/guides/EPICS_Process_Database_Concepts.html#alarm-specification>
+See L<Alarm Specification|https://docs.epics-controls.org/en/latest/process-database/EPICS_Process_Database_Concepts.html#alarm-specification>
 for a complete explanation of record alarms and of the standard fields.
 L<Alarm Fields|dbCommonRecord/Alarm Fields> lists other fields related
 to alarms that are common to all record types.

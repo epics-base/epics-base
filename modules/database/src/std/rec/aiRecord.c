@@ -104,22 +104,22 @@ static long init_record(struct dbCommon *pcommon, int pass)
     recGblInitConstantLink(&prec->siol, DBF_DOUBLE, &prec->sval);
 
     if(!(pdset = (aidset *)(prec->dset))) {
-        recGblRecordError(S_dev_noDSET,(void *)prec,"ai: init_record");
+        recGblRecordError(S_dev_noDSET, prec, "ai: init_record");
         return(S_dev_noDSET);
     }
     /* must have read_ai function defined */
     if ((pdset->common.number < 6) || (pdset->read_ai == NULL)) {
-        recGblRecordError(S_dev_missingSup,(void *)prec,"ai: init_record");
+        recGblRecordError(S_dev_missingSup, prec, "ai: init_record");
         return(S_dev_missingSup);
     }
     prec->init = TRUE;
-    /*The following is for old device support that doesnt know about eoff*/
+    /*The following is for old device support that doesn't know about eoff*/
     if ((prec->eslo==1.0) && (prec->eoff==0.0)) {
         prec->eoff = prec->egul;
     }
 
     if (pdset->common.init_record) {
-	long status = pdset->common.init_record(pcommon);
+        long status = pdset->common.init_record(pcommon);
         if (prec->linr == menuConvertSLOPE) {
             prec->eoff = eoff;
             prec->eslo = eslo;
@@ -143,7 +143,7 @@ static long process(struct dbCommon *pcommon)
 
     if( (pdset==NULL) || (pdset->read_ai==NULL) ) {
         prec->pact=TRUE;
-        recGblRecordError(S_dev_missingSup,(void *)prec,"read_ai");
+        recGblRecordError(S_dev_missingSup, prec, "read_ai");
         return(S_dev_missingSup);
     }
     timeLast = prec->time;
@@ -431,7 +431,7 @@ static void convert(aiRecord *prec)
             break;
 
         default: /* must use breakpoint table */
-            if (cvtRawToEngBpt(&val,prec->linr,prec->init,(void *)&prec->pbrk,&prec->lbrk)!=0) {
+            if (cvtRawToEngBpt(&val, prec->linr, prec->init, &prec->pbrk, &prec->lbrk)!=0) {
                 recGblSetSevrMsg(prec,SOFT_ALARM,MAJOR_ALARM, "BPT Error");
             }
     }

@@ -101,7 +101,7 @@ template class resTable<timerForOldFdmgr, chronIntId>;
 #   pragma warning ( pop )
 #endif
 
-LIBCOM_API fdRegForOldFdmgr::fdRegForOldFdmgr 
+LIBCOM_API fdRegForOldFdmgr::fdRegForOldFdmgr
     (const SOCKET fdIn, const fdRegType typeIn,
         const bool onceOnlyIn, fdManager &managerIn,
         pCallBackFDMgr pFuncIn, void *pParamIn) :
@@ -322,7 +322,7 @@ extern "C" LIBCOM_API int epicsStdCall fdmgr_clear_fd (fdctx *pfdctx, SOCKET fd)
 /*
  * deprecated interface
  */
-extern "C" LIBCOM_API int epicsStdCall fdmgr_add_fd ( 
+extern "C" LIBCOM_API int epicsStdCall fdmgr_add_fd (
     fdctx   *pfdctx, SOCKET  fd, void (*pfunc)(void *pParam), void *param)
 {
     return fdmgr_add_callback (pfdctx, fd, fdi_read, pfunc, param);

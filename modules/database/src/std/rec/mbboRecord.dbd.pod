@@ -354,7 +354,7 @@ for more information on simulation mode and its fields.
 		pp(TRUE)
 		interest(1)
 		size(26)
-		prop(YES)
+		prop(YES)		# get_enum_str, get_enum_strs, put_enum_str
 	}
 	field(ONST,DBF_STRING) {
 		prompt("One String")
@@ -363,7 +363,7 @@ for more information on simulation mode and its fields.
 		pp(TRUE)
 		interest(1)
 		size(26)
-		prop(YES)
+		prop(YES)		# get_enum_str, get_enum_strs, put_enum_str
 	}
 	field(TWST,DBF_STRING) {
 		prompt("Two String")
@@ -372,7 +372,7 @@ for more information on simulation mode and its fields.
 		pp(TRUE)
 		interest(1)
 		size(26)
-		prop(YES)
+		prop(YES)		# get_enum_str, get_enum_strs, put_enum_str
 	}
 	field(THST,DBF_STRING) {
 		prompt("Three String")
@@ -381,7 +381,7 @@ for more information on simulation mode and its fields.
 		pp(TRUE)
 		interest(1)
 		size(26)
-		prop(YES)
+		prop(YES)		# get_enum_str, get_enum_strs, put_enum_str
 	}
 	field(FRST,DBF_STRING) {
 		prompt("Four String")
@@ -390,7 +390,7 @@ for more information on simulation mode and its fields.
 		pp(TRUE)
 		interest(1)
 		size(26)
-		prop(YES)
+		prop(YES)		# get_enum_str, get_enum_strs, put_enum_str
 	}
 	field(FVST,DBF_STRING) {
 		prompt("Five String")
@@ -399,7 +399,7 @@ for more information on simulation mode and its fields.
 		pp(TRUE)
 		interest(1)
 		size(26)
-		prop(YES)
+		prop(YES)		# get_enum_str, get_enum_strs, put_enum_str
 	}
 	field(SXST,DBF_STRING) {
 		prompt("Six String")
@@ -408,7 +408,7 @@ for more information on simulation mode and its fields.
 		pp(TRUE)
 		interest(1)
 		size(26)
-		prop(YES)
+		prop(YES)		# get_enum_str, get_enum_strs, put_enum_str
 	}
 	field(SVST,DBF_STRING) {
 		prompt("Seven String")
@@ -417,7 +417,7 @@ for more information on simulation mode and its fields.
 		pp(TRUE)
 		interest(1)
 		size(26)
-		prop(YES)
+		prop(YES)		# get_enum_str, get_enum_strs, put_enum_str
 	}
 	field(EIST,DBF_STRING) {
 		prompt("Eight String")
@@ -426,7 +426,7 @@ for more information on simulation mode and its fields.
 		pp(TRUE)
 		interest(1)
 		size(26)
-		prop(YES)
+		prop(YES)		# get_enum_str, get_enum_strs, put_enum_str
 	}
 	field(NIST,DBF_STRING) {
 		prompt("Nine String")
@@ -435,7 +435,7 @@ for more information on simulation mode and its fields.
 		pp(TRUE)
 		interest(1)
 		size(26)
-		prop(YES)
+		prop(YES)		# get_enum_str, get_enum_strs, put_enum_str
 	}
 	field(TEST,DBF_STRING) {
 		prompt("Ten String")
@@ -444,7 +444,7 @@ for more information on simulation mode and its fields.
 		pp(TRUE)
 		interest(1)
 		size(26)
-		prop(YES)
+		prop(YES)		# get_enum_str, get_enum_strs, put_enum_str
 	}
 	field(ELST,DBF_STRING) {
 		prompt("Eleven String")
@@ -453,7 +453,7 @@ for more information on simulation mode and its fields.
 		pp(TRUE)
 		interest(1)
 		size(26)
-		prop(YES)
+		prop(YES)		# get_enum_str, get_enum_strs, put_enum_str
 	}
 	field(TVST,DBF_STRING) {
 		prompt("Twelve String")
@@ -462,7 +462,7 @@ for more information on simulation mode and its fields.
 		pp(TRUE)
 		interest(1)
 		size(26)
-		prop(YES)
+		prop(YES)		# get_enum_str, get_enum_strs, put_enum_str
 	}
 	field(TTST,DBF_STRING) {
 		prompt("Thirteen String")
@@ -471,7 +471,7 @@ for more information on simulation mode and its fields.
 		pp(TRUE)
 		interest(1)
 		size(26)
-		prop(YES)
+		prop(YES)		# get_enum_str, get_enum_strs, put_enum_str
 	}
 	field(FTST,DBF_STRING) {
 		prompt("Fourteen String")
@@ -480,7 +480,7 @@ for more information on simulation mode and its fields.
 		pp(TRUE)
 		interest(1)
 		size(26)
-		prop(YES)
+		prop(YES)		# get_enum_str, get_enum_strs, put_enum_str
 	}
 	field(FFST,DBF_STRING) {
 		prompt("Fifteen String")
@@ -489,7 +489,7 @@ for more information on simulation mode and its fields.
 		pp(TRUE)
 		interest(1)
 		size(26)
-		prop(YES)
+		prop(YES)		# get_enum_str, get_enum_strs, put_enum_str
 	}
 	field(ZRSV,DBF_MENU) {
 		prompt("State Zero Severity")

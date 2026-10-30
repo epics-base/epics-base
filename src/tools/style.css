@@ -69,6 +69,11 @@ A[href="#POD_ERRORS"] {
   color: #FF0000;
 }
 
+A.sect {
+  color: #99ccff;
+  vertical-align: super;
+}
+
 TD {
   margin: 0;
   padding: 0;

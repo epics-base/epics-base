@@ -31,7 +31,7 @@
 #endif
 
 #if USE_MEMLOCK
-#include <sys/mman.h> 
+#include <sys/mman.h>
 #endif
 
 /* epicsStdio uses epicsThreadOnce(), require explicit use to avoid unexpected recursion */
@@ -50,6 +50,7 @@
 #include "epicsAssert.h"
 #include "epicsExit.h"
 #include "epicsAtomic.h"
+#include "envDefs.h"
 
 LIBCOM_API void epicsThreadShowInfo(epicsThreadOSD *pthreadInfo, unsigned int level);
 LIBCOM_API void osdThreadHooksRun(epicsThreadId id);
@@ -93,6 +94,7 @@ static pthread_mutex_t listLock;
 static ELLLIST pthreadList = ELLLIST_INIT;
 static commonAttr *pcommonAttr = 0;
 static int epicsThreadOnceCalled = 0;
+static int wantPrioScheduling = 0;
 
 static epicsThreadOSD *createImplicit(void);
 
@@ -119,7 +121,7 @@ if((status))  {\
 if(status) { \
     fprintf(stderr,"%s  error %s",(message),strerror((status))); \
     fprintf(stderr," %s\n",method); \
-    fprintf(stderr,"epicsThreadInit cant proceed. Program exiting\n"); \
+    fprintf(stderr,"epicsThreadInit can't proceed. Program exiting\n"); \
     exit(-1);\
 }
 
@@ -384,6 +386,7 @@ static void once(void)
     checkStatusOnce(status,"pthread_attr_getschedparam");
 
     findPriorityRange(pcommonAttr);
+    envGetBoolConfigParam(&EPICS_ALLOW_POSIX_THREAD_PRIORITY_SCHEDULING, &wantPrioScheduling);
 
     if(pcommonAttr->maxPriority == -1) {
         pcommonAttr->maxPriority = pcommonAttr->schedParam.sched_priority;
@@ -396,18 +399,13 @@ static void once(void)
             pcommonAttr->maxPriority);
     }
 
-    if (errVerbose) {
-        fprintf(stderr, "LRT: min priority: %d max priority %d\n",
-            pcommonAttr->minPriority, pcommonAttr->maxPriority);
-    }
-
 #else
     if(errVerbose) fprintf(stderr,"task priorities are not implemented\n");
 #endif /* _POSIX_THREAD_PRIORITY_SCHEDULING */
 
     pthreadInfo = init_threadInfo("_main_",0,epicsThreadGetStackSize(epicsThreadStackSmall),0,0,0);
     assert(pthreadInfo!=NULL);
-    status = pthread_setspecific(getpthreadInfo,(void *)pthreadInfo);
+    status = pthread_setspecific(getpthreadInfo,pthreadInfo);
     checkStatusOnceQuit(status,"pthread_setspecific","epicsThreadInit");
     status = mutexLock(&listLock);
     checkStatusQuit(status,"pthread_mutex_lock","epicsThreadInit");
@@ -426,6 +424,10 @@ static void * start_routine(void *arg)
     epicsThreadOSD *pthreadInfo = (epicsThreadOSD *)arg;
     int status;
     sigset_t blockAllSig;
+
+    // concurrently written from creator thread with same value
+    pthreadInfo->tid = pthread_self();
+    epicsAtomicWriteMemoryBarrier();
 
     sigfillset(&blockAllSig);
     pthread_sigmask(SIG_SETMASK,&blockAllSig,NULL);
@@ -459,12 +461,16 @@ static void epicsThreadInit(void)
     }
 }
 
+static
+unsigned char mlocked;
+
 LIBCOM_API
 void epicsThreadRealtimeLock(void)
 {
+    mlocked = 0;
 #if USE_MEMLOCK
 #ifndef RTEMS_LEGACY_STACK // seems to be part of libbsd?
-    if (pcommonAttr->maxPriority > pcommonAttr->minPriority) {
+    if (pcommonAttr->maxPriority > pcommonAttr->minPriority && wantPrioScheduling) {
         int status = mlockall(MCL_CURRENT | MCL_FUTURE);
 
         if (status) {
@@ -473,19 +479,21 @@ void epicsThreadRealtimeLock(void)
 #ifdef __linux__
             case ENOMEM:
                 fprintf(stderr, "epicsThreadRealtimeLock "
-                        "Warning: unable to lock memory.  RLIMIT_MEMLOCK is too small or missing CAP_IPC_LOCK\n");
+                        ERL_WARNING ": unable to lock memory.  RLIMIT_MEMLOCK is too small or missing CAP_IPC_LOCK\n");
                 break;
             case EPERM:
                 fprintf(stderr, "epicsThreadRealtimeLock "
-                                "Warning: unable to lock memory.  missing CAP_IPC_LOCK\n");
+                                ERL_WARNING ": unable to lock memory.  missing CAP_IPC_LOCK\n");
                 break;
 #endif
             default:
                 fprintf(stderr, "epicsThreadRealtimeLock "
-                                "Warning: Unable to lock the virtual address space.\n"
+                                ERL_WARNING ": Unable to lock the virtual address space.\n"
                                 "VM page faults may harm real-time performance. errno=%d\n",
                         err);
             }
+        } else {
+            mlocked = 1;
         }
     }
 #endif // LEGACY STACK
@@ -603,22 +611,45 @@ epicsThreadCreateOpt(const char * name,
         return 0;
 
     pthreadInfo->isEpicsThread = 1;
-    setSchedulingPolicy(pthreadInfo, SCHED_FIFO);
-    pthreadInfo->isRealTimeScheduled = 1;
+    if (wantPrioScheduling) {
+        setSchedulingPolicy(pthreadInfo, SCHED_FIFO);
+        pthreadInfo->isRealTimeScheduled = 1;
+    }
+
+    /* The initial ref. will be transfered to the new thread on success,
+     * but is retained on error.
+     * Add a second temporary ref. for this function, in case the new thread
+     * is created, then ends before pthread_create() returns!.
+     */
+    epicsAtomicIncrIntT(&pthreadInfo->refcnt);
 
     if (pthreadInfo->joinable) {
         /* extra ref for epicsThreadMustJoin() */
         epicsAtomicIncrIntT(&pthreadInfo->refcnt);
     }
 
-    status = pthread_create(&pthreadInfo->tid, &pthreadInfo->attr,
+
+    pthread_t new_tid;
+    status = pthread_create(&new_tid, &pthreadInfo->attr,
         start_routine, pthreadInfo);
+
+    // pthreadInfo->tid concurrently written with same value by new thread
+    pthreadInfo->tid = new_tid;
+    epicsAtomicWriteMemoryBarrier();
+
+    free_threadInfo(pthreadInfo); // dispose of temp ref
+    /* On success, pthreadInfo treat as invalid after this point.
+     *   (eg. very short lived thread which self-joins)
+     * On error, we own all refs.
+     */
+
     if (status==EPERM) {
         /* Try again without SCHED_FIFO*/
         if (pthreadInfo->joinable) {
-            int cnt = epicsAtomicDecrIntT(&pthreadInfo->refcnt);
-            assert(cnt==1);
+            epicsAtomicDecrIntT(&pthreadInfo->refcnt); // dispose of joiner ref.
         }
+        // one ref. left
+        assert(1==epicsAtomicGetIntT(&pthreadInfo->refcnt));
         free_threadInfo(pthreadInfo);
 
         pthreadInfo = init_threadInfo(name, opts->priority, stackSize,
@@ -626,17 +657,28 @@ epicsThreadCreateOpt(const char * name,
         if (pthreadInfo==0)
             return 0;
 
+        epicsAtomicIncrIntT(&pthreadInfo->refcnt); // temp ref
+        if (pthreadInfo->joinable) {
+            epicsAtomicIncrIntT(&pthreadInfo->refcnt); // for caller to join
+        }
+
         pthreadInfo->isEpicsThread = 1;
-        status = pthread_create(&pthreadInfo->tid, &pthreadInfo->attr,
+        status = pthread_create(&new_tid, &pthreadInfo->attr,
             start_routine, pthreadInfo);
+
+        // pthreadInfo->tid concurrently written with same value by new thread
+        pthreadInfo->tid = new_tid;
+        epicsAtomicWriteMemoryBarrier();
+
+        free_threadInfo(pthreadInfo); // dispose of temp ref
     }
     checkStatusOnce(status, "pthread_create");
     if (status) {
         if (pthreadInfo->joinable) {
-            /* release extra ref which would have been for epicsThreadMustJoin() */
-            int cnt = epicsAtomicDecrIntT(&pthreadInfo->refcnt);
-            assert(cnt==1);
+            epicsAtomicDecrIntT(&pthreadInfo->refcnt); // dispose of joiner ref.
         }
+        // one ref. left
+        assert(1==epicsAtomicGetIntT(&pthreadInfo->refcnt));
         free_threadInfo(pthreadInfo);
         return 0;
     }
@@ -665,6 +707,9 @@ static epicsThreadOSD *createImplicit(void)
     assert(pthreadInfo);
     pthreadInfo->tid = tid;
     pthreadInfo->osiPriority = 0;
+    pthreadInfo->isOkToBlock = 1;
+    status = pthread_attr_init(&pthreadInfo->attr);
+    checkStatusOnce(status,"pthread_attr_init");
 
 #if defined(_POSIX_THREAD_PRIORITY_SCHEDULING) && _POSIX_THREAD_PRIORITY_SCHEDULING > 0
     if(pthread_getschedparam(tid,&pthreadInfo->schedPolicy,&pthreadInfo->schedParam) == 0) {
@@ -676,7 +721,7 @@ static epicsThreadOSD *createImplicit(void)
     }
 #endif /* _POSIX_THREAD_PRIORITY_SCHEDULING */
 
-    status = pthread_setspecific(getpthreadInfo,(void *)pthreadInfo);
+    status = pthread_setspecific(getpthreadInfo,pthreadInfo);
     checkStatus(status,"pthread_setspecific createImplicit");
     if(status){
         free_threadInfo(pthreadInfo);
@@ -979,6 +1024,11 @@ LIBCOM_API void epicsStdCall epicsThreadShowAll(unsigned int level)
     }
     status = pthread_mutex_unlock(&listLock);
     checkStatus(status,"pthread_mutex_unlock epicsThreadShowAll");
+
+    fprintf(stderr,
+            "OSD priority range min: %d max %d, memory %slocked\n",
+        pcommonAttr->minPriority, pcommonAttr->maxPriority,
+            mlocked ? "" : "not ");
 }
 
 LIBCOM_API void epicsStdCall epicsThreadShow(epicsThreadId showThread, unsigned int level)
@@ -1038,7 +1088,7 @@ LIBCOM_API void epicsStdCall epicsThreadPrivateDelete(epicsThreadPrivateId id)
     assert(epicsThreadOnceCalled);
     status = pthread_key_delete(*key);
     checkStatusQuit(status,"pthread_key_delete","epicsThreadPrivateDelete");
-    free((void *)key);
+    free(key);
 }
 
 LIBCOM_API void epicsStdCall epicsThreadPrivateSet (epicsThreadPrivateId id, void *value)
@@ -1073,6 +1123,12 @@ LIBCOM_API double epicsStdCall epicsThreadSleepQuantum ()
 LIBCOM_API int epicsThreadGetCPUs(void)
 {
     long ret;
+#ifdef CPU_COUNT
+    cpu_set_t mask;
+    ret = sched_getaffinity(0, sizeof(mask), &mask);
+    if (ret == 0)
+        return CPU_COUNT(&mask);
+#endif
 #ifdef _SC_NPROCESSORS_ONLN
     ret = sysconf(_SC_NPROCESSORS_ONLN);
     if (ret > 0)
@@ -1084,4 +1140,18 @@ LIBCOM_API int epicsThreadGetCPUs(void)
         return ret;
 #endif
     return 1;
+}
+
+int epicsStdCall epicsThreadIsOkToBlock(void)
+{
+    epicsThreadOSD *pthreadInfo = epicsThreadGetIdSelf();
+
+    return(pthreadInfo->isOkToBlock);
+}
+
+void epicsStdCall epicsThreadSetOkToBlock(int isOkToBlock)
+{
+    epicsThreadOSD *pthreadInfo = epicsThreadGetIdSelf();
+
+    pthreadInfo->isOkToBlock = !!isOkToBlock;
 }

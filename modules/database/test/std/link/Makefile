@@ -57,8 +57,8 @@ TESTSPEC_RTEMS = linkTestHarness.boot; epicsRunLinkTests
 
 TESTSCRIPTS_HOST += $(TESTS:%=%.t)
 ifneq ($(filter $(T_A),$(CROSS_COMPILER_RUNTEST_ARCHS)),)
-  TESTPROD = $(TESTPROD_HOST)
-  TESTSCRIPTS_RTEMS += $(TESTS:%=%.t)
+  TESTPROD += $(TESTPROD_HOST)
+  TESTSCRIPTS += $(TESTS:%=%.t)
 endif
 
 include $(TOP)/configure/RULES

@@ -146,6 +146,8 @@ LIBCOM_API ELLNODE * ellGet (ELLLIST *pList);
  * \brief Deletes and returns the last node from a list.
  * \param pList Pointer to list from which to get node
  * \return Pointer to the last node from the list, or NULL if the list is empty
+ *
+ * \since 3.15.0.1
  */
 LIBCOM_API ELLNODE * ellPop (ELLLIST *pList);
 /**
@@ -192,6 +194,8 @@ typedef int (*pListCmp)(const ELLNODE* A, const ELLNODE* B);
  *
  * \note Use of mergesort algorithm based on analysis by
  * http://www.chiark.greenend.org.uk/~sgtatham/algorithms/listsort.html
+ *
+ * \since 3.15.5
  */
 LIBCOM_API void ellSortStable(ELLLIST *pList, pListCmp pListCmp);
 /**

@@ -7,7 +7,7 @@ is like the vxWorks sysClockRateGet().
 
 
 The implementation should be:
-    Provide a default that determines the rate emperically at int time by
+    Provide a default that determines the rate empirically at int time by
     calling epicsThreadSleep for amaller and smaller delays until the actual
     delay no longer decreases.
     Each os/xxx can override the default if desired.

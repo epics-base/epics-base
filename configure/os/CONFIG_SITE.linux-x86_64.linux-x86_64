@@ -3,10 +3,7 @@
 # Site specific definitions for linux-x86_64 host - linux-x86_64 target builds
 #-------------------------------------------------------
 
-#OPT_CXXFLAGS_YES += -std=c++11
-#OPT_CXXFLAGS_NO += -std=c++11
-
-# Uncomment the followings lines to build with CLANG instead of GCC.
+# Uncomment the following lines to build with CLANG instead of GCC.
 #
 #GNU         = NO
 #CMPLR_CLASS = clang

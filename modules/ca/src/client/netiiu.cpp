@@ -116,6 +116,12 @@ const char * netiiu::pHostName (
     return pHostNameNetIIU;
 }
 
+unsigned netiiu::getHostMinorProtocol (
+    epicsGuard < epicsMutex > & ) const throw ()
+{
+  return CA_UKN_MINOR_VERSION;
+}
+
 osiSockAddr netiiu::getNetworkAddress (
     epicsGuard < epicsMutex > & ) const
 {
@@ -161,7 +167,7 @@ void netiiu::uninstallChanDueToSuccessfulSearchResponse (
     epicsGuard < epicsMutex > &, nciu &, const epicsTime & )
 {
     throw std::runtime_error (
-        "search response occured when not attached to udpiiu?" );
+        "search response occurred when not attached to udpiiu?" );
 }
 
 bool netiiu::searchMsg (

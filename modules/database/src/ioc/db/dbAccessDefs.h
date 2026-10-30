@@ -214,7 +214,46 @@ DBCORE_API int dbIsValueField(const struct dbFldDes *pdbFldDes);
 DBCORE_API int dbGetFieldIndex(const struct dbAddr *paddr);
 DBCORE_API long dbScanPassive(
     struct dbCommon *pfrom,struct dbCommon *pto);
+/** @brief Begin processing of target record
+ * @param precord Target record
+ * @return 0 on success, non-zero on error.
+ *
+ * @pre After iocInit(), and before iocShutdown()
+ * @pre Record must be locked.  @see dbScanLock()
+ *
+ * This function will attempt to begin record processing, which may have one of
+ * several possible outcomes depending on the PACT state of the record,
+ * and the actions of its rset::process() method.
+ *
+ * If asynchronously processing is ongoing (PACT is initially non-zero),
+ * then a SCAN_ALARM is signaled and posted on the VAL field.
+ * This function returns zero.
+ *
+ * If the record is idle (PACT is zero), then rset::process() runs.
+ * This method may return an error, or not.
+ * Record or device support may also leave PACT as zero,
+ * in which case record processing has compeleted synchronously
+ * Or PACT may be left non-zero, in which case asynchronous processing is ongoing.
+ *
+ * If asynchronous processing is ongoing,
+ * the caller of dbProcess() takes no further action.
+ * Record support code must arrange to complete processing at some future time.
+ *
+ * @code{.c}
+ * dbCommon *prec = ...;
+ * dbScanLock(prec);
+ * long status = dbProcess(prec);
+ * dbScanUnlock(prec);
+ * @endcode
+ */
 DBCORE_API long dbProcess(struct dbCommon *precord);
+/** @brief Lookup dbAddr from record.FLD
+ * @param pname PV name
+ * @param paddr Pointer to uninitialized address
+ * @return zero on success
+ *
+ * Prefer dbChannel for new code.
+ */
 DBCORE_API long dbNameToAddr(const char *pname, struct dbAddr *paddr);
 
 /** Initialize DBADDR from a dbEntry

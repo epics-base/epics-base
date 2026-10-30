@@ -24,14 +24,14 @@
 
 //
 // Requirements:
-// 1) Allow sufficent headroom so that users will be able to perform
+// 1) Allow sufficient headroom so that users will be able to perform
 // a reasonable amount of IO within CA callbacks without experiencing
 // a push/pull deadlock. If a potential push/pull deadlock situation
 // occurs then detect and avoid it and provide diagnostic to the user
 // via special status.
 // 2) Return status to the user when there is insufficient memory to
 // queue a complete message.
-// 3) return status to the user when a message cant be flushed because
+// 3) return status to the user when a message can't be flushed because
 // a connection dropped.
 // 4) Do not allocate too much memory in exception situations (such as
 // after a circuit disconnect).

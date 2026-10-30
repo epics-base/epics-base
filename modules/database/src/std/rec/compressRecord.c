@@ -107,7 +107,7 @@ static void monitor(compressRecord *prec)
         db_post_events(prec, &prec->nuse, monitor_mask);
         prec->ouse = prec->nuse;
     }
-    db_post_events(prec, (void*)&prec->val, monitor_mask);
+    db_post_events(prec, &prec->val, monitor_mask);
 }
 
 static void put_value(compressRecord *prec, double *psource, int n)

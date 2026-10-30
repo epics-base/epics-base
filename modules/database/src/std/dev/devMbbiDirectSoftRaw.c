@@ -27,17 +27,17 @@
 
 /* Create the dset for devMbbiDirectSoftRaw */
 static long init_record(dbCommon *pcommon);
-static long read_mbbi(mbbiDirectRecord *prec);
+static long read_mbbiDirect(mbbiDirectRecord *prec);
 
 mbbidirectdset devMbbiDirectSoftRaw = {
     {5, NULL, NULL, init_record, NULL},
-    read_mbbi
+    read_mbbiDirect
 };
 epicsExportAddress(dset, devMbbiDirectSoftRaw);
 
 static long init_record(dbCommon *pcommon)
 {
-	mbbiDirectRecord *prec = (mbbiDirectRecord *)pcommon;
+    mbbiDirectRecord *prec = (mbbiDirectRecord *)pcommon;
 
     recGblInitConstantLink(&prec->inp, DBF_ULONG, &prec->rval);
 
@@ -49,7 +49,7 @@ static long init_record(dbCommon *pcommon)
     return 0;
 }
 
-static long read_mbbi(mbbiDirectRecord *prec)
+static long read_mbbiDirect(mbbiDirectRecord *prec)
 {
     if (!dbGetLink(&prec->inp, DBR_ULONG, &prec->rval, 0, 0)) {
         prec->rval &= prec->mask;

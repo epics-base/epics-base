@@ -357,7 +357,7 @@ static long devInstallAddr (
             epicsMutexMustLock(addrListLock);
             ellDelete(&addrFree[addrType], &pRange->node);
             epicsMutexUnlock(addrListLock);
-            free ((void *)pRange);
+            free (pRange);
         }
         else {
             pRange->begin = base + size;
@@ -553,7 +553,7 @@ static long devCombineAdjacentBlocks(
             pRange->begin = pBefore->begin;
             ellDelete (pRangeList, &pBefore->node);
             epicsMutexUnlock(addrListLock);
-            free ((void *)pBefore);
+            free (pBefore);
         }
     }
 
@@ -563,7 +563,7 @@ static long devCombineAdjacentBlocks(
             pRange->end = pAfter->end;
             ellDelete (pRangeList, &pAfter->node);
             epicsMutexUnlock(addrListLock);
-            free((void *)pAfter);
+            free(pAfter);
         }
     }
 

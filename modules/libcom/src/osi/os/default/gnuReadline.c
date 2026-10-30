@@ -16,6 +16,7 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 
+#include "errlog.h"
 #include "epicsExit.h"
 #include "envDefs.h"
 #include "epicsReadlinePvt.h"
@@ -74,17 +75,19 @@ osdReadline (const char *prompt, struct readlineContext *context)
         int c;      /* char is unsigned on some archs; EOF is -ve */
         int linelen = 0;
         int linesize = 50;
+        int backslash_seen = 0;
 
         line = malloc(linesize);
         if (line == NULL) {
-            printf("Out of memory!\n");
+            fprintf(stderr, ERL_ERROR " osdReadline() Out of memory!\n");
             return NULL;
         }
         if (prompt) {
             fputs(prompt, stdout);
             fflush(stdout);
         }
-        while ((c = getc(context->in)) !=  '\n') {
+        do {
+            c = getc(context->in);
             if (c == EOF) {
                 free(line);
                 line = NULL;
@@ -93,18 +96,36 @@ osdReadline (const char *prompt, struct readlineContext *context)
             if ((linelen + 1) >= linesize) {
                 char *cp;
 
-                linesize += 50;
+                linesize = linelen + 50;
                 cp = (char *)realloc(line, linesize);
                 if (cp == NULL) {
-                    printf ("Out of memory!\n");
+                    fprintf(stderr, ERL_ERROR " osdReadline() Out of memory!\n");
                     free(line);
                     line = NULL;
                     break;
                 }
                 line = cp;
             }
-            line[linelen++] = c;
-        }
+            if (backslash_seen) {
+                /* try to handle multi-line string */
+                backslash_seen = 0;
+                if (c == '\n') {
+                    linelen--;              /* overwrite the '\' */
+                    c = getc(context->in);  /* skip current '\n' and get the next char */
+                    if (c == EOF) {
+                        free(line);
+                        line = NULL;
+                        break;
+                    }
+                }
+            }
+            if (c == '\\') {
+                backslash_seen = 1;
+            }
+            if (c != '\n') {
+                line[linelen++] = c;
+            }
+        } while (c != '\n');
         if (line)
             line[linelen] = '\0';
     }

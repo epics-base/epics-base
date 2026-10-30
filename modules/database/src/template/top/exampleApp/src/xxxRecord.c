@@ -67,15 +67,6 @@ rset xxxRSET={
 };
 epicsExportAddress(rset,xxxRSET);
 
-typedef struct xxxset { /* xxx input dset */
-    long        number;
-    DEVSUPFUN   dev_report;
-    DEVSUPFUN   init;
-    DEVSUPFUN   init_record; /*returns: (-1,0)=>(failure,success)*/
-    DEVSUPFUN   get_ioint_info;
-    DEVSUPFUN   read_xxx;
-}xxxdset;
-
 static void checkAlarms(xxxRecord *prec);
 static void monitor(xxxRecord *prec);
 
@@ -88,17 +79,17 @@ static long init_record(struct dbCommon *pcommon, int pass)
     if (pass==0) return(0);
 
     if(!(pdset = (xxxdset *)(prec->dset))) {
-        recGblRecordError(S_dev_noDSET,(void *)prec,"xxx: init_record");
+        recGblRecordError(S_dev_noDSET,prec,"xxx: init_record");
         return(S_dev_noDSET);
     }
     /* must have read_xxx function defined */
-    if( (pdset->number < 5) || (pdset->read_xxx == NULL) ) {
-        recGblRecordError(S_dev_missingSup,(void *)prec,"xxx: init_record");
+    if( (pdset->common.number < 5) || (pdset->read_xxx == NULL) ) {
+        recGblRecordError(S_dev_missingSup,prec,"xxx: init_record");
         return(S_dev_missingSup);
     }
 
-    if( pdset->init_record ) {
-        if((status=(*pdset->init_record)(prec))) return(status);
+    if( pdset->common.init_record ) {
+        if((status=(*pdset->common.init_record)(pcommon))) return(status);
     }
     return(0);
 }
@@ -112,7 +103,7 @@ static long process(struct dbCommon *pcommon)
 
     if( (pdset==NULL) || (pdset->read_xxx==NULL) ) {
         prec->pact=TRUE;
-        recGblRecordError(S_dev_missingSup,(void *)prec,"read_xxx");
+        recGblRecordError(S_dev_missingSup,prec,"read_xxx");
         return(S_dev_missingSup);
     }
 
@@ -147,7 +138,7 @@ static long get_precision(const DBADDR *paddr, long *precision)
     xxxRecord   *prec=(xxxRecord *)paddr->precord;
 
     *precision = prec->prec;
-    if(paddr->pfield == (void *)&prec->val) return(0);
+    if(paddr->pfield == &prec->val) return(0);
     recGblGetPrec(paddr,precision);
     return(0);
 }

@@ -81,8 +81,8 @@ TESTSPEC_RTEMS = filterTestHarness.boot; epicsRunFilterTests
 
 TESTSCRIPTS_HOST += $(TESTS:%=%.t)
 ifneq ($(filter $(T_A),$(CROSS_COMPILER_RUNTEST_ARCHS)),)
-TESTPROD_RTEMS = $(TESTPROD_HOST)
-TESTSCRIPTS_RTEMS += $(TESTS:%=%.t)
+TESTPROD += $(TESTPROD_HOST)
+TESTSCRIPTS += $(TESTS:%=%.t)
 endif
 
 include $(TOP)/configure/RULES

@@ -102,8 +102,16 @@ extern "C" {
 #endif
 
 /**
- * \brief epicsSnprintf() is meant to have the same semantics as the C99
- * function snprintf()
+ * \brief Wrapper around OS snprintf()
+ *
+ * \param str Output buffer.  Must be non-NULL.
+ * \param size Capacity of output buffer, including space for nil.
+ *        Must be a positive value.
+ * \param format Format string.  Must be non-NULL.
+ * \returns Non-negative value on success (see below).
+ *
+ * \post On success, at least a nil charactor has been written to the output buffer.
+ *       On failure, the output buffer state is not specified.
  *
  * \details
  * This is provided because some architectures do not implement these functions,
@@ -117,48 +125,23 @@ extern "C" {
  * correctly return the number of characters that would have been written when
  * the output gets truncated, it is not worth trying to fix this as long as
  * they return `size-1` instead; the resulting string must always be correctly
- * terminated with a zero byte.
+ * null terminated.
  *
  * In some scenarios the epicsSnprintf() implementation may not provide the
  * correct C99 semantics for the return value when `size` is given as zero.
  * On these systems epicsSnprintf() can return an error (a value less than
  * zero) when a buffer length of zero is passed in, so callers should not use
  * that technique to calculate the length of the buffer required.
- *
- * \return The number of characters (not counting the terminating zero byte)
- * that would be written to `str` if it was large enough to hold them all; the
- * output has been truncated if the return value is `size` or more.
  */
 LIBCOM_API int epicsStdCall epicsSnprintf(
     char *str, size_t size, EPICS_PRINTF_FMT(const char *format), ...
 ) EPICS_PRINTF_STYLE(3,4);
 /**
- * \brief epicsVsnprintf() is meant to have the same semantics as the C99
- * function vsnprintf()
+ * \brief vararg version of epicsSnprintf()
  *
- * \details
- * This is provided because some architectures do not implement these functions,
- * while others implement them incorrectly.
- * Standardized as a C99 function, vsnprintf() acts like vsprintf() except that
- * the `size` argument gives the maximum number of characters (including the
- * trailing zero byte) that may be placed in `str`.
+ * Wrapper around OS vsnprintf().
  *
- * On some operating systems though the implementation of this function does
- * not always return the correct value. If the OS implementation does not
- * correctly return the number of characters that would have been written when
- * the output gets truncated, it is not worth trying to fix this as long as
- * they return `size-1` instead; the resulting string must always be correctly
- * terminated with a zero byte.
- *
- * In some scenarios the epicsSnprintf() implementation may not provide the
- * correct C99 semantics for the return value when `size` is given as zero.
- * On these systems epicsSnprintf() can return an error (a value less than
- * zero) when a buffer length of zero is passed in, so callers should not use
- * that technique to calculate the length of the buffer required.
- *
- * \return The number of characters (not counting the terminating zero byte)
- * that would be written to `str` if it was large enough to hold them all; the
- * output has been truncated if the return value is `size` or more.
+ * \see Documentation for epicsSnprintf()
  */
 LIBCOM_API int epicsStdCall epicsVsnprintf(
     char *str, size_t size, const char *format, va_list ap);

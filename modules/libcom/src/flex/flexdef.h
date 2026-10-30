@@ -574,7 +574,7 @@ extern void *reallocate_array(void *array, int size, int element_size);
     (int *) allocate_array( size, sizeof( int ) )
 
 #define reallocate_integer_array(array,size) \
-    (int *) reallocate_array( (void *) array, size, sizeof( int ) )
+    (int *) reallocate_array( array, size, sizeof( int ) )
 
 #define allocate_int_ptr_array(size) \
     (int **) allocate_array( size, sizeof( int * ) )
@@ -587,22 +587,22 @@ extern void *reallocate_array(void *array, int size, int element_size);
         allocate_array( size, sizeof( union dfaacc_union ) )
 
 #define reallocate_int_ptr_array(array,size) \
-    (int **) reallocate_array( (void *) array, size, sizeof( int * ) )
+    (int **) reallocate_array( array, size, sizeof( int * ) )
 
 #define reallocate_char_ptr_array(array,size) \
-    (char **) reallocate_array( (void *) array, size, sizeof( char * ) )
+    (char **) reallocate_array( array, size, sizeof( char * ) )
 
 #define reallocate_dfaacc_union(array, size) \
     (union dfaacc_union *) \
-        reallocate_array( (void *) array, size, sizeof( union dfaacc_union ) )
+        reallocate_array( array, size, sizeof( union dfaacc_union ) )
 
 #define allocate_character_array(size) \
     (Char *) allocate_array( size, sizeof( Char ) )
 
 #define reallocate_character_array(array,size) \
-    (Char *) reallocate_array( (void *) array, size, sizeof( Char ) )
+    (Char *) reallocate_array( array, size, sizeof( Char ) )
 
-#if 0 /* JRW this might couse trouble... but not for IOC usage */
+#if 0 /* JRW this might cause trouble... but not for IOC usage */
 /* used to communicate between scanner and parser.  The type should really
  * be YYSTYPE, but we can't easily get our hands on it.
  */
@@ -696,21 +696,21 @@ extern void dataend (void);
 extern void flexerror (char[]) NORETURN;
 
 /* report a fatal error message and terminate */
-extern void flexfatal (char[]);
+extern void flexfatal (char[]) NORETURN;
 
 /* return current time */
 extern char *flex_gettime();
 
 /* report an error message formatted with one integer argument */
-extern void lerrif (char[], int);
+extern void lerrif (char[], int) NORETURN;
 
 /* report an error message formatted with one string argument */
-extern void lerrsf (char[], char[]);
+extern void lerrsf (char[], char[]) NORETURN;
 
 /* spit out a "# line" statement */
 extern void line_directive_out (FILE*);
 
-/* generate a data statment for a two-dimensional array */
+/* generate a data statement for a two-dimensional array */
 extern void mk2data (int);
 
 /* generate a data statement */

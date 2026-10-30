@@ -137,14 +137,14 @@ typedef void ( *epicsTimerCallback ) ( void *pPrivate );
 typedef struct epicsTimerQueueActiveForC * epicsTimerQueueId;
 LIBCOM_API epicsTimerQueueId epicsStdCall
     epicsTimerQueueAllocate ( int okToShare, unsigned int threadPriority );
-LIBCOM_API void epicsStdCall 
+LIBCOM_API void epicsStdCall
     epicsTimerQueueRelease ( epicsTimerQueueId );
-LIBCOM_API epicsTimerId epicsStdCall 
+LIBCOM_API epicsTimerId epicsStdCall
     epicsTimerQueueCreateTimer ( epicsTimerQueueId queueid,
         epicsTimerCallback callback, void *arg );
-LIBCOM_API void epicsStdCall 
+LIBCOM_API void epicsStdCall
     epicsTimerQueueDestroyTimer ( epicsTimerQueueId queueid, epicsTimerId id );
-LIBCOM_API void  epicsStdCall 
+LIBCOM_API void  epicsStdCall
     epicsTimerQueueShow ( epicsTimerQueueId id, unsigned int level );
 
 /* passive timer queue */
@@ -154,28 +154,28 @@ typedef double ( * epicsTimerQueueNotifyQuantum ) ( void * pPrivate );
 LIBCOM_API epicsTimerQueuePassiveId epicsStdCall
     epicsTimerQueuePassiveCreate ( epicsTimerQueueNotifyReschedule,
         epicsTimerQueueNotifyQuantum, void *pPrivate );
-LIBCOM_API void epicsStdCall 
+LIBCOM_API void epicsStdCall
     epicsTimerQueuePassiveDestroy ( epicsTimerQueuePassiveId );
-LIBCOM_API epicsTimerId epicsStdCall 
+LIBCOM_API epicsTimerId epicsStdCall
     epicsTimerQueuePassiveCreateTimer (
         epicsTimerQueuePassiveId queueid, epicsTimerCallback pCallback, void *pArg );
-LIBCOM_API void epicsStdCall 
+LIBCOM_API void epicsStdCall
     epicsTimerQueuePassiveDestroyTimer ( epicsTimerQueuePassiveId queueid, epicsTimerId id );
-LIBCOM_API double epicsStdCall 
+LIBCOM_API double epicsStdCall
     epicsTimerQueuePassiveProcess ( epicsTimerQueuePassiveId );
-LIBCOM_API void  epicsStdCall 
+LIBCOM_API void  epicsStdCall
     epicsTimerQueuePassiveShow ( epicsTimerQueuePassiveId id, unsigned int level );
 
 /* timer */
-LIBCOM_API void epicsStdCall 
+LIBCOM_API void epicsStdCall
     epicsTimerStartTime ( epicsTimerId id, const epicsTimeStamp *pTime );
-LIBCOM_API void epicsStdCall 
+LIBCOM_API void epicsStdCall
     epicsTimerStartDelay ( epicsTimerId id, double delaySeconds );
-LIBCOM_API void epicsStdCall 
+LIBCOM_API void epicsStdCall
     epicsTimerCancel ( epicsTimerId id );
-LIBCOM_API double epicsStdCall 
+LIBCOM_API double epicsStdCall
     epicsTimerGetExpireDelay ( epicsTimerId id );
-LIBCOM_API void  epicsStdCall 
+LIBCOM_API void  epicsStdCall
     epicsTimerShow ( epicsTimerId id, unsigned int level );
 
 #ifdef __cplusplus

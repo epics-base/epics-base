@@ -10,9 +10,12 @@
 =title Data Fanout Record (dfanout)
 
 The Data Fanout or "dfanout" record is used to forward data to up to
-eight other records. It's similar to the fanout record except that the
-capability to forward data has been added to it. If has no associated
+16 other records. It's similar to the fanout record except that the
+capability to forward data has been added to it. It has no associated
 device support.
+
+Since 7.0.10 the number of output links has been increased
+from 8 to 16 and IVOA and IVOV fields have been added.
 
 =head2 Parameter Fields
 
@@ -39,7 +42,7 @@ These fields are listed in L<Scan Fields|dbCommonRecord/Scan Fields>.
 =head3 Desired Output Parameters
 
 The data fanout record must specify where the desired output value
-originates, i.e., the data which is to be fowarded to the records in its
+originates, i.e., the data which is to be forwarded to the records in its
 output links. The output mode select (OMSL) field determines whether the
 output originates from another record or from run-time database access.
 When set to C<closed_loop>, the desired output is retrieved from the link
@@ -58,9 +61,9 @@ undergoes no conversions before it is sent out to the output links.
 
 =head3 Write Parameters
 
-The OUTA-OUTH fields specify where VAL is to be sent. Each field that is to
+The OUTA-OUTP fields specify where VAL is to be sent. Each field that is to
 forward data must specify an address to another record. See L<Address
-Specification|https://docs.epics-controls.org/en/latest/guides/EPICS_Process_Database_Concepts.html#address-specification>
+Specification|https://docs.epics-controls.org/en/latest/process-database/EPICS_Process_Database_Concepts.html#address-specification>
 for information on specifying links.
 
 The SELL, SELM, and SELN fields specify which output links are to be
@@ -88,7 +91,7 @@ If SELM is C<Mask>, then SELN will be treated as a bit mask. If bit zero
 OUTB will be written to, and so on. Thus when SELN==5, both OUTC and OUTA
 will be written to.
 
-=fields SELL, SELM, SELN, OUTA, OUTB, OUTC, OUTD, OUTE, OUTF, OUTG, OUTH
+=fields SELL, SELM, SELN, OUTA - OUTP
 
 =head3 Operator Display Parameters
 
@@ -128,19 +131,24 @@ Parameters> for more about the record name (NAME) and description (DESC) fields.
 
 The possible alarm conditions for data fanouts are the SCAN, READ, INVALID,
 and limit alarms. The SCAN and READ alarms are called by the record
-routines. The limit alarms are configured by the user in the HIHI, LOLO,
+routines. The IVOA field specifies the action to take in this case.
+
+For an explanation of the IVOA and IVOV fields, see
+L<Invalid Output Action Fields|dbCommonOutput/Invalid Output Action Fields>.
+
+The limit alarms are configured by the user in the HIHI, LOLO,
 HIGH, and LOW fields using floating point values. The limit alarms apply 
 only to the VAL field. The severity for each of these limits is specified
 in the corresponding field (HHSV, LLSV, HSV, LSV) and can be either
 NO_ALARM, MINOR, or MAJOR. In the hysteresis field (HYST) can be entered a
 number which serves as the deadband on the limit alarms.
 
-See L<Alarm Specification|https://docs.epics-controls.org/en/latest/guides/EPICS_Process_Database_Concepts.html#alarm-specification>
+See L<Alarm Specification|https://docs.epics-controls.org/en/latest/process-database/EPICS_Process_Database_Concepts.html#alarm-specification>
 for a complete explanation of record alarms and of the standard fields.
 L<Alarm Fields|dbCommonRecord/Alarm Fields> lists other fields related
 to alarms that are common to all record types.
 
-=fields HIHI, HIGH, LOW, LOLO, HHSV, HSV, LSV, LLSV, HYST
+=fields HIHI, HIGH, LOW, LOLO, HHSV, HSV, LSV, LLSV, HYST, IVOA, IVOV
 
 =head3 Monitor Parameters
 
@@ -148,8 +156,8 @@ These parameters are used to determine when to send monitors placed on the
 VAL field. These monitors are sent when the value field exceeds the last
 monitored fields by the specified deadband, ADEL for archivers monitors and
 MDEL for all other types of monitors. If these fields have a value of zero,
-everytime the value changes, a monitor will be triggered; if they have a
-value of -1, everytime the record is scanned, monitors are triggered. See
+every time the value changes, a monitor will be triggered; if they have a
+value of -1, every time the record is scanned, monitors are triggered. See
 L<Monitor Specification> for a complete explanation of monitors.
 
 =fields ADEL, MDEL
@@ -157,7 +165,7 @@ L<Monitor Specification> for a complete explanation of monitors.
 =head3 Run-Time Parameters and Simulation Mode Parameters
 
 These parameters are used by the run-time code for processing the data
-fanout record. Ther are not configurable. They are used to implement the
+fanout record. They are not configurable. They are used to implement the
 hysteresis factors for monitor callbacks.
 
 =fields LALM, ALST, MLST
@@ -227,6 +235,46 @@ hysteresis factors for monitor callbacks.
 		promptgroup("50 - Output")
 		interest(1)
 	}
+	field(OUTI,DBF_OUTLINK) {
+		prompt("Output Spec I")
+		promptgroup("50 - Output")
+		interest(1)
+	}
+	field(OUTJ,DBF_OUTLINK) {
+		prompt("Output Spec J")
+		promptgroup("50 - Output")
+		interest(1)
+	}
+	field(OUTK,DBF_OUTLINK) {
+		prompt("Output Spec K")
+		promptgroup("50 - Output")
+		interest(1)
+	}
+	field(OUTL,DBF_OUTLINK) {
+		prompt("Output Spec L")
+		promptgroup("50 - Output")
+		interest(1)
+	}
+	field(OUTM,DBF_OUTLINK) {
+		prompt("Output Spec M")
+		promptgroup("50 - Output")
+		interest(1)
+	}
+	field(OUTN,DBF_OUTLINK) {
+		prompt("Output Spec N")
+		promptgroup("50 - Output")
+		interest(1)
+	}
+	field(OUTO,DBF_OUTLINK) {
+		prompt("Output Spec O")
+		promptgroup("50 - Output")
+		interest(1)
+	}
+	field(OUTP,DBF_OUTLINK) {
+		prompt("Output Spec P")
+		promptgroup("50 - Output")
+		interest(1)
+	}
 	field(DOL,DBF_INLINK) {
 		prompt("Desired Output Link")
 		promptgroup("40 - Input")
@@ -243,60 +291,60 @@ hysteresis factors for monitor callbacks.
 		promptgroup("80 - Display")
 		interest(1)
 		size(16)
-		prop(YES)
+		prop(YES)		# get_units
 	}
 	field(PREC,DBF_SHORT) {
 		prompt("Display Precision")
 		promptgroup("80 - Display")
 		interest(1)
-		prop(YES)
+		prop(YES)		# get_precision
 	}
 	field(HOPR,DBF_DOUBLE) {
 		prompt("High Operating Range")
 		promptgroup("80 - Display")
 		interest(1)
-		prop(YES)
+		prop(YES)		# get_graphic_double, get_control_double
 	}
 	field(LOPR,DBF_DOUBLE) {
 		prompt("Low Operating Range")
 		promptgroup("80 - Display")
 		interest(1)
-		prop(YES)
+		prop(YES)		# get_graphic_double, get_control_double
 	}
 	field(HIHI,DBF_DOUBLE) {
 		prompt("Hihi Alarm Limit")
 		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
-		prop(YES)
+		prop(YES)		# get_alarm_double
 	}
 	field(LOLO,DBF_DOUBLE) {
 		prompt("Lolo Alarm Limit")
 		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
-		prop(YES)
+		prop(YES)		# get_alarm_double
 	}
 	field(HIGH,DBF_DOUBLE) {
 		prompt("High Alarm Limit")
 		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
-		prop(YES)
+		prop(YES)		# get_alarm_double
 	}
 	field(LOW,DBF_DOUBLE) {
 		prompt("Low Alarm Limit")
 		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
-		prop(YES)
+		prop(YES)		# get_alarm_double
 	}
 	field(HHSV,DBF_MENU) {
 		prompt("Hihi Severity")
 		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
-		prop(YES)
+		prop(YES)		# get_alarm_double
 		menu(menuAlarmSevr)
 	}
 	field(LLSV,DBF_MENU) {
@@ -304,7 +352,7 @@ hysteresis factors for monitor callbacks.
 		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
-		prop(YES)
+		prop(YES)		# get_alarm_double
 		menu(menuAlarmSevr)
 	}
 	field(HSV,DBF_MENU) {
@@ -312,7 +360,7 @@ hysteresis factors for monitor callbacks.
 		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
-		prop(YES)
+		prop(YES)		# get_alarm_double
 		menu(menuAlarmSevr)
 	}
 	field(LSV,DBF_MENU) {
@@ -320,7 +368,7 @@ hysteresis factors for monitor callbacks.
 		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
-		prop(YES)
+		prop(YES)		# get_alarm_double
 		menu(menuAlarmSevr)
 	}
 	field(HYST,DBF_DOUBLE) {
@@ -352,6 +400,17 @@ hysteresis factors for monitor callbacks.
 		prompt("Last Val Monitored")
 		special(SPC_NOMOD)
 		interest(3)
+	}
+	field(IVOA,DBF_MENU) {
+		prompt("INVALID output action")
+		promptgroup("50 - Output")
+		interest(2)
+		menu(menuIvoa)
+	}
+	field(IVOV,DBF_DOUBLE) {
+		prompt("INVALID output value")
+		promptgroup("50 - Output")
+		interest(2)
 	}
 
 =head2 Record Support
@@ -411,32 +470,38 @@ is called.
 =over
 
 =item 1.
-The C<process()> routine first checks that DOL is not a constant link and
-that OMSL is set to "closed_loop". If so, it retrieves a value through DOL
-and places it into VAL. If no errors occur, UDF is set to FALSE.
+
+If OMSL is "closed_loop" and DOL is not a constant link read the new value
+of VAL from DOL. If no errors occur, UDF is set to FALSE.
 
 =item 2.
-PACT is set TRUE, and the record's timestamp is set.
+
+PACT is set TRUE and the record's timestamp is set.
 
 =item 3.
+
 A value is fetched from SELL and placed into SELN.
 
 =item 4.
+
 Alarms ranges are checked against the contents of the VAL field.
 
 =item 5.
-VAL is then sent through the OUTA-OUTH links by calling C<dbPutLink()> for
-each link, conditional on the setting of SELM and the value in SELN.
+
+Check severity and then send the value through the OUTA-OUTP links, depending
+on the setting of SELM and the value in SELN.
+
+See L<Invalid Output Action Fields|dbCommonOutput/Invalid Output Action Fields>
+for information on how INVALID alarms affect output records.
 
 =item 6.
+
 Value and archive monitors are posted on the VAL field if appropriate based on
 the settings of MDEL and ADEL respectively.
 
 =item 7.
-The data fanout's forward link FLNK is processed.
 
-=item 6.
-PACT is set FALSE, and the C<process()> routine returns.
+Scan forward link if necessary, set PACT FALSE, and return.
 
 =back
 

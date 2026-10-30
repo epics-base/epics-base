@@ -127,6 +127,31 @@ int dbServerClient(char *pBuf, size_t bufSize)
     return -1;
 }
 
+int dbServerStats(const char *name, unsigned *channels, unsigned *clients)
+{
+    dbServer *psrv = (dbServer *)ellFirst(&serverList);
+    if (state != running || !psrv)
+        return -1;
+
+    unsigned tch = 0, tcl = 0, nmatch = 0;
+    for (; psrv; psrv = (dbServer *)ellNext(&psrv->node)) {
+        if (psrv->stats &&
+            (!name || strcmp(name, psrv->name) == 0)) {
+            unsigned lch = 0, lcl = 0;
+
+            psrv->stats(&lch, &lcl);
+            tch += lch;
+            tcl += lcl;
+            nmatch++;
+            if (name)
+                break; /* No duplicate names in serverList */
+        }
+    }
+    if (channels) *channels = tch;
+    if (clients) *clients = tcl;
+    return nmatch;
+}
+
 #define STARTSTOP(routine, method, newState) \
 void routine(void) \
 { \

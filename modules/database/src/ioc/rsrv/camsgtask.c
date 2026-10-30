@@ -114,7 +114,7 @@ void camsgtask ( void *pParm )
         client->recv.cnt += ( unsigned ) nchars;
 
         status = camessage ( client );
-        if (status == 0) {
+        if (status == RSRV_OK) {
             /*
              * if there is a partial message
              * align it with the start of the buffer

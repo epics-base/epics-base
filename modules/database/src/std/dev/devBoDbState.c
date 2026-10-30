@@ -26,7 +26,7 @@ static long add_record (struct dbCommon *pdbc)
     boRecord *prec = (boRecord *) pdbc;
 
     if (INST_IO != prec->out.type) {
-        recGblRecordError(S_db_badField, (void *) prec, DEVSUPNAME ": Illegal OUT field");
+        recGblRecordError(S_db_badField, prec, DEVSUPNAME ": Illegal OUT field");
         return(S_db_badField);
     }
 

@@ -65,7 +65,7 @@ LOADABLE_SHRLIB_LDFLAGS = -shared -fPIC -Wl,-h$@
 
 GNU_LDLIBS_YES = -lgcc
 
-# Use compiler flags to generate header dependancies files
+# Use compiler flags to generate header dependencies files
 HDEPENDS_METHOD = COMP
 HDEPENDS_COMPFLAGS = -MM -MF $@
 

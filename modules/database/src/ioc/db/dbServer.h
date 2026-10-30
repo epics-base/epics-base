@@ -17,9 +17,6 @@
  * the dbServer interface provides allow the IOC to start, pause and stop
  * the servers together, and to provide status and debugging information
  * to the IOC user/developer through a common set of commands.
- *
- * @todo No API is provided yet for calling stats() methods.
- * Nothing in the IOC calls dbStopServers(), not sure where it should go.
  */
 
 #ifndef INC_dbServer_H
@@ -59,8 +56,8 @@ typedef struct dbServer {
 
     /** @brief Get number of channels and clients currently connected.
      *
-     * @param channels NULL or pointer for returning channel count.
-     * @param clients NULL or pointer for returning client count.
+     * @param channels @c NULL or pointer for returning channel count.
+     * @param clients @c NULL or pointer for returning client count.
      */
     void (* stats) (unsigned *channels, unsigned *clients);
 
@@ -144,6 +141,30 @@ DBCORE_API void dbsr(unsigned level);
  *  the record is subsequently processed.
  */
 DBCORE_API int dbServerClient(char *pBuf, size_t bufSize);
+
+/** @brief CPP Macro indicating the dbServerStats() routine exists.
+ * @since 7.0.10
+ */
+#define HAS_DBSERVER_STATS
+
+/** @brief Fetch statistics from server layers.
+ *
+ * This is an API for iocStats and similar to fetch the number of channels
+ *  and clients connected to the registered server layers.
+ *  If the name given is NULL the statistics returned are the totals from
+ *  all registered server layers, otherwise just from the named server.
+ * @param name Server name
+ * @param channels NULL, or where to return the channel count
+ * @param clients NULL or where to return the client count
+ * @returns -1 if the IOC isn't running or no servers are registered, without
+ *  writing to the statistics variables. Otherwise it writes to the statistics
+ *  variables and returns the number of dbServer::stats() methods called,
+ *  0 if a named server wasn't found or doesn't have a stats() method.
+ *
+ * @since 7.0.10
+ */
+DBCORE_API int dbServerStats(const char *name, unsigned *channels,
+    unsigned *clients);
 
 /** @brief Initialize all registered servers.
  *

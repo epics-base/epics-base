@@ -133,7 +133,7 @@ static long process(struct dbCommon *pcommon)
 
     if( (pdset==NULL) || (pdset->read_longin==NULL) ) {
         prec->pact=TRUE;
-        recGblRecordError(S_dev_missingSup,(void *)prec,"read_longin");
+        recGblRecordError(S_dev_missingSup, prec, "read_longin");
         return(S_dev_missingSup);
     }
     timeLast = prec->time;

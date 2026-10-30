@@ -171,7 +171,7 @@ static long vxDevConnectInterruptVME (
         return S_dev_vectorInUse;
     }
     status = intConnect(
-            (void *)INUM_TO_IVEC(vectorNumber),
+            INUM_TO_IVEC(vectorNumber),
             pFunction,
             (int) parameter);
     if (status<0) {
@@ -214,7 +214,7 @@ static long vxDevDisconnectInterruptVME (
     }
 
     status = intConnect(
-            (void *)INUM_TO_IVEC(vectorNumber),
+            INUM_TO_IVEC(vectorNumber),
             unsolicitedHandlerEPICS,
             (int) vectorNumber);
     if(status<0){
@@ -406,7 +406,7 @@ static int vxDevInterruptInUseVME (unsigned vectorNumber)
         psub = isrFetch (vectorNumber);
 
         /*
-         * its a C routine. Does it match a default handler?
+         * it's a C routine. Does it match a default handler?
          */
         for (i=0; i<NELEMENTS(defaultHandlerAddr); i++) {
             if (defaultHandlerAddr[i] == psub) {

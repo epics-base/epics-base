@@ -27,7 +27,7 @@ static long add_record (struct dbCommon *pdbc)
     biRecord *prec = (biRecord *) pdbc;
 
     if (INST_IO != prec->inp.type) {
-        recGblRecordError(S_db_badField, (void *) prec, DEVSUPNAME ": Illegal INP field");
+        recGblRecordError(S_db_badField, prec, DEVSUPNAME ": Illegal INP field");
         return(S_db_badField);
     }
 

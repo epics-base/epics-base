@@ -56,7 +56,7 @@
 #  ifndef _CPPLIB_VER
       // Updated Dinkum library defines this, and provides
       // its own min and max definitions, as does MTA version.
-#     ifndef __MTA__ 
+#     ifndef __MTA__
 #        define BOOST_NO_STD_MIN_MAX
 #     endif
 #     define BOOST_NO_MS_INT64_NUMERIC_LIMITS
@@ -64,7 +64,7 @@
 #endif
 
 //
-// std extension namespace is stdext for vc7.1 and later, 
+// std extension namespace is stdext for vc7.1 and later,
 // the same applies to other compilers that sit on top
 // of vc7.1 (Intel and Comeau):
 //
@@ -87,9 +87,9 @@
 #endif
 
 #include <typeinfo>
-#if ( (!_HAS_EXCEPTIONS && !defined(__ghs__)) || (!_HAS_NAMESPACE && defined(__ghs__)) ) 
-#  define BOOST_NO_STD_TYPEINFO    
-#endif  
+#if ( (!_HAS_EXCEPTIONS && !defined(__ghs__)) || (!_HAS_NAMESPACE && defined(__ghs__)) )
+#  define BOOST_NO_STD_TYPEINFO
+#endif
 
 //  C++0x headers implemented in 520 (as shipped by Microsoft)
 //

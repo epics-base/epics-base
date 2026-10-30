@@ -122,7 +122,7 @@ static void testBasicPut(void)
     addr.field_type = DBF_SHORT;
     addr.field_size = s_input_len*sizeof(*scratch);
     addr.no_elements = s_input_len;
-    addr.pfield = (void*)scratch;
+    addr.pfield = scratch;
 
     testDiag("Test dbPutConvertRoutine[DBF_SHORT][DBF_SHORT]");
 

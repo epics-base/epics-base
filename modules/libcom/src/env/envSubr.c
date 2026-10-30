@@ -394,7 +394,7 @@ epicsPrtEnvParams(void)
 /*
  * envGetInetPortConfigParam ()
  */
-LIBCOM_API unsigned short epicsStdCall envGetInetPortConfigParam 
+LIBCOM_API unsigned short epicsStdCall envGetInetPortConfigParam
                 (const ENV_PARAM *pEnv, unsigned short defaultPort)
 {
     long        longStatus;

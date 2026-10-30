@@ -72,7 +72,7 @@ static int initIPAddr ( struct in_addr ipAddr, unsigned port,
  * "pAddrString" does not contain an address of the form
  * "n.n.n.n:p or host:p"
  */
-LIBCOM_API int epicsStdCall 
+LIBCOM_API int epicsStdCall
 aToIPAddr( const char *pAddrString, unsigned short defaultPort,
                 struct sockaddr_in *pIP )
 {

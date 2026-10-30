@@ -11,7 +11,7 @@ These fields usually have the same meaning whenever they are used.
 See also L<Fields Common to All Record Types|dbCommonRecord> and L<Fields Common
 to Output Record Types|dbCommonOutput>.
 
-=head3 Input and Value Fields
+=head2 Input and Value Fields
 
 The B<INP> field specifies an input link. It is used by the device support
 routines to obtain input. For soft analog records it can be a constant, a
@@ -30,7 +30,7 @@ reads values directly into VAL, bypassing this field.
 The B<VAL> field contains the record's final value, after any needed
 conversions have been performed.
 
-=head3 Device Input
+=head2 Device Input
 
 A device input routine normally returns one of the following values to its
 associated record support routine:
@@ -65,7 +65,7 @@ to the engineering units value.
 
 =back
 
-=head3 Device Support for Soft Records
+=head2 Device Support for Soft Records
 
 In most cases, two soft output device support modules are provided: Soft Channel
 and Raw Soft Channel. Both allow INP to be a constant, a database link, or a
@@ -83,7 +83,7 @@ If a value was returned by the link the UDF field is set to FALSE. The device
 support read routine normally returns the status from C<dbGetLink()>.
 
 
-=head3 Input Simulation Fields
+=head2 Input Simulation Fields
 
 The B<SIMM> field controls simulation mode.
 By setting this field to YES or RAW, the record can be switched into
@@ -121,7 +121,7 @@ The B<SSCN> field specifies the SCAN mechanism to be used in simulation mode.
 This is specifically useful for 'I/O Intr' scanned records, which would
 otherwise never be scanned in simulation mode.
 
-=head3 Simulation Mode for Input Records
+=head2 Simulation Mode for Input Records
 
 An input record can be switched into simulation mode of operation by setting
 the value of SIMM to YES or RAW.

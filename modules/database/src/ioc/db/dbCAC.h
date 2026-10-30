@@ -207,6 +207,7 @@ private:
         cacChannel::priLev );
     void flush (
         epicsGuard < epicsMutex > & );
+    void sync ();
     unsigned circuitCount (
         epicsGuard < epicsMutex > & ) const;
     void selfTest (

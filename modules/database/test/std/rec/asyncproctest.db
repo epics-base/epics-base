@@ -14,7 +14,7 @@ record(sub, "done1") {
 
 
 # original problem case
-# async record chained after syncronous record
+# async record chained after synchronous record
 record(calcout, "chain2:1") {
     field(CALC, "A:=A+1;B")
     # ODLY=0 synchronous

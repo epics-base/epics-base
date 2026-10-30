@@ -54,7 +54,7 @@ NaN to another value in order to define the link and its field. Note that all
 undefined links must be recognized as such if the selection algorithm is to work
 as expected.
 
-=fields INPA, INPB, INPC, INPD, INPE, INPF, INPG, INPH, INPI, INPJ, INPK, INPL, A, B, C, D, E, F, G, H, I, J, K, L
+=fields INPA - INPL, A - L
 
 =head3 Select Parameters
 
@@ -133,8 +133,8 @@ alarms that are common to all record types.
 These fields are configurable by the user. They are used as deadbands for the
 archiver and monitor calls for the VAL field. Unless, VAL changes by more than
 the value specified by each, then the respective monitors will not be called. If
-these fields have a value of zero, everytime the VAL changes, monitors are
-triggered; if they have a value of -1, everytime the record is processed,
+these fields have a value of zero, every time the VAL changes, monitors are
+triggered; if they have a value of -1, every time the record is processed,
 monitors are triggered.
 
 =fields ADEL, MDEL
@@ -156,7 +156,7 @@ The LA-LL fields are used to implement the monitors for each of the value
 fields, A-L. They represent previous input values. For example, unless LA is not
 equal to A, no monitor is invoked for A.
 
-=fields VAL, LALM, ALST, MLST, LA, LB, LC, LD, LE, LF, LG, LH, LI, LJ, LK, LL
+=fields VAL, LALM, ALST, MLST, LA - LL
 
 =head2 Record Support
 
@@ -299,6 +299,7 @@ Scan forward link if necessary, set PACT FALSE, and return.
 		prompt("Display Precision")
 		promptgroup("80 - Display")
 		interest(1)
+		prop(YES)		# get_precision
 	}
 	field(NVL,DBF_INLINK) {
 		prompt("Index Value Location")
@@ -370,54 +371,54 @@ Scan forward link if necessary, set PACT FALSE, and return.
 		promptgroup("80 - Display")
 		interest(1)
 		size(16)
-		prop(YES)
+		prop(YES)		# get_units
 	}
 	field(HOPR,DBF_DOUBLE) {
 		prompt("High Operating Rng")
 		promptgroup("80 - Display")
 		interest(1)
-		prop(YES)
+		prop(YES)		# get_graphic_double, get_control_double
 	}
 	field(LOPR,DBF_DOUBLE) {
 		prompt("Low Operating Range")
 		promptgroup("80 - Display")
 		interest(1)
-		prop(YES)
+		prop(YES)		# get_graphic_double, get_control_double
 	}
 	field(HIHI,DBF_DOUBLE) {
 		prompt("Hihi Alarm Limit")
 		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
-		prop(YES)
+		prop(YES)		# get_alarm_double
 	}
 	field(LOLO,DBF_DOUBLE) {
 		prompt("Lolo Alarm Limit")
 		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
-		prop(YES)
+		prop(YES)		# get_alarm_double
 	}
 	field(HIGH,DBF_DOUBLE) {
 		prompt("High Alarm Limit")
 		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
-		prop(YES)
+		prop(YES)		# get_alarm_double
 	}
 	field(LOW,DBF_DOUBLE) {
 		prompt("Low Alarm Limit")
 		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
-		prop(YES)
+		prop(YES)		# get_alarm_double
 	}
 	field(HHSV,DBF_MENU) {
 		prompt("Hihi Severity")
 		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
-		prop(YES)
+		prop(YES)		# get_alarm_double
 		menu(menuAlarmSevr)
 	}
 	field(LLSV,DBF_MENU) {
@@ -425,7 +426,7 @@ Scan forward link if necessary, set PACT FALSE, and return.
 		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
-		prop(YES)
+		prop(YES)		# get_alarm_double
 		menu(menuAlarmSevr)
 	}
 	field(HSV,DBF_MENU) {
@@ -433,7 +434,7 @@ Scan forward link if necessary, set PACT FALSE, and return.
 		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
-		prop(YES)
+		prop(YES)		# get_alarm_double
 		menu(menuAlarmSevr)
 	}
 	field(LSV,DBF_MENU) {
@@ -441,7 +442,7 @@ Scan forward link if necessary, set PACT FALSE, and return.
 		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
-		prop(YES)
+		prop(YES)		# get_alarm_double
 		menu(menuAlarmSevr)
 	}
 	field(HYST,DBF_DOUBLE) {

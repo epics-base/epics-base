@@ -45,6 +45,7 @@ LIBCOM_API void
 epicsEventDestroy(epicsEventId pSem)
 {
     rtems_binary_semaphore_destroy(&pSem->rbs);
+    free(pSem);
 }
 
 LIBCOM_API epicsEventStatus

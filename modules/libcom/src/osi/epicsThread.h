@@ -179,6 +179,15 @@ typedef struct epicsThreadOpts {
  * \param parm Passed to thread main function.
  * \param opts Modifiers for the new thread, or NULL to use target specific defaults.
  * \return NULL on error
+ *
+ * The newly created thread will start running immediately, and may end immediately too!
+ * If joinable, the caller is responsible to arrange for a later call to epicsThreadMustJoin().
+ * The returned epicsThreadId remains valid until joined.
+ * For a non-joinable (detached) thread, the lifetime of the returned epicsThreadId
+ * ends when that thread returns, and so it must not be used unless the caller has
+ * external knowledge that the thread is still running.
+ *
+ * \since 7.0.2
  */
 LIBCOM_API epicsThreadId epicsThreadCreateOpt (
     const char * name,
@@ -197,7 +206,10 @@ LIBCOM_API epicsThreadId epicsStdCall epicsThreadMustCreate (
 
 /* This gets undefined in osdThread.h on VxWorks < 6.9 */
 #define EPICS_THREAD_CAN_JOIN
-/** Wait for a joinable thread to exit (return from its main function) */
+/** Wait for a joinable thread to exit (return from its main function).
+ *  Thread must have been created as joinable.
+ * \since 7.0.2 Test EPICS_THREAD_CAN_JOIN macro for BSP support
+ */
 LIBCOM_API void epicsThreadMustJoin(epicsThreadId id);
 /** Block the current thread until epicsThreadResume(). */
 LIBCOM_API void epicsStdCall epicsThreadSuspendSelf(void);
@@ -437,6 +449,7 @@ private:
     epicsThread ( const epicsThread & );
     epicsThread & operator = ( const epicsThread & );
     friend void epicsThreadCallEntryPoint ( void * );
+    EPICS_NORETURN
     void printLastChanceExceptionMessage (
         const char * pExceptionTypeName,
         const char * pExceptionContext );

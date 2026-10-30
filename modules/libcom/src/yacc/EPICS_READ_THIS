@@ -41,7 +41,7 @@ static int yyerror(char *str)
 The FirstFlag and yyrestart jazz is the flex-flavored version of how you
 restart the scanner if you want to parse another file.  Without it, the
 scanner can only be used one time.  Even if you think your code will only
-be used one time, it is desireable to put in the restart stuff anyway,
+be used one time, it is desirable to put in the restart stuff anyway,
 because some day you (or your boss) will change your mind and without it
 the IOC will crash when you make your second call to your parser.
 

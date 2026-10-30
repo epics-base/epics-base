@@ -362,9 +362,9 @@ epicsStrtod(const char *str, char **endp)
 
     if (epicsStrnCaseCmp("0x", cp, 2) == 0) {
         if (negative)
-            return strtol(str, endp, 16);
+            return strtoll(str, endp, 16);
         else
-            return strtoul(str, endp, 16);
+            return strtoull(str, endp, 16);
     }
     if (!isalpha((int)*cp)) {
         res = strtod(str, endp);

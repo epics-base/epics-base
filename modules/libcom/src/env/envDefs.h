@@ -77,6 +77,13 @@ LIBCOM_API extern const ENV_PARAM IOCSH_PS1;
 LIBCOM_API extern const ENV_PARAM IOCSH_HISTSIZE;
 LIBCOM_API extern const ENV_PARAM IOCSH_HISTEDIT_DISABLE;
 LIBCOM_API extern const ENV_PARAM EPICS_ABORT_ON_ASSERT;
+LIBCOM_API extern const ENV_PARAM EPICS_ALLOW_POSIX_THREAD_PRIORITY_SCHEDULING;
+/** @brief List of all parameters.
+ *
+ * A NULL terminated array of all ENV_PARAM known to EPICS Base.
+ * This array is assembled during the EPICS Base build, and
+ * contains at least the preceding parameters.
+ */
 LIBCOM_API extern const ENV_PARAM *env_param_list[];
 
 struct in_addr;
@@ -91,10 +98,13 @@ struct in_addr;
  * is set to '\0' and NULL is returned.
  *
  * \param pParam Pointer to config param structure.
- * \param bufDim Dimension of parameter buffer
+ * \param bufDim Dimension of parameter buffer.
+ *               Must be greater than zero.
  * \param pBuf Pointer to parameter buffer
  * \return Pointer to the environment variable value string, or
  * NULL if no parameter value and default value was empty.
+ *
+ * \post A terminating '\0' will be written to pBuf to ensure it is null terminated.
  */
 LIBCOM_API char * epicsStdCall
     envGetConfigParam(const ENV_PARAM *pParam, int bufDim, char *pBuf);

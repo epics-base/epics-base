@@ -255,7 +255,7 @@ MAIN(blockingSockTest)
     osiSockAttach();
 
     address addr;
-    memset ( (char *) & addr, 0, sizeof ( addr ) );
+    memset ( & addr, 0, sizeof ( addr ) );
     addr.ia.sin_family = AF_INET;
     addr.ia.sin_addr.s_addr = htonl ( INADDR_LOOPBACK );
     addr.ia.sin_port = 0;

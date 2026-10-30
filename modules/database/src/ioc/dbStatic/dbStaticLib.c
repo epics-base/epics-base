@@ -109,9 +109,9 @@ void dbFreeLinkContents(struct link *plink)
     char *parm = NULL;
 
     switch(plink->type) {
-        case CONSTANT: free((void *)plink->value.constantStr); break;
-        case MACRO_LINK: free((void *)plink->value.macro_link.macroStr); break;
-        case PV_LINK: free((void *)plink->value.pv_link.pvname); break;
+        case CONSTANT: free(plink->value.constantStr); break;
+        case MACRO_LINK: free(plink->value.macro_link.macroStr); break;
+        case PV_LINK: free(plink->value.pv_link.pvname); break;
         case JSON_LINK:
             dbJLinkFree(plink->value.json.jlink);
             parm = plink->value.json.string;
@@ -128,7 +128,7 @@ void dbFreeLinkContents(struct link *plink)
         default:
          epicsPrintf("dbFreeLink called but link type %d unknown\n", plink->type);
     }
-    if(parm && (parm != pNullString)) free((void *)parm);
+    if(parm && (parm != pNullString)) free(parm);
     if(plink->text) free(plink->text);
     plink->lset = NULL;
     plink->text = NULL;
@@ -145,10 +145,10 @@ void dbFreePath(DBBASE *pdbbase)
     if(!ppathList) return;
     while((pdbPathNode = (dbPathNode *)ellFirst(ppathList))) {
         ellDelete(ppathList,&pdbPathNode->node);
-        free((void *)pdbPathNode->directory);
-        free((void *)pdbPathNode);
+        free(pdbPathNode->directory);
+        free(pdbPathNode);
     }
-    free((void *)ppathList);
+    free(ppathList);
     pdbbase->pathPvt = 0;
     return;
 }
@@ -346,8 +346,8 @@ dbDeviceMenu *dbGetDeviceMenu(DBENTRY *pdbentry)
         pdbDeviceMenu = (dbDeviceMenu *)pflddes->ftPvt;
         if(pdbDeviceMenu->nChoice == ellCount(&precordType->devList))
             return(pdbDeviceMenu);
-        free((void *)pdbDeviceMenu->papChoice);
-        free((void *)pdbDeviceMenu);
+        free(pdbDeviceMenu->papChoice);
+        free(pdbDeviceMenu);
         pflddes->ftPvt = NULL;
     }
     nChoice = ellCount(&precordType->devList);
@@ -383,7 +383,7 @@ void dbCatString(char **string,int *stringLength,char *src,char *separator)
         newString = dbCalloc(size,sizeof(char));
         if(*string) {
             strcpy(newString,*string);
-            free((void *)(*string));
+            free(*string);
         }
         *string = newString;
     }
@@ -463,35 +463,35 @@ void dbFreeBase(dbBase *pdbbase)
     while(pdbRecordType) {
         for(i=0; i<pdbRecordType->no_fields; i++) {
             pdbFldDes = pdbRecordType->papFldDes[i];
-            free((void *)pdbFldDes->prompt);
-            free((void *)pdbFldDes->name);
-            free((void *)pdbFldDes->extra);
-            free((void *)pdbFldDes->initial);
+            free(pdbFldDes->prompt);
+            free(pdbFldDes->name);
+            free(pdbFldDes->extra);
+            free(pdbFldDes->initial);
             if(pdbFldDes->field_type==DBF_DEVICE && pdbFldDes->ftPvt) {
                 dbDeviceMenu *pdbDeviceMenu;
 
                 pdbDeviceMenu = (dbDeviceMenu *)pdbFldDes->ftPvt;
-                free((void *)pdbDeviceMenu->papChoice);
-                free((void *)pdbDeviceMenu);
+                free(pdbDeviceMenu->papChoice);
+                free(pdbDeviceMenu);
                 pdbFldDes->ftPvt=0;
             }
-            free((void *)pdbFldDes);
+            free(pdbFldDes);
         }
         pdevSup = (devSup *)ellFirst(&pdbRecordType->devList);
         while(pdevSup) {
             pdevSupNext = (devSup *)ellNext(&pdevSup->node);
             ellDelete(&pdbRecordType->devList,&pdevSup->node);
-            free((void *)pdevSup->name);
-            free((void *)pdevSup->choice);
-            free((void *)pdevSup);
+            free(pdevSup->name);
+            free(pdevSup->choice);
+            free(pdevSup);
             pdevSup = pdevSupNext;
         }
         ptext = (dbText *)ellFirst(&pdbRecordType->cdefList);
         while(ptext) {
             ptextNext = (dbText *)ellNext(&ptext->node);
             ellDelete(&pdbRecordType->cdefList,&ptext->node);
-            free((void *)ptext->text);
-            free((void *)ptext);
+            free(ptext->text);
+            free(ptext);
             ptext = ptextNext;
         }
         pAttribute =
@@ -499,20 +499,20 @@ void dbFreeBase(dbBase *pdbbase)
         while(pAttribute) {
             pAttributeNext = (dbRecordAttribute *)ellNext(&pAttribute->node);
             ellDelete(&pdbRecordType->attributeList,&pAttribute->node);
-            free((void *)pAttribute->name);
-            free((void *)pAttribute->pdbFldDes);
+            free(pAttribute->name);
+            free(pAttribute->pdbFldDes);
             free(pAttribute);
             pAttribute = pAttributeNext;
         }
         pdbRecordTypeNext = (dbRecordType *)ellNext(&pdbRecordType->node);
         gphDelete(pdbbase->pgpHash,pdbRecordType->name,&pdbbase->recordTypeList);
         ellDelete(&pdbbase->recordTypeList,&pdbRecordType->node);
-        free((void *)pdbRecordType->name);
-        free((void *)pdbRecordType->link_ind);
-        free((void *)pdbRecordType->papsortFldName);
-        free((void *)pdbRecordType->sortFldInd);
-        free((void *)pdbRecordType->papFldDes);
-        free((void *)pdbRecordType);
+        free(pdbRecordType->name);
+        free(pdbRecordType->link_ind);
+        free(pdbRecordType->papsortFldName);
+        free(pdbRecordType->sortFldInd);
+        free(pdbRecordType->papFldDes);
+        free(pdbRecordType);
         pdbRecordType = pdbRecordTypeNext;
     }
     pdbMenu = (dbMenu *)ellFirst(&pdbbase->menuList);
@@ -521,21 +521,21 @@ void dbFreeBase(dbBase *pdbbase)
         gphDelete(pdbbase->pgpHash,pdbMenu->name,&pdbbase->menuList);
         ellDelete(&pdbbase->menuList,&pdbMenu->node);
         for(i=0; i< pdbMenu->nChoice; i++) {
-            free((void *)pdbMenu->papChoiceName[i]);
-            free((void *)pdbMenu->papChoiceValue[i]);
+            free(pdbMenu->papChoiceName[i]);
+            free(pdbMenu->papChoiceValue[i]);
         }
-        free((void *)pdbMenu->papChoiceName);
-        free((void *)pdbMenu->papChoiceValue);
-        free((void *)pdbMenu ->name);
-        free((void *)pdbMenu);
+        free(pdbMenu->papChoiceName);
+        free(pdbMenu->papChoiceValue);
+        free(pdbMenu ->name);
+        free(pdbMenu);
         pdbMenu = pdbMenuNext;
     }
     pdrvSup = (drvSup *)ellFirst(&pdbbase->drvList);
     while(pdrvSup) {
         pdrvSupNext = (drvSup *)ellNext(&pdrvSup->node);
         ellDelete(&pdbbase->drvList,&pdrvSup->node);
-        free((void *)pdrvSup->name);
-        free((void *)pdrvSup);
+        free(pdrvSup->name);
+        free(pdrvSup);
         pdrvSup = pdrvSupNext;
     }
     while ((plinkSup = (linkSup *) ellGet(&pdbbase->linkList))) {
@@ -547,25 +547,25 @@ void dbFreeBase(dbBase *pdbbase)
     while(ptext) {
         ptextNext = (dbText *)ellNext(&ptext->node);
         ellDelete(&pdbbase->registrarList,&ptext->node);
-        free((void *)ptext->text);
-        free((void *)ptext);
+        free(ptext->text);
+        free(ptext);
         ptext = ptextNext;
     }
     ptext = (dbText *)ellFirst(&pdbbase->functionList);
     while(ptext) {
         ptextNext = (dbText *)ellNext(&ptext->node);
         ellDelete(&pdbbase->functionList,&ptext->node);
-        free((void *)ptext->text);
-        free((void *)ptext);
+        free(ptext->text);
+        free(ptext);
         ptext = ptextNext;
     }
     pvar = (dbVariableDef *)ellFirst(&pdbbase->variableList);
     while(pvar) {
         pvarNext = (dbVariableDef *)ellNext(&pvar->node);
         ellDelete(&pdbbase->variableList,&pvar->node);
-        free((void *)pvar->name);
-        free((void *)pvar->type);
-        free((void *)pvar);
+        free(pvar->name);
+        free(pvar->type);
+        free(pvar);
         pvar = pvarNext;
     }
     pbrkTable = (brkTable *)ellFirst(&pdbbase->bptList);
@@ -574,8 +574,8 @@ void dbFreeBase(dbBase *pdbbase)
         gphDelete(pdbbase->pgpHash,pbrkTable->name,&pdbbase->bptList);
         ellDelete(&pdbbase->bptList,&pbrkTable->node);
         free(pbrkTable->name);
-        free((void *)pbrkTable->paBrkInt);
-        free((void *)pbrkTable);
+        free(pbrkTable->paBrkInt);
+        free(pbrkTable);
         pbrkTable = pbrkTableNext;
     }
     pfilt = (chFilterPlugin *)ellFirst(&pdbbase->filterList);
@@ -593,13 +593,13 @@ void dbFreeBase(dbBase *pdbbase)
         gphDelete(pdbbase->pgpHash, pguiGroup->name, &pdbbase->guiGroupList);
         ellDelete(&pdbbase->guiGroupList, &pguiGroup->node);
         free(pguiGroup->name);
-        free((void *)pguiGroup);
+        free(pguiGroup);
         pguiGroup = pguiGroupNext;
     }
     gphFreeMem(pdbbase->pgpHash);
     dbPvdFreeMem(pdbbase);
     dbFreePath(pdbbase);
-    free((void *)pdbbase);
+    free(pdbbase);
     pdbbase = NULL;
     return;
 }
@@ -619,20 +619,20 @@ void dbFreeEntry(DBENTRY *pdbentry)
     if (!pdbentry)
         return;
     if (pdbentry->message)
-        free((void *)pdbentry->message);
+        free(pdbentry->message);
     dbmfFree(pdbentry);
 }
 
 void dbInitEntry(dbBase *pdbbase,DBENTRY *pdbentry)
 {
-    memset((char *)pdbentry,'\0',sizeof(DBENTRY));
+    memset(pdbentry, '\0', sizeof(DBENTRY));
     pdbentry->pdbbase = pdbbase;
 }
 
 void dbFinishEntry(DBENTRY *pdbentry)
 {
     if(pdbentry->message) {
-        free((void *)pdbentry->message);
+        free(pdbentry->message);
         pdbentry->message = NULL;
     }
 }
@@ -675,7 +675,7 @@ long dbAddPath(DBBASE *pdbbase,const char *path)
     if(!ppathList) {
         ppathList = dbCalloc(1,sizeof(ELLLIST));
         ellInit(ppathList);
-        pdbbase->pathPvt = (void *)ppathList;
+        pdbbase->pathPvt = ppathList;
     }
     if (!path) return(0); /* Empty path strings are ignored */
     /* care is taken to properly deal with white space
@@ -743,8 +743,8 @@ static long dbAddOnePath (DBBASE *pdbbase, const char *path, unsigned length)
     ppathList = (ELLLIST *)pdbbase->pathPvt;
 
     pdbPathNode = (dbPathNode *)dbCalloc(1, sizeof(dbPathNode));
-    pdbPathNode->directory = (char *)dbCalloc(length+1, sizeof(char));
-    strncpy(pdbPathNode->directory, path, length);
+    pdbPathNode->directory = (char *)dbMalloc(length+1);
+    memcpy(pdbPathNode->directory, path, length);
     pdbPathNode->directory[length] = '\0';
     ellAdd(ppathList, &pdbPathNode->node);
     return 0;
@@ -1888,7 +1888,7 @@ char * dbGetString(DBENTRY *pdbentry)
     switch (pflddes->field_type) {
     case DBF_STRING:
         /* Protect against a missing nil-terminator */
-        dbMsgNCpy(pdbentry, (char *)pfield, pflddes->size);
+        dbMsgNCpy(pdbentry, pfield, pflddes->size);
         break;
     case DBF_CHAR:
     case DBF_UCHAR:
@@ -2118,9 +2118,9 @@ char *dbGetStringNum(DBENTRY *pdbentry)
         break;
     case DBF_UINT64:
         if (cvttype==CT_DECIMAL)
-            cvtUInt64ToString(*(epicsUInt32 *) pfield, message);
+            cvtUInt64ToString(*(epicsUInt64 *) pfield, message);
         else
-            cvtUInt64ToHexString(*(epicsUInt32 *) pfield, message);
+            cvtUInt64ToHexString(*(epicsUInt64 *) pfield, message);
         break;
     case DBF_FLOAT:
         floatToString(*(epicsFloat32 *) pfield, message);
@@ -2214,7 +2214,7 @@ long dbInitRecordLinks(dbRecordType *rtyp, struct dbCommon *prec)
         if(!plink->text)
             continue;
 
-        if(dbParseLink(plink->text, pflddes->field_type, &link_info)!=0) {
+        if(dbParseLink(plink->text, pflddes->field_type, &link_info, prec->name, pflddes->name)!=0) {
             /* This was already parsed once when ->text was set.
              * Any syntax error messages were printed at that time.
              */
@@ -2243,7 +2243,7 @@ void dbFreeLinkInfo(dbLinkInfo *pinfo)
     pinfo->target = NULL;
 }
 
-long dbParseLink(const char *str, short ftype, dbLinkInfo *pinfo)
+long dbParseLink(const char *str, short ftype, dbLinkInfo *pinfo, const char *recname, const char *fieldname)
 {
     char *pstr;
     size_t len;
@@ -2380,7 +2380,13 @@ long dbParseLink(const char *str, short ftype, dbLinkInfo *pinfo)
         /* filter modifiers based on link type */
         switch(ftype) {
         case DBF_INLINK: /* accept all */ break;
-        case DBF_OUTLINK: pinfo->modifiers &= ~pvlOptCPP; break;
+        case DBF_OUTLINK:
+            if(pinfo->modifiers & (pvlOptCPP|pvlOptCP)){
+                errlogPrintf(ERL_WARNING ": Discarding CP/CPP modifier in CA output link from %s.%s to %s.\n",
+                recname, fieldname, pinfo->target);
+            }
+            pinfo->modifiers &= ~(pvlOptCPP|pvlOptCP);
+            break;
         case DBF_FWDLINK: pinfo->modifiers &= pvlOptCA; break;
         }
     }
@@ -2581,7 +2587,7 @@ long dbPutString(DBENTRY *pdbentry,const char *pstring)
     case DBF_STRING:
         if(!pfield) return(S_dbLib_fieldNotFound);
         if(strlen(pstring) >= (size_t)pflddes->size) return S_dbLib_strLen;
-        strncpy((char *)pfield, pstring, pflddes->size-1);
+        strncpy(pfield, pstring, pflddes->size-1);
         ((char *)pfield)[pflddes->size-1] = 0;
 
         if((pflddes->special == SPC_CALC) && !stringHasMacro) {
@@ -2618,7 +2624,7 @@ long dbPutString(DBENTRY *pdbentry,const char *pstring)
             dbLinkInfo link_info;
             DBLINK *plink = (DBLINK *)pfield;
 
-            status = dbParseLink(pstring, pflddes->field_type, &link_info);
+            status = dbParseLink(pstring, pflddes->field_type, &link_info, dbGetRecordName(pdbentry), dbGetFieldName(pdbentry));
             if (status) break;
 
             if (plink->type==CONSTANT && plink->value.constantStr==NULL) {
@@ -2637,7 +2643,9 @@ long dbPutString(DBENTRY *pdbentry,const char *pstring)
             }
         }
         break;
-
+    case DBF_NOACCESS:
+        dbMsgPrint(pdbentry, "Can't set array field before iocInit()");
+        /* fall through */
     default:
         return S_dbLib_badField;
     }
@@ -3045,7 +3053,7 @@ brkTable * dbFindBrkTable(dbBase *pdbbase,const char *name)
 {
     GPHENTRY *pgph;
 
-    pgph = gphFind(pdbbase->pgpHash,name,(void *)&pdbbase->bptList);
+    pgph = gphFind(pdbbase->pgpHash, name, &pdbbase->bptList);
     if(!pgph) return(NULL);
     return((brkTable *)pgph->userPvt);
 }
@@ -3078,7 +3086,7 @@ dbMenu * dbFindMenu(dbBase *pdbbase,const char *name)
 {
     GPHENTRY *pgph;
 
-    pgph = gphFind(pdbbase->pgpHash,name,(void *)&pdbbase->menuList);
+    pgph = gphFind(pdbbase->pgpHash, name, &pdbbase->menuList);
     if(!pgph) return(NULL);
     return((dbMenu *)pgph->userPvt);
 }
@@ -3330,7 +3338,7 @@ void dbDumpRecordType(DBBASE *pdbbase,const char *recordTypeName)
         printf("indvalFlddes %d name %s\n",pdbRecordType->indvalFlddes,
             pdbRecordType->pvalFldDes->name);
         printf("rset * %p rec_size %d\n",
-            (void *)pdbRecordType->prset,pdbRecordType->rec_size);
+            pdbRecordType->prset,pdbRecordType->rec_size);
         if(recordTypeName) break;
     }
 }
@@ -3447,7 +3455,7 @@ void  dbDumpDevice(DBBASE *pdbbase,const char *recordTypeName)
             printf("    device name:   %s\n",pdevSup->name);
             printf("\tchoice:    %s\n",pdevSup->choice);
             printf("\tlink_type: %d\n",pdevSup->link_type);
-            printf("\tpdset:     %p\n",(void *)pdevSup->pdset);
+            printf("\tpdset:     %p\n",pdevSup->pdset);
             if (pdevSup->pdset) {
                 static const char *names[] = {
                     " - report()",
@@ -3456,21 +3464,21 @@ void  dbDumpDevice(DBBASE *pdbbase,const char *recordTypeName)
                     " - get_ioint_info()"
                 };
                 int i, n = pdevSup->pdset->number;
-                DEVSUPFUN *pfunc = &pdevSup->pdset->report;
+                DEVSUPFUN *pfunc = (DEVSUPFUN*) &pdevSup->pdset->report;
 
                 printf("\t    number: %d\n", n);
                 for (i = 0; i < n; ++i, ++pfunc) {
                     const char *name = (i < NELEMENTS(names)) ? names[i] : "";
 
-                    printf("\t    func %d: %p%s\n", i, (void *)*pfunc, name);
+                    printf("\t    func %d: %p%s\n", i, *pfunc, name);
                 }
             }
-            printf("\tpdsxt:     %p\n",(void *)pdevSup->pdsxt);
+            printf("\tpdsxt:     %p\n", pdevSup->pdsxt);
             if (pdevSup->pdsxt) {
                 printf("\t    add_record: %p\n",
-                    (void *)pdevSup->pdsxt->add_record);
+                    pdevSup->pdsxt->add_record);
                 printf("\t    del_record: %p\n",
-                    (void *)pdevSup->pdsxt->del_record);
+                    pdevSup->pdsxt->del_record);
             }
         }
         if(recordTypeName) break;
@@ -3600,7 +3608,7 @@ void  dbReportDeviceConfig(dbBase *pdbbase, FILE *report)
                 if (plink->text) {  /* Not yet parsed */
                     dbLinkInfo linfo;
 
-                    if (dbParseLink(plink->text, pdbentry->pflddes->field_type, &linfo))
+                    if (dbParseLink(plink->text, pdbentry->pflddes->field_type, &linfo, dbGetRecordName(pdbentry), dbGetFieldName(pdbentry)))
                         continue;
 
                     linkType = linfo.ltype;
@@ -3656,3 +3664,24 @@ void  dbReportDeviceConfig(dbBase *pdbbase, FILE *report)
     finishOutstream(stream);
     return;
 }
+
+#if defined(__GNUC__) && defined(__ELF__) && defined(__linux__)
+/* Loading of GDB python helper script.
+ *
+ * Need to include the following line in ~/.gdbinit
+ *
+ *   add-auto-load-safe-path /path/to/base
+ *
+ * after libCom.so is loaded (eg. break on main() ) run in the GDB shell:
+ *
+ *   info auto-load python-scripts
+ */
+__asm__(
+    ".pushsection \".debug_gdb_scripts\", \"MS\",@progbits,1\n"
+    ".byte 4 /* Python text */\n"
+    ".ascii \"epics-gdb-helper.py\\n\"\n"
+    ".incbin \"epics-gdb-helper.py\"\n"
+    ".byte 0\n"
+    ".popsection \n"
+    );
+#endif

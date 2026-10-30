@@ -13,6 +13,8 @@ EPICS Base Documentation
 
    README
    RELEASE_NOTES
+   ACF-Language
+   gdb
 
 .. toctree::
    :maxdepth: 2
@@ -21,10 +23,18 @@ EPICS Base Documentation
    ComponentReference
 
 .. toctree::
+   :titlesonly:
+   :caption: Command Line Reference
+
+   ca-cli
+   msi
+
+.. toctree::
    :maxdepth: 1
    :caption: C/C++ Headers
 
    libcom-api
+   ca-api
    database-api
    record-api
    menu-api

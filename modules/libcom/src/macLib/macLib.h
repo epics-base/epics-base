@@ -71,7 +71,7 @@ epicsStdCall macCreateHandle(
 /**
  * \brief Disable or enable warning messages.
  *
- * The macExpandString() routine prints warnings when it cant expand a macro.
+ * The macExpandString() routine prints warnings when it can't expand a macro.
  * This routine can be used to silence those warnings. A non zero value will
  * suppress the warning messages from subsequent library routines given the
  * same \c handle.
@@ -126,7 +126,7 @@ epicsStdCall macPutValue(
  * \brief Returns the value of a macro
  * \return Returns the length of the value string, <0 if undefined
  *
- * \c value will be zero-terminated if the length of the value is less than
+ * \c value will be null terminated if the length of the value is less than
  * \c capacity. The return value is the number of characters copied to
  * \c value (see below for behavior if the macro is undefined). If \c capacity
  * is zero, no characters will be copied to \c value (which may be NULL)
@@ -277,7 +277,7 @@ epicsStdCall macInstallMacros(
  * environment variables. It parses the string looking for such
  * references and passes them to macGetValue() for translation. It uses
  * malloc() to allocate space for the expanded string and returns a
- * pointer to this null-terminated string. It returns NULL if the source
+ * pointer to this null terminated string. It returns NULL if the source
  * string contains any undefined references.
  */
 LIBCOM_API char *

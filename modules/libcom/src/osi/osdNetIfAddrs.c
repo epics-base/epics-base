@@ -70,7 +70,7 @@ LIBCOM_API void epicsStdCall osiSockDiscoverBroadcastAddresses
             ifa->ifa_name));
 
         /*
-         * If its not an internet interface then don't use it
+         * If it's not an internet interface then don't use it
          */
         if ( ifa->ifa_addr->sa_family != AF_INET ) {
              ifDepenDebugPrintf ( ("osiSockDiscoverBroadcastAddresses(): interface \"%s\" was not AF_INET\n", ifa->ifa_name) );
@@ -88,7 +88,7 @@ LIBCOM_API void epicsStdCall osiSockDiscoverBroadcastAddresses
             if ( pMatchAddr->ia.sin_addr.s_addr != htonl (INADDR_ANY) ) {
                  struct sockaddr_in *pInetAddr = (struct sockaddr_in *) ifa->ifa_addr;
                  if ( pInetAddr->sin_addr.s_addr != pMatchAddr->ia.sin_addr.s_addr ) {
-                     ifDepenDebugPrintf ( ("osiSockDiscoverBroadcastAddresses(): net intf \"%s\" didnt match\n", ifa->ifa_name) );
+                     ifDepenDebugPrintf ( ("osiSockDiscoverBroadcastAddresses(): net intf \"%s\" didn't match\n", ifa->ifa_name) );
                      continue;
                  }
             }
@@ -207,7 +207,7 @@ static void osiLocalAddrOnce (void *raw)
         "osiLocalAddr(): only loopback found\n");
     /* fallback to loopback */
     osiSockAddr addr;
-    memset ( (void *) &addr, '\0', sizeof ( addr ) );
+    memset ( &addr, '\0', sizeof ( addr ) );
     addr.ia.sin_family = AF_INET;
     addr.ia.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
     osiLocalAddrResult = addr;

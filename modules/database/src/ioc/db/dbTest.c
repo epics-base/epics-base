@@ -100,13 +100,59 @@ long dba(const char*pname)
     return 0;
 }
 
+/* split a space separated list of field names and return the number of
+   fields with each field an element of papfields. These elements
+   point to within the fieldnames variable which is modified
+   by the function. memory is allocated for *ppapfields and needs
+   to be freed later by the calling routine */
+static int splitFieldsList(char *fieldnames, char ***ppapfields)
+{
+    char *pnext = fieldnames;
+    int nfields = 0, maxfields = 1;
+    char* saveptr = NULL;
+    /* this may overcount real fields e.g. " VAL " hence maxfields */
+    while (*pnext && (pnext = strchr(pnext, ' '))) {
+        maxfields++;
+        while (*pnext == ' ') pnext++;
+    }
+    *ppapfields = dbCalloc(maxfields, sizeof(char *));
+    pnext = epicsStrtok_r(fieldnames, " ", &saveptr);
+    while(pnext != NULL) {
+        (*ppapfields)[nfields++] = pnext;
+        pnext = epicsStrtok_r(NULL, " ", &saveptr);
+    }
+    return nfields;
+}
+
+static void printFieldsList(DBENTRY *pdbentry, char** papfields, int nfields)
+{
+    int ifield;
+    for (ifield = 0; ifield < nfields; ifield++) {
+        char *pvalue;
+        long status = dbFindField(pdbentry, papfields[ifield]);
+        if (status) {
+            if (!strcmp(papfields[ifield], "recordType")) {
+                pvalue = dbGetRecordTypeName(pdbentry);
+            }
+            else {
+                printf(", ");
+                continue;
+            }
+        }
+        else {
+            pvalue = dbGetString(pdbentry);
+        }
+        printf(", \"%s\"", (pvalue ? pvalue : ""));
+    }
+    printf("\n");
+}
+
 long dbl(const char *precordTypename, const char *fields)
 {
     DBENTRY dbentry;
     DBENTRY *pdbentry=&dbentry;
     long status;
     int nfields = 0;
-    int ifield;
     char *fieldnames = 0;
     char **papfields = 0;
 
@@ -121,25 +167,8 @@ long dbl(const char *precordTypename, const char *fields)
     if (fields && (*fields == '\0'))
         fields = NULL;
     if (fields) {
-        char *pnext;
-
         fieldnames = epicsStrDup(fields);
-        nfields = 1;
-        pnext = fieldnames;
-        while (*pnext && (pnext = strchr(pnext,' '))) {
-            nfields++;
-            while (*pnext == ' ') pnext++;
-        }
-        papfields = dbCalloc(nfields,sizeof(char *));
-        pnext = fieldnames;
-        for (ifield = 0; ifield < nfields; ifield++) {
-            papfields[ifield] = pnext;
-            if (ifield < nfields - 1) {
-                pnext = strchr(pnext, ' ');
-                *pnext++ = 0;
-                while (*pnext == ' ') pnext++;
-            }
-        }
+        nfields = splitFieldsList(fieldnames, &papfields);
     }
     dbInitEntry(pdbbase, pdbentry);
     if (!precordTypename)
@@ -154,24 +183,7 @@ long dbl(const char *precordTypename, const char *fields)
         status = dbFirstRecord(pdbentry);
         while (!status) {
             printf("%s", dbGetRecordName(pdbentry));
-            for (ifield = 0; ifield < nfields; ifield++) {
-                char *pvalue;
-                status = dbFindField(pdbentry, papfields[ifield]);
-                if (status) {
-                    if (!strcmp(papfields[ifield], "recordType")) {
-                        pvalue = dbGetRecordTypeName(pdbentry);
-                    }
-                    else {
-                        printf(", ");
-                        continue;
-                    }
-                }
-                else {
-                    pvalue = dbGetString(pdbentry);
-                }
-                printf(", \"%s\"", pvalue ? pvalue : "");
-            }
-            printf("\n");
+            printFieldsList(pdbentry, papfields, nfields);
             status = dbNextRecord(pdbentry);
         }
         if (precordTypename)
@@ -180,8 +192,8 @@ long dbl(const char *precordTypename, const char *fields)
         status = dbNextRecordType(pdbentry);
     }
     if (nfields > 0) {
-        free((void *)papfields);
-        free((void *)fieldnames);
+        free(papfields);
+        free(fieldnames);
     }
     dbFinishEntry(pdbentry);
     return 0;
@@ -283,14 +295,17 @@ long dbli(const char *pattern)
     return 0;
 }
 
-long dbgrep(const char *pmask)
+long dbglob(const char *pmask,const char *fields)
 {
     DBENTRY dbentry;
     DBENTRY *pdbentry = &dbentry;
     long status;
+    int nfields = 0;
+    char *fieldnames = 0;
+    char **papfields = 0;
 
     if (!pmask || !*pmask) {
-        printf("Usage: dbgrep \"pattern\"\n");
+        printf("Usage: dbglob \"pattern\" \"fields\"\n");
         return 1;
     }
 
@@ -298,24 +313,38 @@ long dbgrep(const char *pmask)
         printf("No database loaded\n");
         return 0;
     }
-
+    if (fields && (*fields == '\0'))
+        fields = NULL;
+    if (fields) {
+        fieldnames = epicsStrDup(fields);
+        nfields = splitFieldsList(fieldnames, &papfields);
+    }
     dbInitEntry(pdbbase, pdbentry);
     status = dbFirstRecordType(pdbentry);
     while (!status) {
         status = dbFirstRecord(pdbentry);
         while (!status) {
             char *pname = dbGetRecordName(pdbentry);
-            if (epicsStrGlobMatch(pname, pmask))
-                puts(pname);
+            if (epicsStrGlobMatch(pname, pmask)) {
+                printf("%s", pname);
+                printFieldsList(pdbentry, papfields, nfields);
+            }
             status = dbNextRecord(pdbentry);
         }
         status = dbNextRecordType(pdbentry);
     }
-
+    if (nfields > 0) {
+        free(papfields);
+        free(fieldnames);
+    }
     dbFinishEntry(pdbentry);
     return 0;
 }
-
+
+long dbgrep(const char *pname, const char *fields) {
+    return dbglob(pname, fields);
+}
+
 long dbgf(const char *pname)
 {
     /* declare buffer long just to ensure correct alignment */
@@ -393,8 +422,10 @@ long dbpf(const char *pname,const char *pvalue)
                 return -1;
             }
             status = dbPutConvertJSON(pvalue, dbrType, array, &n);
-            if (status)
+            if (status) {
+                free(array);
                 return status;
+            }
             pvalue = array;
         }
     }
@@ -797,7 +828,7 @@ static void printBuffer(
 
     if (reqOptions & DBR_STATUS) {
         if (retOptions & DBR_STATUS) {
-            struct dbr_status *pdbr_status = (void *)pbuffer;
+            struct dbr_status *pdbr_status = pbuffer;
 
             printf("status = %u, severity = %u\n",
                 pdbr_status->status,
@@ -811,7 +842,7 @@ static void printBuffer(
 
     if (reqOptions & DBR_UNITS) {
         if (retOptions & DBR_UNITS) {
-            struct dbr_units *pdbr_units = (void *)pbuffer;
+            struct dbr_units *pdbr_units = pbuffer;
 
             printf("units = \"%s\"\n",
                 pdbr_units->units);
@@ -824,7 +855,7 @@ static void printBuffer(
 
     if (reqOptions & DBR_PRECISION) {
         if (retOptions & DBR_PRECISION){
-            struct dbr_precision *pdbr_precision = (void *)pbuffer;
+            struct dbr_precision *pdbr_precision = pbuffer;
 
             printf("precision = %ld\n",
                 pdbr_precision->precision.dp);
@@ -837,7 +868,7 @@ static void printBuffer(
 
     if (reqOptions & DBR_TIME) {
         if (retOptions & DBR_TIME) {
-            struct dbr_time *pdbr_time = (void *)pbuffer;
+            struct dbr_time *pdbr_time = pbuffer;
             char time_buf[40];
             epicsTimeToStrftime(time_buf, 40, "%Y-%m-%d %H:%M:%S.%09f",
                 &pdbr_time->time);
@@ -851,7 +882,7 @@ static void printBuffer(
 
     if (reqOptions & DBR_ENUM_STRS) {
         if (retOptions & DBR_ENUM_STRS) {
-            struct dbr_enumStrs *pdbr_enumStrs = (void *)pbuffer;
+            struct dbr_enumStrs *pdbr_enumStrs = pbuffer;
 
             printf("no_strs = %u:\n",
                 pdbr_enumStrs->no_str);
@@ -866,7 +897,7 @@ static void printBuffer(
 
     if (reqOptions & DBR_GR_LONG) {
         if (retOptions & DBR_GR_LONG) {
-            struct dbr_grLong *pdbr_grLong = (void *)pbuffer;
+            struct dbr_grLong *pdbr_grLong = pbuffer;
 
             printf("grLong: %d .. %d\n",
                 pdbr_grLong->lower_disp_limit,
@@ -880,7 +911,7 @@ static void printBuffer(
 
     if (reqOptions & DBR_GR_DOUBLE) {
         if (retOptions & DBR_GR_DOUBLE) {
-            struct dbr_grDouble *pdbr_grDouble = (void *)pbuffer;
+            struct dbr_grDouble *pdbr_grDouble = pbuffer;
 
             printf("grDouble: %g .. %g\n",
                 pdbr_grDouble->lower_disp_limit,
@@ -894,7 +925,7 @@ static void printBuffer(
 
     if (reqOptions & DBR_CTRL_LONG) {
         if (retOptions & DBR_CTRL_LONG){
-            struct dbr_ctrlLong *pdbr_ctrlLong = (void *)pbuffer;
+            struct dbr_ctrlLong *pdbr_ctrlLong = pbuffer;
 
             printf("ctrlLong: %d .. %d\n",
                 pdbr_ctrlLong->lower_ctrl_limit,
@@ -908,7 +939,7 @@ static void printBuffer(
 
     if (reqOptions & DBR_CTRL_DOUBLE) {
         if (retOptions & DBR_CTRL_DOUBLE) {
-            struct dbr_ctrlDouble *pdbr_ctrlDouble = (void *)pbuffer;
+            struct dbr_ctrlDouble *pdbr_ctrlDouble = pbuffer;
 
             printf("ctrlDouble: %g .. %g\n",
                 pdbr_ctrlDouble->lower_ctrl_limit,
@@ -922,7 +953,7 @@ static void printBuffer(
 
     if (reqOptions & DBR_AL_LONG) {
         if (retOptions & DBR_AL_LONG) {
-            struct dbr_alLong *pdbr_alLong = (void *)pbuffer;
+            struct dbr_alLong *pdbr_alLong = pbuffer;
 
             printf("alLong: %d < %d .. %d < %d\n",
                 pdbr_alLong->lower_alarm_limit,
@@ -938,7 +969,7 @@ static void printBuffer(
 
     if (reqOptions & DBR_AL_DOUBLE) {
         if (retOptions & DBR_AL_DOUBLE) {
-            struct dbr_alDouble *pdbr_alDouble = (void *)pbuffer;
+            struct dbr_alDouble *pdbr_alDouble = pbuffer;
 
             printf("alDouble: %g < %g .. %g < %g\n",
                 pdbr_alDouble->lower_alarm_limit,
@@ -1195,7 +1226,7 @@ static int dbpr_report(
             break;
 
         case DBF_NOACCESS:
-            if (pfield == (void *)&paddr->precord->time) {
+            if (pfield == &paddr->precord->time) {
                 /* Special for the TIME field, make it human-readable */
                 char time_buf[40];
                 epicsTimeToStrftime(time_buf, 40, "%Y-%m-%d %H:%M:%S.%09f",

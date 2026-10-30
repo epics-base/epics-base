@@ -26,6 +26,9 @@
 #include "epicsUnitTest.h"
 #include "testMain.h"
 
+// for TIMER_QUANTUM_BIAS
+#include <timer/timerPrivate.h>
+
 #define verify(exp) ((exp) ? (void)0 : \
     epicsAssert(__FILE__, __LINE__, #exp, epicsAssertAuthor))
 
@@ -110,12 +113,16 @@ inline double delayVerify::delay () const
 
 double delayVerify::checkError () const
 {
-    const double minError = testImpreciseTiming() ? 0.25 : 0.05;
+#ifdef TIMER_QUANTUM_BIAS
+    const double lowerBound = -epicsThreadSleepQuantum()/2;
+#else
+    const double lowerBound = 0.0;
+#endif
+    double upperBound = testImpreciseTiming() ? 0.25 : 0.05;
     double measuredDelay = this->expireStamp - this->beginStamp;
     double measuredError = measuredDelay - this->expectedDelay;
-    double absoluteError = fabs(measuredError);
     double percentError = 100.0 * measuredError / this->expectedDelay;
-    testOk(absoluteError < minError,
+    testOk(measuredError>=lowerBound && measuredError < upperBound,
            "Delay %.3f s, error = %+.6f ms (%+.3f %%)",
            this->expectedDelay, measuredError * 1000, percentError);
     return measuredError;

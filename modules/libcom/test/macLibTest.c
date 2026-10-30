@@ -66,13 +66,25 @@ static void ovcheck(void)
 
 MAIN(macLibTest)
 {
-    testPlan(93);
+    testPlan(105);
 
     if (macCreateHandle(&h, NULL))
         testAbort("macCreateHandle() failed");
     eltc(0);
 
     check("FOO", " FOO");
+    check("F(O){O}", " F(O){O}");
+    check("F(O}{O)", " F(O}{O)");
+
+    check("x${FOO)", "!x${FOO)");
+    check("x${FOO=bar)", "!x${FOO=bar)");
+    check("x${FOO,bar)", "!x${FOO,bar)");
+    check("x${FOO ${BAR", "!x${FOO ${BAR");
+
+    check("x$(FOO}", "!x$(FOO}");
+    check("x$(FOO=bar}", "!x$(FOO=bar}");
+    check("x$(FOO,bar}", "!x$(FOO,bar}");
+    check("x$(FOO $(BAR", "!x$(FOO $(BAR");
 
     check("$(FOO)", "!$(FOO,undefined)");
     check("${FOO}", "!$(FOO,undefined)");
@@ -115,6 +127,8 @@ MAIN(macLibTest)
 
     check("${=BAR}", " BAR");
     check("x${=BAR}y", " xBARy");
+    check("x(${=)}y", " x()y");
+    check("x{$(=})y", " x{}y");
 
     check("${FOO=BAR}", " BAR");
     check("x${FOO=BAR}y", " xBARy");

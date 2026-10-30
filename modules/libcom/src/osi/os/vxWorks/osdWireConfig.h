@@ -23,10 +23,10 @@
 #elif _BYTE_ORDER == _BIG_ENDIAN
 #   define EPICS_BYTE_ORDER EPICS_ENDIAN_BIG
 #else
-#   error EPICS hasnt been ported to _BYTE_ORDER specified by vxWorks <types/vxArch.h>
+#   error EPICS has not been ported to _BYTE_ORDER specified by vxWorks <types/vxArch.h>
 #endif
 
-/* for now, assume that vxWorks doesnt run on weird arch like ARM NWFP */
+/* for now, assume that vxWorks doesn't run on weird arch like ARM NWFP */
 #define EPICS_FLOAT_WORD_ORDER EPICS_BYTE_ORDER
 
 #endif /* ifdef osdWireConfig_h */

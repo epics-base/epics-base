@@ -96,7 +96,7 @@ static long init_record(struct dbCommon *pcommon, int pass)
     recGblInitSimm(pcommon, &prec->sscn, &prec->oldsimm, &prec->simm, &prec->siml);
     recGblInitConstantLink(&prec->siol, DBF_STRING, &prec->sval);
 
-    if( (pdset=(eventdset *)(prec->dset)) && (pdset->common.init_record) ) 
+    if( (pdset=(eventdset *)(prec->dset)) && (pdset->common.init_record) )
         status=(*pdset->common.init_record)(pcommon);
 
     prec->epvt = eventNameToHandle(prec->val);
@@ -111,7 +111,7 @@ static long process(struct dbCommon *pcommon)
     long             status=0;
     unsigned char    pact=prec->pact;
 
-    if((pdset!=NULL) && (pdset->common.number >= 5) && pdset->read_event ) 
+    if((pdset!=NULL) && (pdset->common.number >= 5) && pdset->read_event )
         status=readValue(prec); /* read the new value */
     /* check if device support set pact */
     if ( !pact && prec->pact ) return(0);

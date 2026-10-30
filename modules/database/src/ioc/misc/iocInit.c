@@ -31,6 +31,7 @@
 #include "epicsPrint.h"
 #include "epicsSignal.h"
 #include "epicsThread.h"
+#include "epicsString.h"
 #include "errMdef.h"
 #include "iocsh.h"
 #include "taskwd.h"
@@ -59,6 +60,7 @@
 #include "devSup.h"
 #include "drvSup.h"
 #include "epicsRelease.h"
+#include "epicsConvert.h"
 #include "initHooks.h"
 #include "iocInit.h"
 #include "link.h"
@@ -129,6 +131,16 @@ static int iocBuild_1(void)
         errlogPrintf("iocBuild: " ERL_ERROR " Aborting, bad database definition (DBD)!\n");
         return -1;
     }
+
+    {
+        /* fall back to "old" decimal-only conversion if
+           EPICS_DB_CONVERT_DECIMAL_ONLY is YES (case insensitive). */
+        const char* dec_only = getenv("EPICS_DB_CONVERT_DECIMAL_ONLY");
+        if (dec_only && epicsStrCaseCmp(dec_only, "YES") == 0) {
+            dbConvertBase = 10;
+        }
+    }
+
     epicsSignalInstallSigHupIgnore();
     initHookAnnounce(initHookAtBeginning);
 
@@ -173,7 +185,8 @@ static int iocBuild_2(void)
 
     scanInit();
     if (asInit()) {
-        errlogPrintf(ERL_ERROR " iocBuild: asInit Failed.\n");
+        errlogPrintf(ERL_ERROR " iocBuild: asInit Failed.\n"
+            ANSI_MAGENTA(" The IOC has not been started.") "\n");
         return -1;
     }
     dbProcessNotifyInit();

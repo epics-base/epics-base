@@ -7,9 +7,9 @@
 # in file LICENSE that is included with this distribution.
 #*************************************************************************
 
-=title Array Analog Output (aao)
+=title Array Output (aao)
 
-The array analog output record type is used to write array data. The array data
+The array output record type is used to write array data. The array data
 can contain any of the supported data types. The record is in many ways similar
 to the waveform record but outputs arrays instead of reading them. It also
 allows the device support to allocate the array storage.
@@ -31,7 +31,7 @@ The record-specific fields are described below, grouped by functionality.
 
 =head3 Scan Parameters
 
-The array analog output record has the standard fields for specifying under what
+The array output record has the standard fields for specifying under what
 circumstances the record will be processed.
 These fields are described in L<Scan Fields|dbCommonRecord/Scan Fields>.
 
@@ -40,12 +40,12 @@ These fields are described in L<Scan Fields|dbCommonRecord/Scan Fields>.
 =head3 Write Parameters
 
 These fields are configurable by the user to specify how and where to the record
-writes its data. The OUT field determines where the array analog output writes
+writes its data. The OUT field determines where the array output writes
 its output. It can be a hardware address, a channel access or database link, or
 a constant. Only in records that use soft device support can the OUT field be a
 channel access link, a database link, or a constant. Otherwise, the OUT field
 must be a hardware address. See L<Address
-Specification|https://docs.epics-controls.org/en/latest/guides/EPICS_Process_Database_Concepts.html#address-specification>
+Specification|https://docs.epics-controls.org/en/latest/process-database/EPICS_Process_Database_Concepts.html#address-specification>
 for information on the format of hardware addresses and database links.
 
 =head4 Fields related to array writing
@@ -87,7 +87,7 @@ Parameters> for more on the record name (NAME) and description (DESC) fields.
 
 =head3 Alarm Parameters
 
-The array analog output record has the alarm parameters common to all record
+The array output record has the alarm parameters common to all record
 types.
 
 =head3 Monitor Parameters
@@ -115,11 +115,11 @@ These are the choices available for the C<APST> and C<MPST> fields
 
 =head3 Run-time Parameters
 
-These parameters are used by the run-time code for processing the array analog
+These parameters are used by the run-time code for processing the array
 output record. They are not configured using a configuration tool. Only the VAL
 field is modifiable at run-time.
 
-VAL references the array where the array analog output record stores its data.
+VAL references the array where the array output record stores its data.
 The BPTR field holds the address of the array.
 
 The NORD field holds a counter of the number of elements that have been written
@@ -317,7 +317,7 @@ Scan forward link if necessary, set PACT FALSE, and return.
 
 =cut
 
-	include "dbCommon.dbd" 
+	include "dbCommon.dbd"
     %
     %/* Declare Device Support Entry Table */
     %struct aaoRecord;
@@ -326,6 +326,7 @@ Scan forward link if necessary, set PACT FALSE, and return.
     %    long (*write_aao)(struct aaoRecord *prec); /*returns: (-1,0)=>(failure,success)*/
     %} aaodset;
     %#define HAS_aaodset
+	%#define AAO_POSTS_NORD
     %
 	field(VAL,DBF_NOACCESS) {
 		prompt("Value")
@@ -333,7 +334,7 @@ Scan forward link if necessary, set PACT FALSE, and return.
 		special(SPC_DBADDR)
 		pp(TRUE)
 		extra("void *		val")
-		#=type DOUBLE[]
+		#=type Set by FTVL[NELM]
 		#=read Yes
 		#=write Yes
 	}
@@ -341,7 +342,7 @@ Scan forward link if necessary, set PACT FALSE, and return.
 		prompt("Display Precision")
 		promptgroup("80 - Display")
 		interest(1)
-		prop(YES)
+		prop(YES)		# get_precision
 	}
 	field(OUT,DBF_OUTLINK) {
 		prompt("Output Specification")
@@ -364,19 +365,19 @@ Scan forward link if necessary, set PACT FALSE, and return.
 		promptgroup("80 - Display")
 		interest(1)
 		size(16)
-		prop(YES)
+		prop(YES)		# get_units
 	}
 	field(HOPR,DBF_DOUBLE) {
 		prompt("High Operating Range")
 		promptgroup("80 - Display")
 		interest(1)
-		prop(YES)
+		prop(YES)		# get_graphic_double, get_control_double
 	}
 	field(LOPR,DBF_DOUBLE) {
 		prompt("Low Operating Range")
 		promptgroup("80 - Display")
 		interest(1)
-		prop(YES)
+		prop(YES)		# get_graphic_double, get_control_double
 	}
 	field(NELM,DBF_ULONG) {
 		prompt("Number of Elements")
@@ -384,6 +385,7 @@ Scan forward link if necessary, set PACT FALSE, and return.
 		special(SPC_NOMOD)
 		interest(1)
 		initial("1")
+		prop(YES)		# get_graphic_double, get_control_double
 	}
 	field(FTVL,DBF_MENU) {
 		prompt("Field Type of Value")
@@ -471,7 +473,7 @@ Scan forward link if necessary, set PACT FALSE, and return.
 
 =head3 Fields Of Interest To Device Support
 
-Each array analog output record record must have an associated set of device
+Each array output record record must have an associated set of device
 support routines. The primary responsibility of the device support routines is
 to write the array data value whenever C<write_aao()> is called. The device
 support routines are primarily interested in the following fields:

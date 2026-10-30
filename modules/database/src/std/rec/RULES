@@ -8,8 +8,8 @@
 # This is a Makefile fragment, see src/ioc/Makefile.
 
 stdRecords.dbd$(DEP): $(STDDIR)/rec/Makefile $(STDDIR)/rec/RULES
-	@$(RM) $@
-	@echo "$(COMMON_DIR)/stdRecords.dbd:" > $@
+	echo "$(COMMON_DIR)/stdRecords.dbd:" > $@.stdout
+	$(MV) $@.stdout $@
 
 $(COMMON_DIR)/stdRecords.dbd: $(STDDIR)/rec/Makefile $(STDDIR)/rec/RULES
 

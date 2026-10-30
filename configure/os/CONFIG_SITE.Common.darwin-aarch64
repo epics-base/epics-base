@@ -7,3 +7,5 @@
 #   arm64 devices:  Apple Silicon M1
 
 ARCH_CLASS = arm64
+
+CODE_CFLAGS = -mmacosx-version-min=14.0

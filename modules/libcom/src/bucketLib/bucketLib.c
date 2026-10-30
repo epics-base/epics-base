@@ -305,17 +305,17 @@ LIBCOM_API int epicsStdCall bucketFree (BUCKET *prb)
 /*
  * bucketAddItem()
  */
-LIBCOM_API int epicsStdCall 
+LIBCOM_API int epicsStdCall
     bucketAddItemUnsignedId(BUCKET *prb, const unsigned *pId, const void *pApp)
 {
     return bucketAddItem(prb, &BSET[bidtUnsigned], pId, pApp);
 }
-LIBCOM_API int epicsStdCall 
+LIBCOM_API int epicsStdCall
     bucketAddItemPointerId(BUCKET *prb, void * const *pId, const void *pApp)
 {
     return bucketAddItem(prb, &BSET[bidtPointer], pId, pApp);
 }
-LIBCOM_API int epicsStdCall 
+LIBCOM_API int epicsStdCall
     bucketAddItemStringId(BUCKET *prb, const char *pId, const void *pApp)
 {
     return bucketAddItem(prb, &BSET[bidtString], pId, pApp);
@@ -412,17 +412,17 @@ LIBCOM_API void * epicsStdCall bucketLookupAndRemoveItemStringId (BUCKET *prb, c
 /*
  * bucketRemoveItem()
  */
-LIBCOM_API int epicsStdCall 
+LIBCOM_API int epicsStdCall
     bucketRemoveItemUnsignedId (BUCKET *prb, const unsigned *pId)
 {
     return bucketLookupAndRemoveItem(prb, &BSET[bidtUnsigned], pId)?S_bucket_success:S_bucket_uknId;
 }
-LIBCOM_API int epicsStdCall 
+LIBCOM_API int epicsStdCall
     bucketRemoveItemPointerId (BUCKET *prb, void * const *pId)
 {
     return bucketLookupAndRemoveItem(prb, &BSET[bidtPointer], pId)?S_bucket_success:S_bucket_uknId;
 }
-LIBCOM_API int epicsStdCall 
+LIBCOM_API int epicsStdCall
     bucketRemoveItemStringId (BUCKET *prb, const char *pId)
 {
     return bucketLookupAndRemoveItem(prb, &BSET[bidtString], pId)?S_bucket_success:S_bucket_uknId;

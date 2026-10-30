@@ -112,7 +112,7 @@ express that space character as an escaped character C<\x20> or C<\u0020> inside
 a quoted string, otherwise the space will mark the end of the channel name to
 the link parsing code inside the IOC.
 
-=head4 Example Filters
+=head3 Example Filters
 
 Given a record called C<test:channel> the following would all apply a channel
 filter C<f> to the VAL field of that record, giving the filter two numeric
@@ -230,7 +230,9 @@ This filter is used for two purposes:
 
 =head4 Parameters
 
-=head4 No parameters (an empty pair of braces)
+=over
+
+=item No parameters (an empty pair of braces)
 
 Retrieve the record value as normal, but replace the timestamp with the time the
 value was fetched (or an update was sent). This is useful for clients that can't
@@ -239,7 +241,7 @@ indicates when the record last processed, which could have been days or even
 weeks ago for some records, or set to the EPICS epoch if the record has never
 processed.
 
-=head4 Numeric type C<"num">
+=item Numeric type C<"num">
 
 The following values are accepted for this parameter:
 
@@ -262,7 +264,7 @@ The following values are accepted for this parameter:
 Note that C<epicsUInt32> cannot be transferred over Channel Access; in that
 case, the value will be converted to C<epicsFloat64>.
 
-=head4 String type C<"str">
+=item String type C<"str">
 
 The following values are accepted for this parameter:
 
@@ -275,7 +277,7 @@ The following values are accepted for this parameter:
 
 =back
 
-=head4 Epoch adjustment C<"epoch">
+=item Epoch adjustment C<"epoch">
 
 The following values are accepted for this parameter:
 
@@ -285,6 +287,8 @@ The following values are accepted for this parameter:
         C<"epoch"> parameter is not specified.
 
 =item * C<"unix"> converts the timestamp to the UNIX/POSIX epoch (1970-01-01).
+
+=back
 
 =back
 

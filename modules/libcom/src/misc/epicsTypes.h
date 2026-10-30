@@ -11,7 +11,7 @@
 /**
  * \file epicsTypes.h
  * \author: Jeff Hill
- * 
+ *
  * \brief The core data types used by epics
  */
 
@@ -37,7 +37,7 @@ typedef enum {
 /**
  * \name epicsTypes
  * Architecture Independent Data Types
- * 
+ *
  * These are sufficient for all our current archs
  * @{
  */

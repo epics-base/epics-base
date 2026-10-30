@@ -161,7 +161,7 @@ static void usage(const char * progname)
 {
     fprintf(stderr,
             "usage:  %s [options]\n"
-            "Parse input from stdin as JSON and ouput parsing details "
+            "Parse input from stdin as JSON and output parsing details "
                                                           "to stdout\n"
             "   -5  allow JSON5\n"
             "   -b  set the read buffer size\n"
@@ -197,10 +197,10 @@ main(int argc, char ** argv)
         yajlTestMalloc,
         yajlTestRealloc,
         yajlTestFree,
-        (void *) NULL
+        NULL
     };
 
-    allocFuncs.ctx = (void *) &memCtx;
+    allocFuncs.ctx = &memCtx;
 
     /* allocate the parser */
     hand = yajl_alloc(&callbacks, &allocFuncs, NULL);
@@ -263,7 +263,7 @@ main(int argc, char ** argv)
         file = stdin;
     }
     for (;;) {
-        rd = fread((void *) fileData, 1, bufSize, file);
+        rd = fread(fileData, 1, bufSize, file);
 
         if (rd == 0) {
             if (!feof(file)) {

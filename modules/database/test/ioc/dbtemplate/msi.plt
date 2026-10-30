@@ -57,10 +57,10 @@ ok(msi('-I. -I.. -S ../t12-substitute.txt'), slurp('../t12-result.txt'));
 delete @ENV{ keys %envs };  # Not really needed
 
 # Substitution file, relative path includes
-ok(msi('-I @TOP@/modules -S ../t13-substitute.txt'), slurp('../t13-result.txt'));
+ok(msi('-I ../.. -S ../t13-substitute.txt'), slurp('../t13-result.txt'));
 
 # Template file, relative path includes
-ok(msi('-I @TOP@/modules ../t14-template.txt'), slurp('../t14-result.txt'));
+ok(msi('-I ../.. ../t14-template.txt'), slurp('../t14-result.txt'));
 
 # Test support routines
 

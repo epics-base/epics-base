@@ -9,7 +9,14 @@
 #include <set>
 #include <map>
 
+#if defined(vxWorks) && \
+      (_WRS_VXWORKS_MAJOR+0 <= 6) && (_WRS_VXWORKS_MINOR+0 < 9)
+typedef int intptr_t;
+typedef unsigned int uintptr_t;
+#else
 #include <stdint.h>
+#endif
+
 #include <string.h>
 
 #define EPICS_PRIVATE_API

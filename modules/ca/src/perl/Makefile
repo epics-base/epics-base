@@ -23,7 +23,7 @@ ifdef T_A
 # Special settings for Darwin:
 ifeq ($(OS_CLASS),Darwin)
   # Use hdepends command (not GNU compiler flags)
-  # to generate header file dependancies for Darwin.
+  # to generate header file dependencies for Darwin.
   # Darwin has multiple -arch compiler flags.
   HDEPENDS_METHOD = MKMF
 
@@ -81,5 +81,5 @@ ifdef T_A
 
   $(INSTALL_PERL_MODULES)/$(PERL_ARCHPATH)/%: %
 	$(ECHO) "Installing loadable shared library $@"
-	@$(INSTALL_LIBRARY) -d -m $(LIB_PERMISSIONS) $< $(INSTALL_PERL_MODULES)/$(PERL_ARCHPATH)
+	$(INSTALL_LIBRARY) -d -m $(LIB_PERMISSIONS) $< $(INSTALL_PERL_MODULES)/$(PERL_ARCHPATH)
 endif

@@ -34,33 +34,36 @@ struct link; /* aka DBLINK */
  * Recommended usage:
  *
  * In Makefile:
- @code
- USR_CPPFLAGS += -DUSE_TYPED_RSET -DUSE_TYPED_DSET
- @endcode
+ * @code
+ * USR_CPPFLAGS += -DUSE_TYPED_RSET -DUSE_TYPED_DSET
+ * @endcode
  *
  * In C source file:
- @code
- #include <devSup.h>
- #include <dbScan.h>      // For IOCSCANPVT
- ...
- #include <epicsExport.h> // defines epicsExportSharedSymbols
- ...
- static long init_record(dbCommon *prec);
- static long get_iointr_info(int detach, dbCommon *prec, IOCSCANPVT* pscan);
- static long longin_read(longinRecord *prec);
-
- longindset devLiDevName = {
-     {
-      5, // 4 from dset + 1 from longinRecord
-         NULL,
-         NULL,
-         &init_record,
-         &get_iointr_info
-     },
-     &longin_read
- };
- epicsExportAddress(dset, devLiDevName);
- @endcode
+ * @code
+ * #include <devSup.h>
+ * #include <dbScan.h>      // For IOCSCANPVT
+ * ...
+ * #include <epicsExport.h> // defines epicsExportSharedSymbols
+ * ...
+ * static long init_record(dbCommon *prec) {
+ *     DBLINK *link = dbGetDevLink(prec); // INP
+ *     ...
+ * }
+ * static long get_iointr_info(int detach, dbCommon *prec, IOCSCANPVT* pscan);
+ * static long longin_read(longinRecord *prec);
+ *
+ * longindset devLiDevName = {
+ *     {
+ *      5, // 4 from dset + 1 from longinRecord
+ *         NULL,
+ *         NULL,
+ *         &init_record,
+ *         &get_iointr_info
+ *     },
+ *     &longin_read
+ * };
+ * epicsExportAddress(dset, devLiDevName);
+ * @endcode
  */
 typedef struct typed_dset {
     /** Number of function pointers which follow.
@@ -157,6 +160,10 @@ typedef dset unambiguous_dset;
 /** Fetch INP or OUT link (or NULL if record type has neither).
  *
  * Recommended for use in device support init_record()
+ * to provide access to the INP/OUT link from `dbCommon*`
+ * without casting to the specific record type.
+ *
+ * @since 7.0.6
  */
 DBCORE_API struct link* dbGetDevLink(struct dbCommon* prec);
 

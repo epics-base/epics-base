@@ -70,7 +70,7 @@ recommended. The old approach is simpler in these cases.
 In a Makefile that is building a DLL or shared library, set the variable
 C<API_HEADER> to the name of the API header file to be generated. This name
 must start with a legal C identifier and end with C<API.h>. The C identifier
-part preceeding the C<API.h> is referred to here as the I<stem> for this
+part preceding the C<API.h> is referred to here as the I<stem> for this
 header file, and should be a short name in lower case or camelCase. For
 example the stem used in the example here is C<libCom>:
 

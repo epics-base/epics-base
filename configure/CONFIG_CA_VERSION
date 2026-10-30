@@ -1,8 +1,8 @@
 # Version number for the Channel Access API and shared library
 
 EPICS_CA_MAJOR_VERSION = 4
-EPICS_CA_MINOR_VERSION = 14
-EPICS_CA_MAINTENANCE_VERSION = 5
+EPICS_CA_MINOR_VERSION = 15
+EPICS_CA_MAINTENANCE_VERSION = 1
 
 # Development flag, set to zero for release versions
 

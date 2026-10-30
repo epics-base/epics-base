@@ -58,4 +58,14 @@
  */
 #define EPICS_UNUSED __attribute__((unused))
 
+/*
+ * No return marker
+ */
+#define EPICS_NORETURN __attribute__((noreturn))
+
+/*
+ * malloc marker takes 1 or 2 args: (index of size) or (index of count, index of element size)
+ */
+#define EPICS_MALLOC(...) __attribute__((__malloc__, __alloc_size__(__VA_ARGS__)))
+
 #endif  /* ifndef compilerSpecific_h */

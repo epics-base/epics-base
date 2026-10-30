@@ -59,8 +59,6 @@ environment:
     APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
   - CMP: vs2015
   - CMP: vs2013
-  - CMP: vs2012
-  - CMP: vs2010
   - CMP: gcc
     APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
     # TODO: static linking w/ readline isn't working.  Bypass auto-detect
@@ -74,11 +72,6 @@ platform:
 # Matrix configuration: exclude sets of jobs
 matrix:
   exclude:
-  # VS2012 and older installs don't have the 64 bit compiler
-  - platform: x64
-    CMP: vs2012
-  - platform: x64
-    CMP: vs2010
   # Exclude more jobs to reduce build time
   # Skip 32-bit for "middle-aged" compilers
   - platform: x86
@@ -96,8 +89,9 @@ matrix:
 #---------------------------------#
 
 install:
+  - cmd: set PATH=C:\Python38-x64;%PATH%
   - cmd: git submodule update --init --recursive
-  - cmd: pip install git+https://github.com/mdavidsaver/ci-core-dumper#egg=ci-core-dumper
+  - cmd: python -m pip install git+https://github.com/mdavidsaver/ci-core-dumper#egg=ci-core-dumper
   - cmd: python .ci/cue.py prepare
 
 build_script:
@@ -135,10 +129,4 @@ on_failure:
 #---------------------------------#
 
 notifications:
-
-  - provider: Email
-    to:
-      - core-talk@aps.anl.gov
-    on_build_success: false
-
   - provider: GitHubPullRequest

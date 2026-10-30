@@ -13,6 +13,8 @@
 
 SRC_DIRS += $(LIBCOM)/as
 
+DOCS += ACF-Language.md
+
 INC += asLib.h
 INC += asTrapWrite.h
 

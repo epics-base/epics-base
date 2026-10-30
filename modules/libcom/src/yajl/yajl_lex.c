@@ -113,7 +113,7 @@ yajl_lex_alloc(yajl_alloc_funcs * alloc,
         return NULL;
     }
 
-    memset((void *) lxr, 0, sizeof(struct yajl_lexer_t));
+    memset(lxr, 0, sizeof(struct yajl_lexer_t));
     lxr->buf = yajl_buf_alloc(alloc);
     lxr->allowComments = allowComments;
     lxr->validateUTF8 = validateUTF8;
@@ -389,7 +389,7 @@ yajl_lex_string(yajl_lexer lexer, const unsigned char * jsonText,
         /* accept it, and move on */
     }
   finish_string_lex:
-    /* tell our buddy, the parser, wether he needs to process this string
+    /* tell our buddy, the parser, whether he needs to process this string
      * again */
     if (hasEscapes && tok == yajl_tok_string) {
         tok = yajl_tok_string_with_escapes;
@@ -725,7 +725,7 @@ yajl_lex_lex(yajl_lexer lexer, const unsigned char * jsonText,
                  * - malformed comment opening (slash not followed by
                  *   '*' or '/') (tok_error)
                  * - eof hit. (tok_eof) */
-                tok = yajl_lex_comment(lexer, (const unsigned char *) jsonText,
+                tok = yajl_lex_comment(lexer, jsonText,
                                        jsonTextLen, offset);
                 if (tok == yajl_tok_comment) {
                     /* "error" is silly, but that's the initial

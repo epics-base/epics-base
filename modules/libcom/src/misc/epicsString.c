@@ -234,7 +234,7 @@ int epicsStrPrintEscaped(FILE *fp, const char *s, size_t len)
    if (fp == NULL)
        return -1;
 
-   if (s == NULL || strlen(s) == 0 || len == 0)
+   if (s == NULL || len == 0)
        return 0; // No work to do
 
    while (len--) {

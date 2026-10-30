@@ -27,6 +27,7 @@
 #include "ellLib.h"
 #include "epicsAtomic.h"
 #include "epicsEvent.h"
+#include "epicsGeneralTime.h"
 #include "epicsMutex.h"
 #include "epicsPrint.h"
 #include "epicsRingBytes.h"
@@ -114,7 +115,10 @@ typedef struct event_list {
     struct event_list   *next;
     char                eventname[1]; /* actually arbitrary size */
 } event_list;
-static event_list * volatile pevent_list[256];
+/* All event_list are singly linked from pevent_list[0] via next.
+ * Numbered events are also stored in pevent_list[1..255].
+ */
+static event_list * volatile pevent_list[NUM_TIME_EVENTS];
 static epicsMutexId event_lock;
 
 /* IO_EVENT*/
@@ -245,7 +249,7 @@ void scanAdd(struct dbCommon *precord)
     scan = precord->scan;
     if (scan == menuScanPassive) return;
     if (scan < 0 || scan >= nPeriodic + SCAN_1ST_PERIODIC) {
-        recGblRecordError(-1, (void *)precord,
+        recGblRecordError(-1, precord,
             "scanAdd detected illegal SCAN value");
     } else if (scan == menuScanEvent) {
         char* eventname;
@@ -255,7 +259,7 @@ void scanAdd(struct dbCommon *precord)
         eventname = precord->evnt;
         prio = precord->prio;
         if (prio < 0 || prio >= NUM_CALLBACK_PRIORITIES) {
-            recGblRecordError(-1, (void *)precord,
+            recGblRecordError(-1, precord,
                 "scanAdd: illegal prio field");
             return;
         }
@@ -267,14 +271,14 @@ void scanAdd(struct dbCommon *precord)
         long (*get_ioint_info)(int, struct dbCommon *, IOSCANPVT*);
 
         if (precord->dset == NULL){
-            recGblRecordError(-1, (void *)precord,
+            recGblRecordError(-1, precord,
                 "scanAdd: I/O Intr not valid (no DSET) ");
             precord->scan = menuScanPassive;
             return;
         }
         get_ioint_info = precord->dset->get_ioint_info;
         if (get_ioint_info == NULL) {
-            recGblRecordError(-1, (void *)precord,
+            recGblRecordError(-1, precord,
                 "scanAdd: I/O Intr not valid (no get_ioint_info)");
             precord->scan = menuScanPassive;
             return;
@@ -284,14 +288,14 @@ void scanAdd(struct dbCommon *precord)
             return;
         }
         if (piosh == NULL) {
-            recGblRecordError(-1, (void *)precord,
+            recGblRecordError(-1, precord,
                 "scanAdd: I/O Intr not valid");
             precord->scan = menuScanPassive;
             return;
         }
         prio = precord->prio;
         if (prio < 0 || prio >= NUM_CALLBACK_PRIORITIES) {
-            recGblRecordError(-1, (void *)precord,
+            recGblRecordError(-1, precord,
                 "scanAdd: illegal prio field");
             precord->scan = menuScanPassive;
             return;
@@ -313,7 +317,7 @@ void scanDelete(struct dbCommon *precord)
     scan = precord->scan;
     if (scan == menuScanPassive) return;
     if (scan < 0 || scan >= nPeriodic + SCAN_1ST_PERIODIC) {
-        recGblRecordError(-1, (void *)precord,
+        recGblRecordError(-1, precord,
             "scanDelete detected illegal SCAN value");
     } else if (scan == menuScanEvent) {
         int prio;
@@ -322,7 +326,7 @@ void scanDelete(struct dbCommon *precord)
 
         prio = precord->prio;
         if (prio < 0 || prio >= NUM_CALLBACK_PRIORITIES) {
-            recGblRecordError(-1, (void *)precord,
+            recGblRecordError(-1, precord,
                 "scanDelete detected illegal PRIO field");
             return;
         }
@@ -335,25 +339,25 @@ void scanDelete(struct dbCommon *precord)
         long (*get_ioint_info)(int, struct dbCommon *, IOSCANPVT*);
 
         if (precord->dset==NULL) {
-            recGblRecordError(-1, (void *)precord,
+            recGblRecordError(-1, precord,
                 "scanDelete: I/O Intr not valid (no DSET)");
             return;
         }
         get_ioint_info=precord->dset->get_ioint_info;
         if (get_ioint_info == NULL) {
-            recGblRecordError(-1, (void *)precord,
+            recGblRecordError(-1, precord,
                 "scanDelete: I/O Intr not valid (no get_ioint_info)");
             return;
         }
         if (get_ioint_info(1, precord, &piosh)) return;
         if (piosh == NULL) {
-            recGblRecordError(-1, (void *)precord,
+            recGblRecordError(-1, precord,
                 "scanDelete: I/O Intr not valid");
             return;
         }
         prio = precord->prio;
         if (prio < 0 || prio >= NUM_CALLBACK_PRIORITIES) {
-            recGblRecordError(-1, (void *)precord,
+            recGblRecordError(-1, precord,
                 "scanDelete: get_ioint_info returned illegal priority");
             return;
         }
@@ -487,7 +491,7 @@ event_list *eventNameToHandle(const char *eventname)
     */
     if (epicsParseDouble(eventname, &eventnumber, NULL) == 0)
     {
-        if (eventnumber >= 0 && eventnumber < 256)
+        if (eventnumber >= 0 && eventnumber < NUM_TIME_EVENTS)
         {
             if (eventnumber < 1)
                 return NULL; /* 0 is no event */
@@ -546,7 +550,7 @@ void postEvent(event_list *pel)
 /* backward compatibility */
 void post_event(int event)
 {
-    if (event <= 0 || event > 255) return;
+    if (event <= 0 || event >= NUM_TIME_EVENTS) return;
     postEvent(pevent_list[event]);
 }
 
@@ -680,7 +684,9 @@ int scanOnceCallback(struct dbCommon *precord, once_complete cb, void *usr)
     pushOK = epicsRingBytesPut(onceQ, (void*)&ent, sizeof(ent));
 
     if (!pushOK) {
-        if (newOverflow) errlogPrintf("scanOnce: Ring buffer overflow\n");
+        if (newOverflow)
+            errlogPrintf("%s : " ERL_WARNING " scanOnce: Ring buffer overflow\n",
+                         precord->name);
         newOverflow = FALSE;
         epicsAtomicIncrIntT(&onceQOverruns);
     } else {
@@ -947,7 +953,7 @@ static void spawnPeriodic(int ind)
 
     sprintf(taskName, "scan-%g", ppsl->period);
     periodicTaskId[ind] = epicsThreadCreateOpt(
-        taskName, periodicTask, (void *)ppsl, &opts);
+        taskName, periodicTask, ppsl, &opts);
 
     epicsEventWait(startStopEvent);
 }
@@ -1101,14 +1107,14 @@ static void deleteFromList(struct dbCommon *precord, scan_list *psl)
         epicsMutexUnlock(psl->lock);
         errlogPrintf("dbScan: Tried to delete record from wrong scan list!\n"
             "\t%s.SPVT = NULL, but psl = %p\n",
-            precord->name, (void *)psl);
+            precord->name, psl);
         return;
     }
     if (pse->pscan_list != psl) {
         epicsMutexUnlock(psl->lock);
         errlogPrintf("dbScan: Tried to delete record from wrong scan list!\n"
             "\t%s.SPVT->pscan_list = %p but psl = %p\n",
-            precord->name, (void *)pse, (void *)psl);
+            precord->name, pse, psl);
         return;
     }
     pse->pscan_list = NULL;

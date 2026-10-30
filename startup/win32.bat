@@ -82,16 +82,53 @@ set "PATH=%PATH%;%_strawberry_perl_home%\perl\site\bin"
 set "PATH=%PATH%;%_strawberry_perl_home%\perl\bin"
 :after_add_strawberry_perl
 
-rem Set the environment for Microsoft Visual Studio
-call "%_visual_studio_home%\VC\Auxiliary\Build\vcvarsall.bat" x86
+rem locate visual studio
+rem also define VCVERSION environment variable for use in builds
+if "%ProgramFiles(x86)%" == "" (
+    set "_progfiles=C:\Program Files"
+) else (
+    set "_progfiles=%ProgramFiles(x86)%"
+)
+for %%i in ( 10.0 11.0 12.0 13.0 14.0 )do (
+    if exist "%_progfiles%\Microsoft Visual Studio %%i\VC\vcvarsall.bat" set VCVERSION=%%i
+)
+set "_vcvarsalldir=%_progfiles%\Microsoft Visual Studio %VCVERSION%\VC"
+for %%i in ( Community Professional Enterprise ) do (
+    if exist "%_progfiles%\Microsoft Visual Studio\2019\%%i\VC\Auxiliary\Build" (
+        set "VCVERSION=16.0"
+        set "_vcvarsalldir=%_progfiles%\Microsoft Visual Studio\2019\%%i\VC\Auxiliary\Build"
+    )
+    for %%i in ( Community Professional Enterprise ) do (
+        if exist "%ProgramFiles%\Microsoft Visual Studio\2022\%%i\VC\Auxiliary\Build" (
+            set "VCVERSION=17.0"
+            set "_vcvarsalldir=%ProgramFiles%\Microsoft Visual Studio\2022\%%i\VC\Auxiliary\Build"
+        )
+    )
+    for %%i in ( Community Professional Enterprise ) do (
+        if exist "%ProgramFiles%\Microsoft Visual Studio\18\%%i\VC\Auxiliary\Build" (
+            set "VCVERSION=18.0"
+            set "_vcvarsalldir=%ProgramFiles%\Microsoft Visual Studio\18\%%i\VC\Auxiliary\Build"
+        )
+    )
+)
 
-rem Set the EPICS host architecture specification
-set "EPICS_HOST_ARCH=%_epics_host_arch%"
+if exist "%_vcvarsalldir%\vcvarsall.bat" (
+    @echo Using Visual Studio %VCVERSION% x86 native compiler
+    call "%_vcvarsalldir%\vcvarsall.bat" x86
+) else (
+    @echo ERROR - Cannot locate Visual Studio vcvarsall.bat
+)
+
+rem Set the EPICS host architecture specification if
+rem not already set
+if "%EPICS_HOST_ARCH%" == "" (
+    set "EPICS_HOST_ARCH=%_epics_host_arch%"
+)
 
 rem Add the EPICS Base host architecture bin directory to PATH
 if "%_auto_path_append%" == "yes" (
   if not "%_epics_base%" == "" (
-    set "PATH=%PATH%;%_epics_base%\bin\%_epics_host_arch%"
+    set "PATH=%PATH%;%_epics_base%\bin\%EPICS_HOST_ARCH%"
   )
 )
 
@@ -104,3 +141,5 @@ set _strawberry_perl_home=
 set _visual_studio_home=
 set _epics_host_arch=
 set _epics_base=
+set _progfiles=
+set _vcvarsalldir=

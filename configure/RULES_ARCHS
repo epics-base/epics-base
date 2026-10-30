@@ -55,16 +55,16 @@ endif
 archPart = $(word 2, $(subst $(DIVIDER), ,$@))
 actionPart = $(word 1, $(subst $(DIVIDER), ,$@))
 $(actionArchTargets) : $(buildDirs) O.Common
-	$(MAKE) -C O.$(archPart) -f ../Makefile TOP=$(TOP)/.. \
+	$(MAKE) -C O.$(archPart) -f ../Makefile TOP=../$(TOP) \
 	    T_A=$(archPart) $(actionPart)
 
 $(BUILD_ARCHS) : % : O.% O.Common
-	$(MAKE) -C O.$@ -f ../Makefile TOP=$(TOP)/.. T_A=$@
+	$(MAKE) -C O.$@ -f ../Makefile TOP=../$(TOP) T_A=$@
 
 $(ACTIONS) : % : $(foreach arch, $(BUILD_ARCHS), %$(DIVIDER)$(arch))
 
 $(buildDirs):
-	$(PERL) $(TOOLS)/makeMakefile.pl $@ $(TOP)/..
+	$(PERL) $(TOOLS)/makeMakefile.pl $@ ../$(TOP)
 
 O.Common:
 	$(MKDIR) O.Common

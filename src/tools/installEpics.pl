@@ -26,6 +26,8 @@ use File::Copy;
 my $tool = basename($0);
 my $mode = 0755;
 
+my $WINATTR_READONLY = 0x1;
+
 our ($opt_d, $opt_h, $opt_m, $opt_q);
 
 getopt "m";
@@ -63,7 +65,7 @@ foreach my $source (@ARGV) {
     if (-f $target) {
         next if -M $target < -M $source and -C $target < -C $source;
         # Remove old target, making sure it is deletable first
-        chmod 0777, $target;
+        MyChmod(0777, $target);
         unlink $target;
     }
 
@@ -73,9 +75,36 @@ foreach my $source (@ARGV) {
     rename $temp, $target or die "$tool: Rename failed: $!\n" .
         "$tool:\t$temp -> $target\n";
 
-    # chmod 0555 <read-only> DOES work on Win32, but the above
-    # chmod 0777 fails to install a newer version on top.
-    chmod $mode, $target unless $^O eq 'MSWin32';
+    MyChmod($mode, $target);
+}
+
+#
+# chmod doesn't always behave as expected on WIN32, so use
+# Win32::File::SetAttributes to be sure.
+# The READONLY attribute is the only one we are concerned with.
+sub MyChmod {
+    my($mode, $target) = @_;
+    if ($^O eq "MSWin32")
+    {
+        require Win32::File;
+        my($attr);
+        Win32::File::GetAttributes($target, $attr);
+        # if write access is requested anywhere in the mode
+        # then remove read-only, otherwise set it
+        if ($mode & 0222)
+        {
+            $attr &= ~$WINATTR_READONLY;
+        }
+        else
+        {
+            $attr |= $WINATTR_READONLY;
+        }
+        Win32::File::SetAttributes($target, $attr);
+    }
+    else
+    {
+        chmod $mode, $target;
+    }
 }
 
 sub Usage {

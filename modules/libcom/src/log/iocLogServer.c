@@ -39,6 +39,7 @@
 static unsigned short ioc_log_port;
 static long ioc_log_file_limit;
 static char ioc_log_file_name[512];
+static char ioc_log_file_name_ex[512];
 static char ioc_log_file_command[256];
 
 
@@ -58,6 +59,7 @@ struct ioc_log_server {
     void *pfdctx;
     SOCKET sock;
     long max_file_size;
+    int tm_yday; /* year day log file created, used for log rotation */
 };
 
 #define IOCLS_ERROR (-1)
@@ -82,6 +84,17 @@ static int sighupPipe[2];
 #endif
 
 
+static void hideConsoleWindow()
+{
+#ifdef _WIN32
+    /* hide console window - could also link program /subsys:windows rather than console */
+    HWND hwnd = GetConsoleWindow();
+    if (hwnd != NULL)
+    {
+        ShowWindow(hwnd, SW_HIDE /*SW_MINIMIZE*/);
+    }
+#endif /* _WIN32 */
+}
 
 /*
  *
@@ -96,6 +109,8 @@ int main(void)
     struct ioc_log_server *pserver;
 
     osiSockIoctl_t  optval;
+
+    hideConsoleWindow();
 
     status = getConfig();
     if (status<0) {
@@ -191,7 +206,7 @@ int main(void)
     if (status < 0) {
         fprintf(stderr,
             "File access problems to `%s' because `%s'\n",
-            ioc_log_file_name,
+            ioc_log_file_name_ex,
             strerror(errno));
         free(pserver);
         return IOCLS_ERROR;
@@ -337,7 +352,7 @@ static int seekLatestLine (struct ioc_log_server *pserver)
         if (pserver->filePos!=0) {
             fprintf (stderr, "iocLogServer: **** Warning ****\n");
             fprintf (stderr, "iocLogServer: no recognizable dates in \"%s\"\n",
-                ioc_log_file_name);
+                ioc_log_file_name_ex);
             fprintf (stderr, "iocLogServer: logging at end of file\n");
         }
     }
@@ -353,31 +368,41 @@ static int seekLatestLine (struct ioc_log_server *pserver)
 static int openLogFile (struct ioc_log_server *pserver)
 {
     enum TF_RETURN ret;
+    time_t now;
+    struct tm now_tm;
 
     if (pserver->poutfile && pserver->poutfile != stderr){
         fclose (pserver->poutfile);
         pserver->poutfile = NULL;
     }
 
-    pserver->poutfile = fopen(ioc_log_file_name, "r+");
+    time(&now);
+    memcpy(&now_tm, localtime(&now), sizeof(now_tm));
+    pserver->tm_yday = now_tm.tm_yday;
+    if (0 == strftime(ioc_log_file_name_ex, sizeof(ioc_log_file_name_ex)-1, ioc_log_file_name, &now_tm))
+    {
+        strncpy(ioc_log_file_name_ex, ioc_log_file_name, sizeof(ioc_log_file_name_ex)-1);
+    }
+    ioc_log_file_name_ex[sizeof(ioc_log_file_name_ex)-1] = '\0';
+    pserver->poutfile = fopen(ioc_log_file_name_ex, "r+");
     if (pserver->poutfile) {
         fclose (pserver->poutfile);
         pserver->poutfile = NULL;
-        ret = truncateFile (ioc_log_file_name, ioc_log_file_limit);
+        ret = truncateFile (ioc_log_file_name_ex, ioc_log_file_limit);
         if (ret==TF_ERROR) {
             return IOCLS_ERROR;
         }
-        pserver->poutfile = fopen(ioc_log_file_name, "r+");
+        pserver->poutfile = fopen(ioc_log_file_name_ex, "r+");
     }
     else {
-        pserver->poutfile = fopen(ioc_log_file_name, "w");
+        pserver->poutfile = fopen(ioc_log_file_name_ex, "w");
     }
 
     if (!pserver->poutfile) {
         pserver->poutfile = stderr;
         return IOCLS_ERROR;
     }
-    strcpy (pserver->outfile, ioc_log_file_name);
+    strcpy (pserver->outfile, ioc_log_file_name_ex);
     pserver->max_file_size = ioc_log_file_limit;
 
     return seekLatestLine (pserver);
@@ -579,6 +604,21 @@ static void writeMessagesToLog (struct iocLogClient *pclient)
 {
     int status;
     size_t lineIndex = 0;
+    time_t now;
+    struct tm now_tm;
+    /* reopen log file once a day for rotation */
+    time(&now);
+    memcpy(&now_tm, localtime(&now), sizeof(struct tm));
+    if (now_tm.tm_yday != pclient->pserver->tm_yday)
+    {
+        status = openLogFile(pclient->pserver);
+        if(status<0){
+            fprintf(stderr,
+                "File access problems to `%s' because `%s'\n",
+                ioc_log_file_name_ex,
+                strerror(errno));
+        }
+    }
 
     while (TRUE) {
         size_t nchar;
@@ -910,7 +950,7 @@ static void serviceSighupRequest(void *pParam)
     if(status<0){
         fprintf(stderr,
             "File access problems to `%s' because `%s'\n",
-            ioc_log_file_name,
+            ioc_log_file_name_ex,
             strerror(errno));
         /* Revert to old filename */
         strcpy(ioc_log_file_name, pserver->outfile);
@@ -918,20 +958,20 @@ static void serviceSighupRequest(void *pParam)
         if(status<0){
             fprintf(stderr,
                 "File access problems to `%s' because `%s'\n",
-                ioc_log_file_name,
+                ioc_log_file_name_ex,
                 strerror(errno));
             return;
         }
         else {
             fprintf(stderr,
                 "iocLogServer: re-opened old log file %s\n",
-                ioc_log_file_name);
+                ioc_log_file_name_ex);
         }
     }
     else {
         fprintf(stderr,
             "iocLogServer: opened new log file %s\n",
-            ioc_log_file_name);
+            ioc_log_file_name_ex);
     }
 }
 

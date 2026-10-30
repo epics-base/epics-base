@@ -305,6 +305,17 @@ static void errlogCallFunc(const iocshArgBuf *args)
     errlogFlush();
 }
 
+/* errlogSev */
+static const iocshArg errlogSevArg0 = { "severity",iocshArgInt};
+static const iocshArg errlogSevArg1 = { "message",iocshArgString};
+static const iocshArg * const errlogSevArgs[] = 
+    {&errlogSevArg0, &errlogSevArg1};
+static const iocshFuncDef errlogSevFuncDef = {"errlogSev",2,errlogSevArgs};
+static void errlogSevCallFunc(const iocshArgBuf *args)
+{
+    errlogSevPrintf(args[0].ival, "%s\n", args[1].sval);
+}
+
 /* iocLogPrefix */
 static const iocshArg iocLogPrefixArg0 = { "prefix",iocshArgString};
 static const iocshArg * const iocLogPrefixArgs[1] = {&iocLogPrefixArg0};
@@ -506,6 +517,7 @@ void epicsStdCall libComRegister(void)
     iocshRegister(&errlogInitFuncDef,errlogInitCallFunc);
     iocshRegister(&errlogInit2FuncDef,errlogInit2CallFunc);
     iocshRegister(&errlogFuncDef, errlogCallFunc);
+    iocshRegister(&errlogSevFuncDef, errlogSevCallFunc);
     iocshRegister(&iocLogPrefixFuncDef, iocLogPrefixCallFunc);
 
     iocshRegister(&epicsThreadShowAllFuncDef,epicsThreadShowAllCallFunc);

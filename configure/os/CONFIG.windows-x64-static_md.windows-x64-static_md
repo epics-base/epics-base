@@ -1,0 +1,18 @@
+# CONFIG.windows-x64-static.windows-x64-static
+#
+# Definitions for windows-x64-static_md host - windows-x64-static_md target build
+# Override these definitions in CONFIG_SITE.windows-x64-static_md.windows-x64-static_md
+#-------------------------------------------------------
+
+#Include definitions common to windows-x64 builds
+include $(CONFIG)/os/CONFIG.windows-x64.windows-x64
+
+# Override CONFIG_SITE settings:
+SHARED_LIBRARIES = NO
+STATIC_BUILD= YES
+
+STATIC_CFLAGS_YES= /MD$(VISC_STATIC_CFLAGS_DEBUG) $(VISC_DLL)
+STATIC_CXXFLAGS_YES= /MD$(VISC_STATIC_CFLAGS_DEBUG) $(VISC_DLL)
+
+# ISIS only extra
+STATIC_LDFLAGS_EXTRA_YES=/NODEFAULTLIB:LIBCMT.LIB /NODEFAULTLIB:LIBCMTD.LIB /NODEFAULTLIB:MSVCRT$(VISC_NODEFLIB_DEBUG_$(HOST_OPT)).LIB

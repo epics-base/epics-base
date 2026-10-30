@@ -95,3 +95,9 @@ EPICS_IOC_LOG_FILE_LIMIT=1000000
 # Set to 'YES' to call abort() rather than suspend the current thread
 # when an assert() fails
 EPICS_ABORT_ON_ASSERT=NO
+
+EPICS_CA_MAX_ARRAY_BYTES=65536
+
+## this should just add loopback to the auto determined address list
+EPICS_CA_AUTO_ADDR_LIST=YES
+EPICS_CA_ADDR_LIST="127.255.255.255"

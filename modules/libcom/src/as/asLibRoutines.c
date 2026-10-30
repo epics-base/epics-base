@@ -124,7 +124,7 @@ long epicsStdCall asInitialize(ASINPUTFUNCPTR inputfunction)
         while(puagname) {
             pgphentry = gphAdd(pasbasenew->phash,puagname->user,puag);
             if(!pgphentry) {
-                errlogPrintf("Duplicated user '%s' in UAG '%s'\n",
+                errlogSevPrintf(errlogInfo, "Duplicated user '%s' in UAG '%s'\n",
                     puagname->user, puag->name);
             }
             puagname = (UAGNAME *)ellNext(&puagname->node);
@@ -137,7 +137,7 @@ long epicsStdCall asInitialize(ASINPUTFUNCPTR inputfunction)
         while(phagname) {
             pgphentry = gphAdd(pasbasenew->phash,phagname->host,phag);
             if(!pgphentry) {
-                errlogPrintf("Duplicated host '%s' in HAG '%s'\n",
+                errlogSevPrintf(errlogInfo, "Duplicated host '%s' in HAG '%s'\n",
                     phagname->host, phag->name);
             }
             phagname = (HAGNAME *)ellNext(&phagname->node);

@@ -1,0 +1,8 @@
+# CONFIG.Common.linux-x86_64
+#
+# Definitions for linux-x86_64 target builds
+# Sites may override these definitions in CONFIG_SITE.Common.linux-x86_64
+#-------------------------------------------------------
+
+# Include definitions common to all linux targets
+include $(CONFIG)/os/CONFIG.Common.linux-x86_64

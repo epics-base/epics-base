@@ -24,6 +24,12 @@
 #include <ctype.h>
 #include <errno.h>
 
+#ifdef _WIN32
+#include <io.h> /* for isatty() */
+#include <string>
+#include <windows.h>
+#endif /* _WIN32 */
+
 #define EPICS_PRIVATE_API
 
 #include "epicsMath.h"
@@ -1313,6 +1319,85 @@ iocshBody (const char *pathname, const char *commandLine, const char *macros)
 int epicsStdCall
 iocsh (const char *pathname)
 {
+#ifdef _WIN32
+// Adjust stdout and stderr buffering for use with non-terminal programs such as procServ
+    static int first_call = 1;
+    if (first_call)
+    {
+        // see https://learn.microsoft.com/en-us/windows/win32/debug/error-mode
+        // Best practice is that all applications call the process-wide SetErrorMode function
+        // with a parameter of SEM_FAILCRITICALERRORS at startup. This is to prevent
+        // error mode dialogs from hanging the application.
+        UINT error_mode = GetErrorMode();
+        error_mode |= SEM_FAILCRITICALERRORS;
+        SetErrorMode(error_mode);
+
+        if (setvbuf(stderr, NULL, _IONBF, BUFSIZ) != 0)
+        {
+            fprintf(stderr, "iocsh: error setting stderr buffering\n");
+            fflush(stderr);
+        }
+        if (setvbuf(stdout, NULL, _IONBF, BUFSIZ) != 0)
+        {
+            fprintf(stderr, "iocsh: error setting stdout buffering\n");
+            fflush(stderr);
+        }
+//      if ( !isatty(fileno(stdout)) )
+//      {
+//          if (setvbuf(stdout, NULL, _IOFBF, 256) != 0) // set a small buffer size to try and emulate line buffering (Windows does not support _IOLBF)
+//          {
+//              fprintf(stderr, "iocsh: error setting stdout buffering\n");
+//              fflush(stderr);
+//          }
+//      }
+        // set console title to executable name - will not get done automatically if we run executable from a batch file
+        char module_path[256];
+        GetModuleFileName(NULL, module_path, sizeof(module_path));
+        const char* module_name = strrchr(module_path, '\\');
+        if (module_name != NULL)
+        {
+            ++module_name; // move past \ to real name
+        }
+        else
+        {
+            module_name = module_path;
+        }
+        SetConsoleTitle((std::string("IOC: ") + module_name).c_str());
+        const char* iocsh_showwin = macEnvExpand("$(IOCSH_SHOWWIN=)");
+        HWND conwin = GetConsoleWindow();
+        if ( conwin != NULL && iocsh_showwin != NULL )
+        {
+            switch(iocsh_showwin[0])
+            {
+                case 'M': // minimise
+                case 'm': 
+                    ShowWindowAsync(conwin, SW_MINIMIZE);
+                    break;
+
+                case 'H': // hide
+                case 'h':
+                    ShowWindowAsync(conwin, SW_HIDE);
+                    break;
+
+                default:
+                    break;
+            }
+        }
+        // disable quick edit mode, can cause ioc window to freeze if user clicks in it by mistake
+        DWORD mode;
+        HANDLE hStdin = GetStdHandle(STD_INPUT_HANDLE); 
+        if (hStdin != INVALID_HANDLE_VALUE)
+        {
+            if (GetConsoleMode(hStdin, &mode) != 0)
+            {
+                mode &= ~ENABLE_QUICK_EDIT_MODE;
+                mode |= ENABLE_EXTENDED_FLAGS;
+                SetConsoleMode(hStdin, mode);
+            }
+        }
+        first_call = 0;
+    }
+#endif /* _WIN32 */
     return iocshLoad(pathname, NULL);
 }
 

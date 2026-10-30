@@ -5,5 +5,5 @@
 TOP = ../..
 include $(TOP)/configure/CONFIG
 ARCH = _ARCH_
-TARGETS = envPaths relPaths.sh
+TARGETS = envPaths relPaths.sh runIOC.sh
 include $(TOP)/configure/RULES.ioc

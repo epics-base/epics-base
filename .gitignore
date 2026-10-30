@@ -19,3 +19,13 @@ O.*/
 .*.swp
 .DS_Store
 .iocsh_history
+#
+# local additions
+#
+envPaths
+cdCommands
+dllPath*.bat
+runIOC.bat
+runIOC.sh
+relPaths.sh
+.project

@@ -40,7 +40,7 @@ LIBCOM_API enum TF_RETURN  truncateFile (const char *pFileName, unsigned long si
         return TF_ERROR;
     }
 
-    pFile = fopen(pFileName, "r");
+    pFile = fopen(pFileName, "rb");
     if (!pFile) {
         fprintf (stderr,
             "File access problems to `%s' because `%s'\n",
@@ -97,7 +97,7 @@ LIBCOM_API enum TF_RETURN  truncateFile (const char *pFileName, unsigned long si
         charNo++;
     }
     fclose (pFile);
-    pFile = fopen(pFileName, "w");
+    pFile = fopen(pFileName, "wb");
     if (!pFile) {
         fprintf (stderr,
             "File access problems to `%s' because `%s'\n",

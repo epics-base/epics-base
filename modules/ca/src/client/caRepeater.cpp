@@ -56,6 +56,14 @@ static void usage(char* argv[])
 
 int main(int argc, char* argv[])
 {
+#ifdef _WIN32
+    HWND conwin = GetConsoleWindow();
+    if ( conwin != NULL )
+    {
+        ShowWindowAsync(conwin, SW_HIDE);
+    }
+#endif /* _WIN32 */
+
     bool detachinout = true;
 
     int opt;

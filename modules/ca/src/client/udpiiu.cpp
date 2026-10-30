@@ -25,6 +25,10 @@
 
 #define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
 
+#ifdef _WIN32
+#include <io.h> /* for access() */
+#endif /* _WIN32 */
+
 #include "envDefs.h"
 #include "dbDefs.h"
 #include "osiProcess.h"
@@ -628,8 +632,34 @@ void epicsStdCall caStartRepeaterIfNotInstalled ( unsigned repeaterPort )
          * the 2nd repeater exits when unable to attach to the
          * repeater's port)
          */
+         
+
+        /* 
+         * look for a caRepeater in the same directory as CA.DLL 
+         * and use this if present instead of a PATH search
+         */
+        char carep_path[256];
+        strcpy(carep_path, "caRepeater");
+#ifdef _WIN32       
+        char caDLLPath[MAX_PATH];
+        HMODULE hmod = GetModuleHandle("CA.DLL");
+        if (hmod != NULL) {
+           if (GetModuleFileName(hmod, caDLLPath, sizeof(caDLLPath)) > 0) {
+               char* base_path = strrchr(caDLLPath, '\\');
+               if (base_path != NULL) {
+                   *base_path = '\0';   // caDLLPath is now the directory containing CA.DLL
+                   _snprintf(carep_path, sizeof(carep_path), "%s\\caRepeater.exe", caDLLPath);
+                    if (access(carep_path, 04) != 0) {
+                        strcpy(carep_path, "caRepeater");  // Not found, so will search PATH instead for caRepeater
+                    }
+               }
+           }
+        }
+#endif /* _WIN32 */
+         
+         
         osiSpawnDetachedProcessReturn osptr =
-            osiSpawnDetachedProcess ( "!CA Repeater", "caRepeater" );
+            osiSpawnDetachedProcess ( "!CA Repeater", carep_path );
         if ( osptr != osiSpawnDetachedProcessSuccess ) {
             epicsThreadId tid;
 

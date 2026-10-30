@@ -147,7 +147,7 @@ static const int osdRealtimePriorityList [osdRealtimePriorityStateCount] =
 BOOL WINAPI DllMain (
     HINSTANCE hModule, DWORD dwReason, LPVOID lpReserved )
 {
-    static DWORD dllHandleIndex;
+    static DWORD dllHandleIndex = TLS_OUT_OF_INDEXES;
     HMODULE dllHandle = 0;
     BOOL success = TRUE;
 
@@ -161,7 +161,9 @@ BOOL WINAPI DllMain (
         break;
 
     case DLL_PROCESS_DETACH:
-        success = TlsFree ( dllHandleIndex );
+        if (dllHandleIndex != TLS_OUT_OF_INDEXES) {
+            success = TlsFree ( dllHandleIndex );
+        }
         break;
 
     case DLL_THREAD_ATTACH:
@@ -1162,7 +1164,7 @@ LIBCOM_API epicsThreadPrivateId epicsStdCall epicsThreadPrivateCreate ()
     epicsThreadPrivateOSD *p = ( epicsThreadPrivateOSD * ) malloc ( sizeof ( *p ) );
     if ( p ) {
         p->key = TlsAlloc ();
-        if ( p->key == 0xFFFFFFFF ) {
+        if ( p->key == TLS_OUT_OF_INDEXES ) {
             free ( p );
             p = 0;
         }

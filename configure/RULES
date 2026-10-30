@@ -17,3 +17,4 @@ include $(CONFIG)/RULES_BUILD
 
 endif # T_A defined
 
+include $(CONFIG)/RULES_ISIS

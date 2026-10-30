@@ -26,3 +26,6 @@ endif
 
 # Needed to find dlls for base installed build tools (antelope,eflex,...)
 PATH := $(EPICS_BASE_BIN):$(PATH)
+
+# this is so that if sh.exe is available in PATH, using echo still works
+SHELL = cmd

@@ -63,6 +63,8 @@ sub UnixPath {
         $newpath =~ s{\\}{/}go;
         $newpath =~ s{^([a-zA-Z]):/}{/cygdrive/$1/};
     } elsif ($^O eq 'MSWin32') {
+        use if $^O eq 'MSWin32', 'Win32';
+        $newpath = Win32::GetLongPathName($newpath);
         $newpath =~ s{\\}{/}go;
     }
     return $newpath;

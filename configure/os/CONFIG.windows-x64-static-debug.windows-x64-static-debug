@@ -1,0 +1,9 @@
+# CONFIG.windows-x64-static-debug.windows-x64-static-debug
+#
+# Definitions for windows-x64-static debug compiler host - windows-x64-static debug compiler target builds
+# Sites may override these definitions in CONFIG_SITE.windows-x64-static-debug.windows-x64-static-debug
+#-------------------------------------------------------
+
+include $(CONFIG)/os/CONFIG.windows-x64-static.windows-x64-static
+
+HOST_OPT=NO

@@ -1,0 +1,14 @@
+## we now use the CL environment variable set in config_env, but this
+## approach migth be needed for e.g. mings if we used that 
+
+## Win7 SP1
+#CODE_CPPFLAGS += -D_WIN32_WINNT=0x0601 -DNTDDI_VERSION=0x06010100
+
+## I believe a /SUBSYSTEM:CONSOLE,6.01 is probably not needed, it would
+## restrict the program to running on W7 and above whereas the
+## default of 6.00 would allow vista or above. but we would never try
+## running on vista.
+
+## for when we are running W10 everywhere, restrict to the LTSC version
+## For W10 LTSC (1809) "Redstone 5" / Server 2019
+#CODE_CPPFLAGS += -D_WIN32_WINNT=0x0A00 -DNTDDI_VERSION=0x0A000006

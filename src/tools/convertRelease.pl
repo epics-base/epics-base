@@ -82,6 +82,10 @@ expandRelease(\%macros);
 for ($outfile) {
     m/releaseTops/       and do { releaseTops();         last; };
     m/dllPath\.bat/      and do { dllPath();             last; };
+    if (defined($arch)) {
+        m/dllPath-$arch\.bat/    and do { dllPath();             last; };
+    }
+    m/dllCopy\.bat/              and do { dllCopy();             last; };
     m/relPaths\.sh/      and do { relPaths();            last; };
     m/ModuleDirs\.pm/    and do { moduleDirs();          last; };
     m/cdCommands/        and do { cdCommands();          last; };
@@ -98,7 +102,9 @@ sub HELP_MESSAGE {
 Usage: convertRelease.pl [-a arch] [-T top] [-t ioctop] outfile
     where outfile is one of:
         releaseTops - lists the module names defined in RELEASE*s
+        dllPath-<epics hostarch>.bat - path changes for cmd.exe to find Windows DLLs for <epics hostarch>
         dllPath.bat - path changes for cmd.exe to find Windows DLLs
+        dllCopy.bat - copy all Windows DLLs to local DIR
         relPaths.sh - path changes for bash to add RELEASE bin dir's
         *ModuleDirs.pm - generate a perl module adding lib/perl paths
         cdCommands - generate cd path strings for vxWorks IOCs
@@ -129,6 +135,29 @@ sub dllPath {
     close OUT;
 }
 
+#
+# File to copy dependent DLLs into bin directory of IOC 
+#
+sub dllCopy {
+    unlink $outfile;
+    open(OUT, ">$outfile") or die "$! creating $outfile";
+    print OUT "\@ECHO OFF\n";
+    print OUT "setlocal\n";
+    print OUT "set \"MYDIR=\%~dp0\"\n";
+    print OUT "set \"MYARCHSRC=$arch\"\n";
+    print OUT "set \"MYARCHDST=$arch\"\n";
+    print OUT "echo Copy DLLs for IOC in %MYDIR%\n";
+    print OUT "CHOICE /C YN /M \"Do you wish to continue?\"\n";
+    print OUT "IF %errorLevel% neq 1 exit /b 1\n";
+    foreach my $dir (binDirs()) {
+        $dir =~ s!/bin/$arch!/bin/%MYARCHSRC%!g;
+        $dir =~ s%/%\\%g;
+        print OUT "XCOPY /R /I /Q /Y ",$dir,"\\*.dll \%MYDIR\%..\\..\\bin\\%MYARCHDST%\n";
+    }
+    print OUT "pause\n";
+    close OUT;
+}
+
 sub relPaths {
     unlink $outfile;
     open(OUT, ">$outfile") or die "$! creating $outfile";
@@ -143,6 +172,12 @@ sub binDirs {
     foreach my $app (@includes) {
         my $path = $macros{$app} . "/bin/$arch";
         next unless -d $path;
+        if ($^O eq 'MSWin32') {
+            # reduce length of PATH by only adding
+            # bin directories with DLLs present
+            my @dlls = glob("$path/*.dll");
+            next unless scalar(@dlls);
+        }
         $path =~ s/^$root/$iocroot/o if ($opt_t);
         push @path, LocalPath($path);
     }

@@ -1,0 +1,8 @@
+# CONFIG.linux-x86_64.Common
+#
+# Definitions for linux-x86_64 host builds
+# Sites may override these definitions in CONFIG_SITE.linux-x86_64.Common
+#-------------------------------------------------------
+
+#Include definitions common to unix hosts
+include $(CONFIG)/os/CONFIG.linux-x86_64.Common

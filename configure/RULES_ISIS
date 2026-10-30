@@ -1,0 +1,3 @@
+ioctests:
+
+.PHONY: ioctests

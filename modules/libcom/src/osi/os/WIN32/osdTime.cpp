@@ -277,7 +277,7 @@ void currentTime::getCurrentTime ( epicsTimeStamp & dest )
             double diff = static_cast < double >
                 ( this->epicsTimeLast - epicsTimeCurrent ) / EPICS_TIME_TICKS_PER_SEC;
             errlogPrintf (
-                "currentTime::getCurrentTime(): %f sec "
+                "currentTime::getCurrentTime(): %g sec "
                 "time discontinuity detected\n",
                 diff );
         }

@@ -1,0 +1,16 @@
+# CONFIG_SITE.win32-x86.Common
+#
+# Revision-Id: jba@aps.anl.gov-20101115012953-0084bw5aaupzfiip
+#
+# Site specific definitions for win32-x86 host
+# Only the local epics system manager should modify this file
+ 
+# jba test overrides
+#CROSS_COMPILER_TARGET_ARCHS=vxWorks-486
+#CROSS_COMPILER_TARGET_ARCHS+=vxWorks-68040
+#INSTALL_LOCATION = G:/testInstall
+
+INSTALL_PDB=YES
+
+#COMMANDLINE_LIBRARY = WINEDITLINE
+#COMMANDLINE_LIBRARY = EPICS

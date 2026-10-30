@@ -11,13 +11,17 @@
 /include/
 /lib/
 /templates/
+/data/
 
 # Local configuration files
 /configure/*.local
 
 # iocBoot generated files
 /iocBoot/*ioc*/cdCommands
-/iocBoot/*ioc*/dllPath.bat
+/iocBoot/*ioc*/dllPath*.bat
+/iocBoot/*ioc*/dllCopy.bat
+/iocBoot/*ioc*/runIOC.bat
+/iocBoot/*ioc*/runIOC.sh
 /iocBoot/*ioc*/envPaths
 /iocBoot/*ioc*/relPaths.sh
 

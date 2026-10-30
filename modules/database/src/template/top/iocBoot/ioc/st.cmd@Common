@@ -7,6 +7,9 @@
 #- You may have to change _APPNAME_ to something else
 #- everywhere it appears in this file
 
+# Increase this if you get <<TRUNCATED>> or discarded messages warnings in your errlog output
+errlogInit2(65536, 256)
+
 < envPaths
 
 cd "${TOP}"
@@ -15,11 +18,6 @@ cd "${TOP}"
 dbLoadDatabase "dbd/_APPNAME_.dbd"
 _CSAFEAPPNAME__registerRecordDeviceDriver pdbbase
 
-## Load record instances
-#dbLoadRecords("db/_APPNAME_.db","user=_USER_")
+## calling common command file in ioc 01 boot dir
+< ${TOP}/iocBoot/ioc_01_APP_NAME_/st-common.cmd
 
-cd "${TOP}/iocBoot/${IOC}"
-iocInit
-
-## Start any sequence programs
-#seq sncxxx,"user=_USER_"

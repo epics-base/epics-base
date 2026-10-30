@@ -157,6 +157,10 @@ int asInit(void)
 int asShutdown(void) {
     volatile ASBASE *pbase = pasbase;
     pasbase = NULL;
+    /* restore the invariant that asActive implies pasbase != NULL; leaving
+       asActive TRUE here would let later AS calls dereference the freed/NULL
+       base or consult stale cached access rights */
+    asActive = FALSE;
     firstTime = TRUE;
     if(pbase)
         asFreeAll((ASBASE*)pbase);

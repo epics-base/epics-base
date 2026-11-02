@@ -1336,6 +1336,11 @@ static void dbRecordField(char *name,char *value)
                                 int nChoice;
                                 int choice;
 
+                                if (!temp.pflddes->ftPvt) {
+                                    /* no choices defined: unlikely */
+                                    status = S_stdlib_noConversion;
+                                    break;
+                                }
                                 if (temp.pflddes->field_type == DBF_MENU) {
                                     dbMenu* menu = (dbMenu*)temp.pflddes->ftPvt;
                                     choices = menu->papChoiceValue;

@@ -13,6 +13,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
+#include <unistd.h>
+#include <sys/stat.h>
 
 #define EPICS_EXPOSE_LIBCOM_MONOTONIC_PRIVATE
 #include "osiSock.h"
@@ -20,8 +22,55 @@
 #include "cantProceed.h"
 #include "epicsTime.h"
 #include "generalTimeSup.h"
+#include "errlog.h"
 
-#ifdef CLOCK_REALTIME
+#if defined(__linux__)
+
+#define TIME_INIT generalTimeCurrentTpRegister("GetTimeOfDay", \
+    LAST_RESORT_PRIORITY, osdTimeGetCurrent)
+
+extern "C"
+int osdTimeGetCurrent(epicsTimeStamp *pDest)
+{
+    struct timespec clockNow;
+    if(clock_gettime(CLOCK_REALTIME, &clockNow)) {
+        static unsigned char shown;
+        if(!shown) {
+            // likely an unrecoverable situation, but at least don't just flood the log
+            fprintf(stderr, ERL_ERROR ": CLOCK_REALTIME not available.  %d\n", errno);
+            shown = 1;
+        }
+    }
+    if(clockNow.tv_sec < POSIX_TIME_AT_EPICS_EPOCH) {
+        clockNow.tv_sec = POSIX_TIME_AT_EPICS_EPOCH + 86400;
+        clockNow.tv_nsec = 0;
+    }
+    epicsTimeFromTimespec(pDest, &clockNow);
+    return 0;
+}
+
+extern "C"
+void ClockTime_GetProgramStart(epicsTimeStamp *pDest)
+{
+    static epicsTimeStamp startTime;
+
+    if(startTime.secPastEpoch==0) {
+        pid_t self = getpid();
+        char procdir[sizeof("/proc/18446744073709551615")]; // 1<<64 - 1
+
+        sprintf(procdir, "/proc/%llu", (unsigned long long)self);
+
+        struct stat out;
+        if(::stat(procdir, &out)==0 && out.st_ctim.tv_sec > POSIX_TIME_AT_EPICS_EPOCH) {
+            startTime.nsec = out.st_ctim.tv_nsec;
+            startTime.secPastEpoch = out.st_ctim.tv_sec - POSIX_TIME_AT_EPICS_EPOCH;
+        }
+    }
+
+    *pDest = startTime;
+}
+
+#elif defined(CLOCK_REALTIME)
     #include "osiClockTime.h"
 
     #define TIME_INIT ClockTime_Init(CLOCKTIME_NOSYNC)

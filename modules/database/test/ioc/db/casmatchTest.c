@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "epicsStdio.h"
 #include "dbUnitTest.h"
 #include "dbBase.h"
 #include "dbAccessDefs.h"
@@ -23,7 +24,7 @@ static int iocshOutput(const char *command, char *output, size_t size)
     int status;
     size_t nread;
 
-    snprintf(line, sizeof(line), "%s > %s", command, filename);
+    epicsSnprintf(line, sizeof(line), "%s > %s", command, filename);
     status = iocshCmd(line);
     file = fopen(filename, "r");
     if (!file)

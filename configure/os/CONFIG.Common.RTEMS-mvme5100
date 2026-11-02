@@ -1,0 +1,37 @@
+# CONFIG.Common.RTEMS-mvme5100
+#
+# Definitions for the RTEMS-mvme5100 target
+# Site-specific overrides go in CONFIG_SITE.Common.RTEMS-mvme5100
+#
+# Author: Vijay Banerjee
+#
+# Support for MVME5100 is available from RTEMS version 7.
+#-------------------------------------------------------
+
+EXE = .elf
+RTEMS_BSP = mvme5100
+RTEMS_TARGET_CPU = powerpc
+GNU_TARGET = powerpc-rtems
+ARCH_DEP_CFLAGS += -DBSP_NVRAM_BASE_ADDR=0xfef880c8
+ARCH_DEP_CFLAGS += -DHAVE_PPCBUG
+ARCH_DEP_CFLAGS += -DNVRAM_INDIRECT
+ARCH_DEP_CFLAGS += -DNVRAM_INDIRECT_ADDR_LO=0xFEF880C8
+ARCH_DEP_CFLAGS += -DNVRAM_INDIRECT_ADDR_HI=0xFEF880D0
+ARCH_DEP_CFLAGS += -DNVRAM_INDIRECT_DATA=0xFEF880D8
+
+MUNCH_SUFFIX = .boot
+define MUNCH_CMD
+	$(RTEMS_TOOLS)/bin/$(OBJCOPY_FOR_TARGET) -O binary -R .comment -S $< rtems
+	gzip -f9 rtems
+	$(RTEMS_TOOLS)/bin/$(LD_FOR_TARGET) -o $@.elf \
+		 $(PROJECT_RELEASE)/lib/bootloader.o \
+		--just-symbols=$< \
+		-b binary rtems.gz \
+		--no-warn-mismatch \
+		-T $(PROJECT_RELEASE)/lib/ppcboot.lds \
+		-Map $<.map
+	$(RTEMS_TOOLS)/bin/$(OBJCOPY_FOR_TARGET) -O binary $@.elf $@
+	rm -f rtems.gz $@.elf
+endef
+
+include $(CONFIG)/os/CONFIG.Common.RTEMS

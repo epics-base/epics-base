@@ -378,7 +378,7 @@ static int yyerror(char *str)
         dbIncludePrint();
         yyFailed = TRUE;
     }
-    fprintf(stderr, "\n %d | %s\n", pinputFileNow->line_num, my_buffer);
+    fprintf(stderr, "\n %d | %s\n", pinputFileNow ? pinputFileNow->line_num : -1, my_buffer);
     return(0);
 }
 static long pvt_yy_parse(void)

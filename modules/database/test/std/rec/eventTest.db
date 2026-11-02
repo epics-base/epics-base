@@ -1,0 +1,29 @@
+record(event, "event") {
+    field(VAL,  "FirstEvent")
+    field(FLNK, "forwardCounter")
+}
+
+record(stringout, "eventName") {
+    field(VAL, "FirstEvent")
+}
+
+record(event, "softEvent") {
+    field(DTYP, "Soft Channel")
+    field(INP,  "eventName")
+}
+
+record(calc, "firstCounter") {
+    field(SCAN, "Event")
+    field(EVNT, "FirstEvent")
+    field(CALC, "VAL+1")
+}
+
+record(calc, "secondCounter") {
+    field(SCAN, "Event")
+    field(EVNT, "SecondEvent")
+    field(CALC, "VAL+1")
+}
+
+record(calc, "forwardCounter") {
+    field(CALC, "VAL+1")
+}

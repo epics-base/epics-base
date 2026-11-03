@@ -56,6 +56,20 @@ typedef double          epicsFloat64;
 typedef epicsInt32      epicsStatus;
  /** @} */
 
+/**
+ * \name Limits of the 64-bit integer types
+ *
+ * \<limits.h\> only defines LLONG_MIN, LLONG_MAX and ULLONG_MAX in C99
+ * and later; the RTEMS 4.x cross-compilers default to C89 and do not
+ * provide them. The types above have a fixed width, so give the limits
+ * here instead.
+ * @{
+ */
+#define epicsInt64Min   (-0x7fffffffffffffffLL - 1)
+#define epicsInt64Max     0x7fffffffffffffffLL
+#define epicsUInt64Max    0xffffffffffffffffULL
+ /** @} */
+
 #define MAX_STRING_SIZE 40
 
 /**

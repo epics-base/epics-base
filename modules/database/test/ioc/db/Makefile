@@ -37,6 +37,7 @@ dbTestIoc_DBD += devx.dbd
 dbTestIoc_DBD += jlinkz.dbd
 dbTestIoc_DBD += dbLinkdset.dbd
 dbTestIoc_DBD += dbCore.dbd
+dbTestIoc_DBD += rsrv.dbd
 TESTFILES += $(COMMON_DIR)/dbTestIoc.dbd ../xRecord.db
 
 testHarness_SRCS += dbTestIoc_registerRecordDeviceDriver.cpp
@@ -115,6 +116,12 @@ dbCaStatsTest_SRCS += dbTestIoc_registerRecordDeviceDriver.cpp
 testHarness_SRCS += dbCaStatsTest.c
 TESTS += dbCaStatsTest
 TESTFILES += ../dbCaStats.db
+
+TESTPROD_HOST += casmatchTest
+casmatchTest_SRCS += casmatchTest.c
+casmatchTest_SRCS += dbTestIoc_registerRecordDeviceDriver.cpp
+testHarness_SRCS += casmatchTest.c
+TESTS += casmatchTest
 
 TESTPROD_HOST += dbCaLinkTest
 dbCaLinkTest_SRCS += dbCaLinkTest.c

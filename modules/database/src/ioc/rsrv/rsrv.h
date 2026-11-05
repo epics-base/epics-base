@@ -31,6 +31,7 @@ extern "C" {
 DBCORE_API void rsrv_register_server(void);
 
 DBCORE_API void casr (unsigned level);
+DBCORE_API void casmatch(const char *pattern, unsigned level);
 DBCORE_API int casClientInitiatingCurrentThread (
                         char * pBuf, size_t bufSize );
 DBCORE_API void casStatsFetch (

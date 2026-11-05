@@ -43,6 +43,7 @@ char copyright[] =
 #endif
 
 #include "epicsTempFile.c"
+#include "compilerDependencies.h"
 
 static char flex_version[] = "2.3";
 
@@ -415,8 +416,7 @@ void flexinit(int argc, char **argv)
                     fprintf( stderr,
         "%s: Assuming use of deprecated -c flag is really intended to be -C\n",
                              program_name );
-
-                    /* fall through */
+                    EPICS_FALLTHROUGH;
 
                 case 'C':
                     if ( i != 1 )

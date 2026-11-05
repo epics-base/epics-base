@@ -97,7 +97,7 @@ epicsStdCall macParseDefns(
             if ( !quote && !escape && ( isspace( (int) *c ) || *c == ',' ) ) break;
             ptr[num] = c;
             state = inName;
-            /* fall through (may be empty name) */
+            EPICS_FALLTHROUGH;
 
           case inName:
             if ( quote || escape || ( *c != '=' && *c != ',' ) ) break;
@@ -109,13 +109,13 @@ epicsStdCall macParseDefns(
             state = preValue;
             if ( *c != ',' ) break;
             del[num] = TRUE;
-            /* fall through (','; will delete) */
+            EPICS_FALLTHROUGH;
 
           case preValue:
             if ( !quote && !escape && isspace( (int) *c ) ) break;
             ptr[num] = c;
             state = inValue;
-            /* fall through (may be empty value) */
+            EPICS_FALLTHROUGH;
 
           case inValue:
             if ( quote || escape || *c != ',' ) break;

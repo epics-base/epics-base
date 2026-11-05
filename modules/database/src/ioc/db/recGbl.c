@@ -269,7 +269,7 @@ void recGblInheritSevrMsg(int msMode, void *precord, epicsEnum16 stat,
     case pvlOptMSI:
         if (sevr < INVALID_ALARM)
             break;
-        /* Fall through */
+        EPICS_FALLTHROUGH;
     case pvlOptMS:
         recGblSetSevr(precord, LINK_ALARM, sevr);
         break;

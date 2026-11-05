@@ -38,6 +38,7 @@ typedef struct epicsThreadOSD {
     int                isOkToBlock;
     unsigned int       osiPriority;
     int                joinable;
+    int                isTidSet;
     char               name[1];     /* actually larger */
 } epicsThreadOSD;
 

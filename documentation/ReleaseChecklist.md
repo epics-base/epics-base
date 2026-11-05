@@ -302,9 +302,29 @@ git push --follow-tags upstream 7.0
 
 ----
 
+### Build the tagged documentation
+
+The read-the-docs build process isn't automatic when the tag doesn't
+point to the last commit in a push, so building the release docs
+must be triggered by hand after pushing as follows:
+
+- Go to [read-the-docs versions page](https://app.readthedocs.org/projects/epics-base/)
+- Look for a R7.0.12 version tag in the list. If present with a
+  green check-mark it has already been built: click on the Book icon
+  ("View documentation for ...") link to check the result.
+- If R7.0.12 is not present, click the "+ Add version" button and
+  type `7.0.12` into the "Search versions" box there, then click that
+  entry to bring up an "Edit version" dialog.
+- I like to edit the suggested "Slug" to remove the `r` from the
+  start.
+- Click the "Active" slider to turn that on, then "Update version".
+- Wait for the documentation to be built, and check the result.
+
+----
+
 ### Publish the Release
 
-These stages don't have to happen in this particular order.
+The steps below don't have to happen in this particular order.
 
 #### A. Publish to epics.anl.gov
 
@@ -333,7 +353,7 @@ updating the front page and sidebar.
 Add an entry to the website News page, linking to the new version
 webpage.
 
-### B. Publish to epics-controls.org
+#### B. Publish to epics-controls.org
 
 **Website Editor:**
 Upload the tar file and its `.asc` signature file to the
@@ -355,7 +375,7 @@ Not covered in the instructions on the website: Go to Posts, find a previous
 release and use "Duplicate Post", then edit the result and publish it.
 This generates the News item.
 
-### C. Publish to GitHub
+#### C. Publish to GitHub
 
 **Release Manager:**
 Go to the GitHub

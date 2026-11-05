@@ -82,9 +82,12 @@ static void testArrayWrites(void)
 static void checkMonitorCount(testMonitor *monitor, unsigned expected,
     const char *name)
 {
+    unsigned actual;
+
     testMonitorSync(monitor);
-    testOk(testMonitorCount(monitor, 1) == expected,
-        "%s monitor count is %u", name, expected);
+    actual = testMonitorCount(monitor, 1);
+    testOk(actual == expected, "%s monitor count is %u (got %u)",
+        name, expected, actual);
 }
 
 static void testValueMonitors(void)

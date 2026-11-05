@@ -9,6 +9,9 @@ RTEMS_BSP = xilinx_zynq_microzed
 RTEMS_TARGET_CPU = arm
 GNU_TARGET = arm-rtems
 
+# LibBSD domain page memory in Megabytes (MB)
+ARCH_DEP_CFLAGS += -DRTEMS_BSD_DOMAIN_PAGE_MBUFS_SIZE_MB=32
+
 OP_SYS_LDLIBS += -Wl,--gc-sections
 ARCH_DEP_LDFLAGS = -L$(RTEMS_BASE)/$(GNU_TARGET)$(RTEMS_VERSION)/xilinx_zynq_microzed/lib/
 

@@ -58,6 +58,11 @@
 
 #include <stddef.h>
 
+#if __has_include(<pthread.h>)
+#  include <pthread.h>
+#endif
+
+#include "epicsVersion.h"
 #include "libComAPI.h"
 #include "compilerDependencies.h"
 
@@ -204,8 +209,21 @@ LIBCOM_API epicsThreadId epicsStdCall epicsThreadMustCreate (
     const char * name, unsigned int priority, unsigned int stackSize,
     EPICSTHREADFUNC funptr,void * parm );
 
-/* This gets undefined in osdThread.h on VxWorks < 6.9 */
 #define EPICS_THREAD_CAN_JOIN
+
+#ifdef _WRS_VXWORKS_MAJOR
+#  define VXWORKS_VERSION_INT VERSION_INT(_WRS_VXWORKS_MAJOR, \
+        _WRS_VXWORKS_MINOR, _WRS_VXWORKS_MAINT, _WRS_VXWORKS_SVCPK)
+#else
+/* Version not available at compile-time */
+#  define VXWORKS_VERSION_INT 0
+#endif
+
+#if VXWORKS_VERSION_INT < VERSION_INT(6, 9, 4, 1)
+/* VxWorks 6.9.4.1 and later can support joining threads */
+#  undef EPICS_THREAD_CAN_JOIN
+#endif
+
 /** Wait for a joinable thread to exit (return from its main function).
  *  Thread must have been created as joinable.
  * \since 7.0.2 Test EPICS_THREAD_CAN_JOIN macro for BSP support
@@ -355,6 +373,14 @@ LIBCOM_API void epicsStdCall epicsThreadPrivateSet(epicsThreadPrivateId,void *);
 /** Fetch the current value of a thread local variable */
 LIBCOM_API void * epicsStdCall epicsThreadPrivateGet(epicsThreadPrivateId);
 
+#if __has_include(<pthread.h>)
+LIBCOM_API pthread_t epicsThreadGetPosixThreadId(epicsThreadId id);
+LIBCOM_API int epicsThreadGetPosixPriority(epicsThreadId id);
+#elif defined(__rtems__)
+/* RTEMS-score */
+int epicsThreadGetOssPriorityValue(unsigned int osiPriority);
+#endif
+
 #ifdef __cplusplus
 }
 #endif
@@ -477,8 +503,6 @@ private:
 };
 
 #endif /* __cplusplus */
-
-#include "osdThread.h"
 
 #ifdef __cplusplus
 

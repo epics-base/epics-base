@@ -35,6 +35,8 @@
 #include "vxLib.h"
 #include "epicsExit.h"
 
+#include "osdThread.h"
+
 #ifdef EPICS_THREAD_CAN_JOIN
   /* The implementation of epicsThreadMustJoin() here uses 2 features
    * of VxWorks that were first introduced in VxWorks 6.9: taskWait(),

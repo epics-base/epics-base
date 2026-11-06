@@ -11,14 +11,4 @@
 #ifndef INC_osdThread_H
 #define INC_osdThread_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-int epicsThreadGetOssPriorityValue(unsigned int osiPriority);
-
-#ifdef __cplusplus
-}
-#endif
-
 #endif /* INC_osdThread_H */

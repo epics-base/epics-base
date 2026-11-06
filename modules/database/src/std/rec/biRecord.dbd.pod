@@ -65,7 +65,9 @@ field.
 The value from RVAL is then converted using the process described in the
 next section.
 
-=fields INP, DTYP, ZNAM, ONAM, RVAL, VAL
+The IVAL field is always the inverse of the VAL field.
+
+=fields INP, DTYP, ZNAM, ONAM, RVAL, VAL, IVAL
 
 =head3 Conversion Fields
 
@@ -166,6 +168,11 @@ is not equal to VAL.
 		asl(ASL0)
 		pp(TRUE)
 	}
+	field(IVAL, DBF_SHORT) {
+        prompt("Inverted Value")
+        special(SPC_NOMOD)
+        interest(1)
+    }
 	field(ZSV,DBF_MENU) {
 		prompt("Zero Error Severity")
 		promptgroup("70 - Alarm")
@@ -308,6 +315,8 @@ for more information on simulation mode and its fields.
         interest(4)
         extra("epicsCallback            *simpvt")
     }
+	
+    
 
 =head2 Record Support
 

@@ -146,6 +146,10 @@ static long process(struct dbCommon *pcommon)
         prec->udf = FALSE;
     }
     else if(status==2) status=0;
+
+    /** IVAL is always the inverse of VAL. */
+    prec->ival = (prec->val == 0) ? 1 : 0;
+
     /* check for alarms */
     checkAlarms(prec, &timeLast);
     /* check event list */
@@ -202,7 +206,7 @@ static long get_enum_str(const DBADDR *paddr, char *pstring)
 static long get_enum_strs(const DBADDR *paddr,struct dbr_enumStrs *pes)
 {
     biRecord    *prec=(biRecord *)paddr->precord;
-
+    
     pes->no_str = 2;
     memset(pes->strs,'\0',sizeof(pes->strs));
 
@@ -295,6 +299,9 @@ static void monitor(biRecord *prec)
     /* send out monitors connected to the value field */
     if (monitor_mask){
         db_post_events(prec,&prec->val,monitor_mask);
+
+        /** IVAL can post monitors. */
+        db_post_events(prec, &prec->ival, monitor_mask);
     }
     if(prec->oraw!=prec->rval) {
         db_post_events(prec,&prec->rval,

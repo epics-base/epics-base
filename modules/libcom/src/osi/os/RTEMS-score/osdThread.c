@@ -40,6 +40,8 @@
 #include "epicsExit.h"
 #include "epicsAtomic.h"
 
+#include "osdThread.h"
+
 LIBCOM_API void osdThreadHooksRun(epicsThreadId id);
 LIBCOM_API void osdThreadHooksRunMain(epicsThreadId id);
 

@@ -11,4 +11,14 @@
 #ifndef osdThreadh
 #define osdThreadh
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+extern HANDLE osdThreadGetTimer(void);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif /* osdThreadh */

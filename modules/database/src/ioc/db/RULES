@@ -16,6 +16,7 @@ THESE_RULES := $(IOCDIR)/db/RULES
 dbCommon.h$(DEP): $(COMMON_DIR)/dbCommonRecord.dbd $(THESE_RULES) \
     $(DBDTORECTYPEH_dep)
 	$(DBTORECORDTYPEH) -D -I ../db  -I $(COMMON_DIR) -o $(COMMONDEP_TARGET) $< > $@.stdout
+	echo $@: $(COMMONDEP_TARGET) >> $@.stdout
 	$(MV) $@.stdout $@
 
 $(COMMON_DIR)/dbCommonRecord.html: ../db/dbCommon.dbd.pod

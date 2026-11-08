@@ -11,6 +11,9 @@ GNU_TARGET = powerpc-rtems
 ARCH_DEP_CFLAGS += -DMY_DO_BOOTP=NULL
 ARCH_DEP_CFLAGS += -DHAVE_PPCBUG
 
+# LibBSD domain page memory in Megabytes (MB)
+ARCH_DEP_CFLAGS += -DRTEMS_BSD_DOMAIN_PAGE_MBUFS_SIZE_MB=32
+
 MUNCH_SUFFIX = .boot
 define MUNCH_CMD
 	$(RTEMS_TOOLS)/bin/$(OBJCOPY_FOR_TARGET) -O binary -R .comment -S $< rtems

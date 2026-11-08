@@ -16,7 +16,7 @@ ARCH_DEP_CFLAGS += -DBSP_NVRAM_BASE_ADDR=0xf1110000
 
 MUNCH_SUFFIX = .boot
 define MUNCH_CMD
-	$(RTEMS_TOOLS)/bin/$(OBJCOPY_FOR_TARGET) -O binary $< $@
+	$(RTEMS_OBJCOPY_FOR_TARGET) -O binary $< $@
 endef
 
 include $(CONFIG)/os/CONFIG.Common.RTEMS

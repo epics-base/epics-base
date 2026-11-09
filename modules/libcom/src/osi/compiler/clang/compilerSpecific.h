@@ -68,4 +68,6 @@
  */
 #define EPICS_MALLOC(...) __attribute__((__malloc__, __alloc_size__(__VA_ARGS__)))
 
+#define EPICS_FALLTHROUGH __attribute__((fallthrough))
+
 #endif  /* ifndef compilerSpecific_h */

@@ -41,5 +41,6 @@
 
 #endif /* __cplusplus */
 
+#define EPICS_FALLTHROUGH
 
 #endif  /* ifndef compilerSpecific_h */

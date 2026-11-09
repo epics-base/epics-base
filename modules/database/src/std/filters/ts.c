@@ -346,7 +346,7 @@ static void channelRegisterPost(dbChannel *chan, void *pvt,
     switch (settings->mode) {
     case tsModeArray:
         probe->no_elements = 2;
-        /* fallthrough */
+        EPICS_FALLTHROUGH;
     case tsModeSec:
     case tsModeNsec:
         probe->field_type = DBF_ULONG;

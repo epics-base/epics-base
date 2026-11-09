@@ -234,7 +234,7 @@ CONTINUE:
                 prec->val = prec->ivov;
                 convert(prec);
             }
-            /* No break, fall through... */
+            EPICS_FALLTHROUGH;
         case menuIvoaContinue_normally:
             status = writeValue(prec);
             break;

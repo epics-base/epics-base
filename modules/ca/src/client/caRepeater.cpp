@@ -72,7 +72,7 @@ int main(int argc, char* argv[])
             return 0;
         case 'd':
             debug++;
-            // Fall through
+            EPICS_FALLTHROUGH;
         case 'v':
             detachinout = false;
             break;

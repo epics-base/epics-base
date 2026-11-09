@@ -37,3 +37,43 @@ record(seq, "seq0"){
 record(ai, "ai0"){
 }
 
+record(seq, "seqA") {
+    field(DOL0, "1")
+    field(LNK0, "startB.VAL PP")
+    field(DOL1, "2")
+    field(LNK1, "order.VAL PP")
+    field(FLNK, "seqComplete")
+}
+
+record(seq, "seqB") {
+    field(DOL0, "3")
+    field(LNK0, "order.VAL PP")
+    field(DOL1, "4")
+    field(LNK1, "order.VAL PP")
+    field(FLNK, "seqBComplete")
+}
+
+record(seq, "seqSync") {
+    field(DOL0, "5")
+    field(LNK0, "order.VAL PP")
+    field(DOL1, "6")
+    field(LNK1, "order.VAL PP")
+}
+
+record(sub, "startB") {
+    field(SNAM, "seqTrace")
+    field(FLNK, "seqB.PROC")
+}
+
+record(sub, "order") {
+    field(SNAM, "seqTrace")
+}
+
+record(sub, "seqComplete") {
+    field(SNAM, "seqACompleteSub")
+}
+
+record(sub, "seqBComplete") {
+    field(SNAM, "seqBCompleteSub")
+}
+

@@ -454,3 +454,26 @@ done:
     free(dist1);
     return ret;
 }
+
+void epicsStrerror(int errnum, char *buf, size_t buflen) {
+    char tmp[256];
+    if (!buf || buflen == 0) return;
+
+    tmp[0] = '\0';
+
+#if defined(_GNU_SOURCE)
+    /** GNU-specific strerror_r returns a char* which might not point to tmp */
+    const char* msg = strerror_r(errnum, tmp, sizeof(tmp));
+    if (msg != tmp) {
+        snprintf(tmp, sizeof(tmp), "%s", msg);
+    }
+#else
+    /** XSI-compliant POSIX fallback */
+    strerror_r(errnum, tmp, sizeof(tmp));
+#endif
+
+    /** Format error message string with the numerical code embedded */
+    snprintf(buf, buflen, "%s (errno=%d)", tmp[0] ? tmp : "Unknown error", errnum);
+}
+
+

@@ -12,6 +12,7 @@
 #include <dbStaticLib.h>
 #include <dbStaticPvt.h>
 #include <dbUnitTest.h>
+#include <epicsMath.h>
 #include <testMain.h>
 #include <epicsString.h>
 #include <iocsh.h>
@@ -337,6 +338,42 @@ static void testReadDatabase(const char *filename, int expectToFail)
             expectToFail ? " is expected to fail" : "");
 }
 
+static void testSimilarName(const char *input,
+                            const char *expectRec,
+                            const char *expectFld,
+                            double expectScore)
+{
+    DBENTRY ent;
+    long status;
+    double score = -2.0;
+
+    dbInitEntry(pdbbase, &ent);
+    status = dbFindRecordSimilar(&ent, input, &score);
+
+    if(status) {
+        if(!expectRec) {
+            testPass("Expected no match for '%s'", input);
+        } else {
+            testFail("No match for '%s', expected '%s.%s' with %f",
+                     input, expectRec, expectFld, expectScore);
+        }
+    } else {
+        if(!expectRec) {
+            testFail("Unexpected match '%s', found '%s.%s' with %f",
+                     input, ent.precnode->recordname,
+                     ent.pflddes->name, score);
+        } else {
+            testOk(strcmp(expectRec, ent.precnode->recordname)==0
+                   && strcmp(expectFld, ent.pflddes->name)==0
+                   && fabs(score-expectScore) < 0.001,
+                   "Mis-match '%s', found '%s.%s' with %f, expected '%s.%s' with %f",
+                   input,
+                   ent.precnode->recordname, ent.pflddes->name, score,
+                   expectRec, expectFld, expectScore);
+        }
+    }
+}
+
 void dbTestIoc_registerRecordDeviceDriver(struct dbBase *);
 
 MAIN(dbStaticTest)
@@ -345,7 +382,7 @@ MAIN(dbStaticTest)
     char *ldirDup;
     FILE *fp = NULL;
 
-    testPlan(350);
+    testPlan(358);
     testdbPrepare();
 
     testdbReadDatabase("dbTestIoc.dbd", NULL, NULL);
@@ -451,6 +488,16 @@ MAIN(dbStaticTest)
     testEntryRemoved("testdelrec11");
 
     testDbVerify("testrec");
+
+    testDiag("testSimilarName");
+    testSimilarName("testrec", "testrec", "VAL", 1.0);
+    testSimilarName("testrec.VAL", "testrec", "VAL", 1.0);
+    testSimilarName("testrec.VAL$", "testrec", "VAL", 1.0);
+    testSimilarName("testrec.CAL", "testrec", "VAL", 0.833);
+    testSimilarName("testrex.VAL", "testrec", "VAL", 0.929);
+    testSimilarName("testrex$", "testrec", "VAL", 0.875);
+    testSimilarName("testrex.", "testrec", "VAL", 0.929);
+    testSimilarName("testrex.$", "testrec", "VAL", 0.929);
 
     testIocShutdownOk();
 

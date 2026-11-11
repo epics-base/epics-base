@@ -770,14 +770,10 @@ static bool substituteGetNextSet(subInfo * const psubInfo,char **filename)
     while (psubFile->token == tokenSeparator)
         subGetNextToken(psubFile);
 
-    if (psubFile->token == tokenLBrace) {
+    if (psubFile->token == tokenLBrace ||
+        psubFile->token == tokenRBrace) {
         EXITD(1);
         return true;
-    }
-
-    if (psubFile->token == tokenRBrace) {
-        subFileErrPrint(psubFile, "Parse error, unexpected '}'");
-        abortExit(1);
     }
 
     if (psubFile->token != tokenString ||

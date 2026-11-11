@@ -1,0 +1,66 @@
+record(fanout, "test_fanout_record") {
+}
+
+record(calc, "test_fanout_out0") {
+    field(CALC, "VAL+1")
+}
+
+record(calc, "test_fanout_out1") {
+    field(CALC, "VAL+1")
+}
+
+record(calc, "test_fanout_out2") {
+    field(CALC, "VAL+1")
+}
+
+record(calc, "test_fanout_out3") {
+    field(CALC, "VAL+1")
+}
+
+record(calc, "test_fanout_out4") {
+    field(CALC, "VAL+1")
+}
+
+record(calc, "test_fanout_out5") {
+    field(CALC, "VAL+1")
+}
+
+record(calc, "test_fanout_out6") {
+    field(CALC, "VAL+1")
+}
+
+record(calc, "test_fanout_out7") {
+    field(CALC, "VAL+1")
+}
+
+record(calc, "test_fanout_out8") {
+    field(CALC, "VAL+1")
+}
+
+record(calc, "test_fanout_out9") {
+    field(CALC, "VAL+1")
+}
+
+record(calc, "test_fanout_outa") {
+    field(CALC, "VAL+1")
+}
+
+record(calc, "test_fanout_outb") {
+    field(CALC, "VAL+1")
+}
+
+record(calc, "test_fanout_outc") {
+    field(CALC, "VAL+1")
+}
+
+record(calc, "test_fanout_outd") {
+    field(CALC, "VAL+1")
+}
+
+record(calc, "test_fanout_oute") {
+    field(CALC, "VAL+1")
+}
+
+record(calc, "test_fanout_outf") {
+    field(CALC, "VAL+1")
+}

@@ -53,7 +53,6 @@ permissiveRecord
 printfRecord
 selRecord
 seqRecord
-stateRecord
 stringinRecord
 stringoutRecord
 subArrayRecord

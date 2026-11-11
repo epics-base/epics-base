@@ -1,0 +1,24 @@
+record(calcout, "test_calcout"){
+
+}
+
+record(ao, "test_ao1"){
+
+}
+
+record(ao, "test_ao2"){
+
+}
+
+record(ao, "test_ao3"){
+
+}
+
+record(ao, "test_out"){
+
+}
+
+record(calcout, "test_calcout2"){
+#    field(INPA, "test_ao1")
+#    field(INPB, "234")
+}

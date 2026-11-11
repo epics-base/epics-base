@@ -32,8 +32,9 @@
 #include "tool_lib.h"
 
 static unsigned statLevel = 0;  /* ca_client_status() interest level */
+static int showIfAnyConn = 0;   /* Flag: print values if at least one PV connects */
 
-
+
 void usage (void)
 {
     fprintf (stderr, "\nUsage: cainfo [options] <PV name> ...\n\n"
@@ -43,6 +44,7 @@ void usage (void)
     "  -w <sec>:   Wait time, specifies CA timeout, default is %f second(s)\n"
     "  -s <level>: Call ca_client_status with the specified interest level\n"
     "  -p <prio>:  CA priority (0-%u, default 0=lowest)\n"
+    "  -i: Incrementally print values, even when a PV in the list is disconnected\n"
     "\nExample: cainfo my_channel another_channel\n\n"
              , DEFAULT_TIMEOUT, CA_PRIORITY_MAX);
     fprintf (stderr, "\nEPICS Version %s, CA Protocol version %s\n", EPICS_VERSION_STRING, ca_version() );
@@ -74,12 +76,24 @@ int cainfo (pv *pvs, int nPvs)
         "never connected", "previously connected", "connected", "closed" };
     char *boolStrings[] = { "no ", "" };
 
+                                /* Suppress all output if any PV is missing,
+                                 * unless the user issued -i */
+    if (!showIfAnyConn) {
+        for (n = 0; n < nPvs; n++) {
+            if (!pvs[n].chid || ca_state(pvs[n].chid) != cs_conn)
+                return 1;
+        }
+    }
+
     if (statLevel) {
         ca_client_status(statLevel);
 
     } else {
-
         for (n = 0; n < nPvs; n++) {
+
+                                /* Channel creation fails = no chid to query */
+            if (!pvs[n].chid)
+                continue;
 
                                 /* Print the status data */
                                 /* --------------------- */
@@ -143,7 +157,7 @@ int main (int argc, char *argv[])
 
     use_ca_timeout_env ( &caTimeout);
 
-    while ((opt = getopt(argc, argv, ":nhVw:s:p:")) != -1) {
+    while ((opt = getopt(argc, argv, ":nhVw:s:p:i")) != -1) {
         switch (opt) {
         case 'h':               /* Print usage */
             usage();
@@ -180,6 +194,9 @@ int main (int argc, char *argv[])
                 caPriority = DEFAULT_CA_PRIORITY;
             }
             if (caPriority > CA_PRIORITY_MAX) caPriority = CA_PRIORITY_MAX;
+            break;
+        case 'i':               /* Print even when one PV is disconnected */
+            showIfAnyConn = 1;
             break;
         case '?':
             fprintf(stderr,
@@ -228,8 +245,8 @@ int main (int argc, char *argv[])
     result = connect_pvs(pvs, nPvs);
 
                                 /* Print data */
-    if (!result)
-        result = cainfo(pvs, nPvs);
+    if (cainfo(pvs, nPvs))
+        result = 1;
 
                                 /* Shut down Channel Access */
     ca_context_destroy();

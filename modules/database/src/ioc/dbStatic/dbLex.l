@@ -73,7 +73,7 @@ static int yyreset(void)
 "link"          return(tokenLINK);
 "breaktable"    return(tokenBREAKTABLE);
 "record"        return(tokenRECORD);
-"grecord"       return(tokenGRECORD);
+"grecord"       return(tokenRECORD); /* keep only for backward compatibility and nostalgia */
 "alias"         return(tokenALIAS);
 "info"          return(tokenINFO);
 "registrar"     return(tokenREGISTRAR);

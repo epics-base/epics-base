@@ -151,9 +151,8 @@ DBCORE_API char * dbGetRecordName(DBENTRY *pdbentry);
 DBCORE_API long dbCopyRecord(DBENTRY *pdbentry,
     const char *newRecordName, int overWriteOK);
 
-DBCORE_API long dbVisibleRecord(DBENTRY *pdbentry);
-DBCORE_API long dbInvisibleRecord(DBENTRY *pdbentry);
-DBCORE_API int dbIsVisibleRecord(DBENTRY *pdbentry);
+EPICS_DEPRECATED static EPICS_ALWAYS_INLINE
+    int dbIsVisibleRecord(DBENTRY *pdbentry) { return 1; }
 
 DBCORE_API long dbCreateAlias(DBENTRY *pdbentry,
     const char *paliasName);

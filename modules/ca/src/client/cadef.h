@@ -652,29 +652,6 @@ LIBCA_API int epicsStdCall ca_clear_channel
 /************************************************************************/
 /*  Write a value to a channel                  */
 /************************************************************************/
-/*
- * ca_bput()
- *
- * WARNING: this copies the new value from a string (dbr_string_t)
- *      (and not as an integer)
- *
- * chan         R       channel identifier
- * pValue       R       new channel value string copied from this location
- */
-#define ca_bput(chan, pValue) \
-ca_array_put(DBR_STRING, 1u, chan, (const dbr_string_t *) (pValue))
-
-/*
- * ca_rput()
- *
- * WARNING: this copies the new value from a dbr_float_t
- *
- * chan         R       channel identifier
- * pValue       R       new channel value copied from this location
- */
-#define ca_rput(chan,pValue) \
-ca_array_put(DBR_FLOAT, 1u, chan, (const dbr_float_t *) pValue)
-
 /** \brief Write a scalar value to a process variable.
  *
  * See ca_array_put().
@@ -862,29 +839,6 @@ LIBCA_API int epicsStdCall ca_array_put_callback
 /*  Read a value from a channel                                         */
 /************************************************************************/
 
-/*
- * ca_bget()
- *
- * WARNING: this copies the new value into a string (dbr_string_t)
- *      (and not into an integer)
- *
- * chan     R   channel identifier
- * pValue   W   channel value copied to this location
- */
-#define ca_bget(chan, pValue) \
-ca_array_get(DBR_STRING, 1u, chan, (dbr_string_t *)(pValue))
-
-/*
- * ca_rget()
- *
- * WARNING: this copies the new value into a 32 bit float (dbr_float_t)
- *
- * chan     R   channel identifier
- * pValue   W   channel value copied to this location
- */
-#define ca_rget(chan, pValue) \
-ca_array_get(DBR_FLOAT, 1u, chan, (dbr_float_t *)(pValue))
-
 /** \brief Read a scalar value from a process variable.
  *
  * See ca_array_get().
@@ -982,31 +936,6 @@ LIBCA_API int epicsStdCall ca_array_get
 /*                                                                      */
 /*                                                                      */
 /************************************************************************/
-/*
- * ca_bget_callback()
- *
- * WARNING: this returns the new value as a string (dbr_string_t)
- *      (and not as an integer)
- *
- * chan     R   channel identifier
- * pFunc    R   pointer to call-back function
- * pArg     R   copy of this pointer passed to pFunc
- */
-#define ca_bget_callback(chan, pFunc, pArg)\
-ca_array_get_callback (DBR_STRING, 1u, chan, pFunc, pArg)
-
-/*
- * ca_rget_callback()
- *
- * WARNING: this returns the new value as a float (dbr_float_t)
- *
- * chan     R   channel identifier
- * pFunc    R   pointer to call-back function
- * pArg     R   copy of this pointer passed to pFunc
- */
-#define ca_rget_callback(chan, pFunc, pArg)\
-ca_array_get_callback (DBR_FLOAT, 1u, chan, pFunc, pArg)
-
 /** \brief Asynchronously read a scalar value from a process variable.
  *
  * See ca_array_get().
@@ -1960,13 +1889,6 @@ LIBCA_API int epicsStdCall ca_client_status ( unsigned level );
  */
 LIBCA_API int epicsStdCall ca_context_status ( struct ca_client_context *context, unsigned level );
 
-/*
- * deprecated
- */
-#define ca_build_channel(NAME,XXXXX,CHIDPTR,YYYYY)\
-ca_build_and_connect(NAME, XXXXX, 1, CHIDPTR, YYYYY, 0, 0)
-#define ca_array_build(NAME,XXXXX, ZZZZZZ, CHIDPTR,YYYYY)\
-ca_build_and_connect(NAME, XXXXX, ZZZZZZ, CHIDPTR, YYYYY, 0, 0)
 LIBCA_API int epicsStdCall ca_build_and_connect
     ( const char *pChanName, chtype, unsigned long,
     chid * pChanID, void *, caCh * pFunc, void * pArg );
@@ -2003,10 +1925,6 @@ LIBCA_API int epicsStdCall ca_clear_event ( evid eventID );
 #define ca_add_event(type,chan,pFunc,pArg,pEventID)\
 ca_add_array_event(type,1u,chan,pFunc,pArg,0.0,0.0,0.0,pEventID)
 
-#define ca_add_delta_event(TYPE,CHID,ENTRY,ARG,DELTA,EVID)\
-    ca_add_array_event(TYPE,1,CHID,ENTRY,ARG,DELTA,DELTA,0.0,EVID)
-#define ca_add_general_event(TYPE,CHID,ENTRY,ARG,P_DELTA,N_DELTA,TO,EVID)\
-ca_add_array_event(TYPE,1,CHID,ENTRY,ARG,P_DELTA,N_DELTA,TO,EVID)
 #define ca_add_array_event(TYPE,COUNT,CHID,ENTRY,ARG,P_DELTA,N_DELTA,TO,EVID)\
 ca_add_masked_array_event(TYPE,COUNT,CHID,ENTRY,ARG,P_DELTA,N_DELTA,TO,EVID, DBE_VALUE | DBE_ALARM)
 LIBCA_API int epicsStdCall ca_add_masked_array_event

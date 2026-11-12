@@ -1,0 +1,14 @@
+#  CONFIG.linux-riscv64.linux-riscv64
+#
+# Definitions for linux-riscv64 host - linux-riscv64 target builds
+# Sites may override these definitions in CONFIG_SITE.linux-riscv64.linux-riscv64
+#-------------------------------------------------------
+
+# Include common gnu compiler definitions
+include $(CONFIG)/CONFIG.gnuCommon
+
+STATIC_LDFLAGS_YES= -Wl,-Bstatic
+STATIC_LDFLAGS_NO=
+STATIC_LDLIBS_YES= -Wl,-Bdynamic
+STATIC_LDLIBS_NO=
+

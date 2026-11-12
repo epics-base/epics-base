@@ -865,7 +865,6 @@ bool cac::writeNotifyRespAction (
 }
 
 // Reject a data response whose header is inconsistent with its payload.
-// Returns an exception to the server and returns true on error.
 bool cac::badResponsePayload (
     epicsGuard < epicsMutex > & guard, baseNMIU & miu,
     const caHdrLargeArray & hdr )

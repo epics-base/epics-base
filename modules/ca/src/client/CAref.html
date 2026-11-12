@@ -217,6 +217,7 @@ in the file LICENSE that is included with this distribution.</span></p>
   <li><a href="#ca_write_access">ca_write_access</a></li>
   <li><a href="#ca_state">channel_state</a></li>
   <li><a href="#dbr_size">dbr_size[]</a></li>
+  <li><a href="#dbr_size_chk">dbr_size_chk</a></li>
   <li><a href="#dbr_size_n">dbr_size_n</a></li>
   <li><a href="#dbr_value_size">dbr_value_size[]</a></li>
   <li><a href="#dbr_type_t">dbr_type_to_text</a></li>
@@ -2276,8 +2277,8 @@ types. If more than one element is requested, then the individual elements can
 be accessed in an application program by indexing a pointer to the value field
 in the DBR_XXX structure. For example, the following code computes the sum of
 the elements in a array process variable and prints its time stamp. The
-<code><a href="#dbr_size_n">dbr_size_n</a>()</code> function can be used to determine the correct
-number of bytes to reserve when there are more than one value field elements in
+<code><a href="#dbr_size_n">dbr_size_n</a>()</code> function calculates the
+number of bytes to reserve when there are multiple value field elements in
 a structured CA data type.</p>
 <pre>#include &lt;stdio.h&gt;
 #include &lt;stdlib.h&gt;
@@ -3898,17 +3899,23 @@ extern unsigned dbr_size[/* TYPE */];</pre>
     <dd>the size in bytes of the specified type</dd>
 </dl>
 
-<h3><code><a name="dbr_size_n">dbr_size_n()</a></code></h3>
+<h3><code><a name="dbr_size_chk">dbr_size_chk()</a></code></h3>
 <pre>#include &lt;db_access.h&gt;
-unsigned dbr_size_n ( TYPE, COUNT );</pre>
+epicsUInt64 dbr_size_chk ( unsigned TYPE, epicsInt64 COUNT );</pre>
 
 <h4>Description</h4>
 
-<p>Returns the size in bytes for a DBR_XXXX type with COUNT elements. If the
-DBR type is a structure then the value field is the last field in the
-structure. If COUNT is greater than one then COUNT-1 elements are appended to
-the end of the structure so that they can be addressed as an array through a
-pointer to the value field.</p>
+<p>A range-checked, overflow-safe equivalent of the <code>dbr_size_n()</code>
+macro. Returns the size in bytes for a DBR_XXXX type with COUNT elements. When a
+DBR type is a structure the <code>value</code> field is always the last field in
+it. If COUNT is greater than one then COUNT-1 elements are appended to the
+end of it so they can be addressed as an array using a pointer to the value
+field. A negative COUNT is treated as a single element. When COUNT is zero
+this returns the structure's size excluding the value field, so zero element
+arrays are handled correctly.</p>
+
+<p>The size is computed and returned using 64-bit arithmetic so that a large
+element count cannot overflow the calculation. An invalid TYPE returns 0.</p>
 
 <h4>Arguments</h4>
 <dl>
@@ -3927,21 +3934,17 @@ pointer to the value field.</p>
       elements</dd>
 </dl>
 
-<h3><code><a name="dbr_size_chk">dbr_size_chk()</a></code></h3>
+<h3><code><a name="dbr_size_n">dbr_size_n()</a></code></h3>
 <pre>#include &lt;db_access.h&gt;
-epicsUInt64 dbr_size_chk ( unsigned TYPE, epicsInt64 COUNT );</pre>
+unsigned dbr_size_n ( TYPE, COUNT );</pre>
 
 <h4>Description</h4>
 
-<p>A range-checked, overflow-safe equivalent of the <code>dbr_size_n()</code>
-macro. Returns the size in bytes for a DBR_XXXX type with COUNT elements. If the
+<p>Returns the size in bytes for a DBR_XXXX type with COUNT elements. If the
 DBR type is a structure then the value field is the last field in the
 structure. If COUNT is greater than one then COUNT-1 elements are appended to
 the end of the structure so that they can be addressed as an array through a
-pointer to the value field. A negative COUNT is treated as a single element.</p>
-
-<p>The size is computed and returned using 64-bit arithmetic so that a large
-element count cannot overflow the calculation. An invalid TYPE returns 0.</p>
+pointer to the value field.</p>
 
 <h4>Arguments</h4>
 <dl>

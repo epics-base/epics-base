@@ -556,11 +556,12 @@ LIBCA_API extern const unsigned short dbr_value_size[];
 /** \brief Returns the size in bytes for a `DBR_XXXX` type with `count` elements.
  *
  * This is a range-checked, overflow-safe equivalent of the dbr_size_n() macro.
- * If the DBR type is a structure then the value field is the last field in the
- * structure. If `count` is greater than one then `count-1` elements are
- * appended to the end of the structure so that they can be addressed as an
- * array through a pointer to the value field. A negative `count` is treated as
- * a single element.
+ * When a DBR type is a structure the value field is always the last field in it.
+ * If `count` is greater than one then `count-1` elements are appended to the end
+ * of it so they can be addressed as an array using a pointer to the value field.
+ * A negative `count` is treated as a single element. When `count` is zero this
+ * returns the structure's size excluding the value field, so zero element arrays
+ * are handled correctly.
  *
  * The result is computed and returned using 64-bit arithmetic so that a large
  * (or malicious) element count cannot overflow the calculation. An invalid

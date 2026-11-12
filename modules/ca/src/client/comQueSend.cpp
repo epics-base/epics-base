@@ -358,9 +358,8 @@ void comQueSend::insertRequestWithPayLoad (
         else {
             maxBytes = MAX_TCP - sizeof ( caHdr );
         }
-        // nElem is bounded to the channel's native element count in
-        // nciu::write, so this 64-bit size cannot overflow; the dbr_double_t
-        // margin allows for the alignment rounding below.
+        // nciu::write limits nElem to the channel preventing overflow here.
+        // The dbr_double_t is for alignment rounding.
         epicsUInt64 fullSize = dbr_size_chk ( dataType, nElem );
         if ( fullSize + sizeof (dbr_double_t) > maxBytes ) {
             throw cacChannel::outOfBounds();
@@ -387,9 +386,7 @@ void comQueSend::commitMsg ()
         this->pFirstUncommited->commitIncomming ();
         this->pFirstUncommited++;
     }
-    // printf ( "NBP: %u\n", this->nBytesPending );
 }
-
 
 void comQueSend::clearUncommitedMsg ()
 {

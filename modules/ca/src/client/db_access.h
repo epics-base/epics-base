@@ -19,6 +19,7 @@
 
 #include "epicsTypes.h"
 #include "epicsTime.h"
+#include "compilerSpecific.h"
 
 #include "libCaAPI.h"
 
@@ -551,6 +552,40 @@ LIBCA_API extern const unsigned short dbr_size[];
  * \sa dbr_size_n()
  */
 LIBCA_API extern const unsigned short dbr_value_size[];
+
+/** \brief Returns the size in bytes for a `DBR_XXXX` type with `count` elements.
+ *
+ * This is a range-checked, overflow-safe equivalent of the dbr_size_n() macro.
+ * When a DBR type is a structure the value field is always the last field in it.
+ * If `count` is greater than one then `count-1` elements are appended to the end
+ * of it so they can be addressed as an array using a pointer to the value field.
+ * A negative `count` is treated as a single element. When `count` is zero this
+ * returns the structure's size excluding the value field, so zero element arrays
+ * are handled correctly.
+ *
+ * The result is computed and returned using 64-bit arithmetic so that a large
+ * (or malicious) element count cannot overflow the calculation. An invalid
+ * data type returns 0.
+ *
+ * \sa dbr_size, dbr_value_size, dbr_size_n
+ *
+ * \param[in] type The data type.
+ * \param[in] count The element count.
+ * \returns The size in bytes of the specified type
+ * with the specified number of elements.
+ */
+#ifndef db_accessHFORdb_accessC
+static EPICS_ALWAYS_INLINE
+epicsUInt64 dbr_size_chk(unsigned type, epicsInt64 count)
+{
+    if (type > (unsigned) LAST_BUFFER_TYPE)
+        return 0;
+    if (count < 0)
+        return dbr_size[type];
+    return (epicsUInt64) dbr_size[type]
+        + (epicsUInt64) (count - 1) * dbr_value_size[type];
+}
+#endif /*db_accessHFORdb_accessC*/
 
 #ifndef db_accessHFORdb_accessC
 /* class for each type's value */

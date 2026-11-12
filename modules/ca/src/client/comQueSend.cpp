@@ -358,16 +358,13 @@ void comQueSend::insertRequestWithPayLoad (
         else {
             maxBytes = MAX_TCP - sizeof ( caHdr );
         }
-        arrayElementCount maxElem =
-            ( maxBytes - sizeof (dbr_double_t) - dbr_size[dataType] ) /
-                dbr_value_size[dataType];
-        if ( nElem >= maxElem ) {
+        // nciu::write limits nElem to the channel preventing overflow here.
+        // The dbr_double_t is for alignment rounding.
+        epicsUInt64 fullSize = dbr_size_chk ( dataType, nElem );
+        if ( fullSize + sizeof (dbr_double_t) > maxBytes ) {
             throw cacChannel::outOfBounds();
         }
-        // the above checks verify that the total size
-        // is lest that 0xffffffff
-        size = static_cast < ca_uint32_t >
-            ( dbr_size_n ( dataType, nElem ) );
+        size = static_cast < ca_uint32_t > ( fullSize );
         payloadSize = CA_MESSAGE_ALIGN ( size );
         this->insertRequestHeader ( request, payloadSize,
             static_cast <ca_uint16_t> ( dataType ),
@@ -389,9 +386,7 @@ void comQueSend::commitMsg ()
         this->pFirstUncommited->commitIncomming ();
         this->pFirstUncommited++;
     }
-    // printf ( "NBP: %u\n", this->nBytesPending );
 }
-
 
 void comQueSend::clearUncommitedMsg ()
 {

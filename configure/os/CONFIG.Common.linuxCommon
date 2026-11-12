@@ -24,14 +24,20 @@ STATIC_LDFLAGS_NO=
 STATIC_LDLIBS_YES= -Wl,-Bdynamic
 
 # Set runtime path for shared libraries if LINKER_USE_RPATH=YES
-SHRLIBDIR_RPATH_LDFLAGS_YES = $(SHRLIB_DEPLIB_DIRS:%=-Wl,-rpath,%)
+SHRLIBDIR_RPATH_LDFLAGS_YES = $(subst $(abspath $(LINKER_ORIGIN_ROOT)),$(FINAL_LOCATION),$(SHRLIB_DEPLIB_DIRS:%=-Wl,-rpath,%)) $(SHRLIB_DEPLIB_DIRS:%=-Wl,-rpath-link,%)
 SHRLIBDIR_RPATH_LDFLAGS_ORIGIN = $(shell $(MAKERPATH) -O '\$$ORIGIN' -F $(FINAL_DIR) -R $(LINKER_ORIGIN_ROOT) $(SHRLIB_DEPLIB_DIRS)) \
  $(if $(filter-out 0,$(.SHELLSTATUS)), $(error $(MAKERPATH) failed))
 SHRLIBDIR_LDFLAGS += \
     $(SHRLIBDIR_RPATH_LDFLAGS_$(LINKER_USE_RPATH))
 
 # Set runtime path for products if LINKER_USE_RPATH=YES
-PRODDIR_RPATH_LDFLAGS_YES = $(PROD_DEPLIB_DIRS:%=-Wl,-rpath,%)
+ifeq ($(T_A)_$(LINKER_USE_RPATH),$(EPICS_HOST_ARCH)_YES)
+ifneq (,$(filter-out $(FINAL_LOCATION),$(abspath $(INSTALL_LOCATION))))
+# Find libraries during build and tests if FINAL_LOCATION differs from INSTALL_LOCATION
+export LD_LIBRARY_PATH:=$(INSTALL_LIB)$(LD_LIBRARY_PATH:%=:%)
+endif
+endif
+PRODDIR_RPATH_LDFLAGS_YES = $(subst $(abspath $(LINKER_ORIGIN_ROOT)),$(FINAL_LOCATION),$(PROD_DEPLIB_DIRS:%=-Wl,-rpath,%)) $(SHRLIB_DEPLIB_DIRS:%=-Wl,-rpath-link,%)
 PRODDIR_RPATH_LDFLAGS_ORIGIN = $(shell $(MAKERPATH) -O '\$$ORIGIN' -F $(FINAL_DIR) -R $(LINKER_ORIGIN_ROOT) $(PROD_DEPLIB_DIRS)) \
  $(if $(filter-out 0,$(.SHELLSTATUS)), $(error $(MAKERPATH) failed))
 PRODDIR_LDFLAGS += \

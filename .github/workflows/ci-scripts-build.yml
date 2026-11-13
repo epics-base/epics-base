@@ -121,6 +121,12 @@ jobs:
             configuration: default
             cross: "linux-arm@arm-linux-gnueabihf"
 
+          - name: "Ub gcc + linux-loong64"
+            os: ubuntu-26.04
+            cmp: gcc
+            configuration: default
+            cross: "linux-loong64@loongarch64-linux-gnu"
+
           - name: "Ub-22 gcc + MinGW"
             os: ubuntu-22.04
             cmp: gcc

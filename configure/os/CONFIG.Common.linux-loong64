@@ -1,0 +1,15 @@
+# CONFIG.Common.linux-loong64
+#
+# Definitions for linux-loong64 target builds
+# Override these settings in CONFIG_SITE.Common.linux-loong64
+#-------------------------------------------------------
+
+# Include definitions common to all Linux targets
+include $(CONFIG)/os/CONFIG.Common.linuxCommon
+
+ARCH_CLASS = loongarch
+
+# No architecture-specific compiler flags: use the compiler's default
+# settings (generic LoongArch64 ISA, -mabi=lp64d). If a site needs
+# -march/-mtune/-mabi/-mfpu, set ARCH_DEP_CFLAGS in
+# CONFIG_SITE.Common.linux-loong64.

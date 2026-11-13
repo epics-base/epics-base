@@ -3,12 +3,22 @@
 # Site specific definitions for linux-x86_64 host - linux-loong64 target builds
 #-------------------------------------------------------
 
-# Set GNU crosscompiler target name
-GNU_TARGET = loongarch64-linux-gnu
-
-# Set GNU tools install path
-# Examples is the installation at the APS:
-#GNU_DIR = /opt/loongson-gnu-toolchain-8.3-x86_64-loongarch64-linux-gnu-rc1.2
+# Set GNU tools install path: the directory of the cross toolchain, i.e.
+# the one containing bin/loongarch64-linux-gnu-gcc. Both the "old world"
+# (ABI 1.0) and the "new world" (ABI 2.0) LoongArch64 toolchains use the
+# same tool prefix loongarch64-linux-gnu-, they only differ in the
+# glibc/ABI baseline and the compiler version, so switching between them
+# is a matter of pointing GNU_DIR at the right installation:
+# Old world (ABI 1.0, gcc 8.3, e.g. Loongnix/UOS targets):
+#GNU_DIR = /opt/loongson-gnu-toolchain-8.3-x86_64-loongarch64-linux-gnu-rc1.6
+# New world (ABI 2.0, gcc 13 and later, using the distro cross compiler):
+#GNU_DIR = /usr
+#
+# If the toolchain uses a different prefix, for example a buildroot
+# generated SDK with loongarch64-unknown-linux-gnu-, also set
+#GNU_TARGET = loongarch64-unknown-linux-gnu
+# (the compiler prefix and the sysroot directories under GNU_DIR are
+# both derived from GNU_TARGET).
 
 # If cross-building shared libraries and the paths on the target machine are
 # different than on the build host, you should uncomment the lines below to

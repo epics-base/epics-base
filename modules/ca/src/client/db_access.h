@@ -19,6 +19,7 @@
 
 #include "epicsTypes.h"
 #include "epicsTime.h"
+#include "epicsAssert.h"
 
 #include "libCaAPI.h"
 
@@ -36,20 +37,20 @@ extern "C" {
  *
  * (so far this is sufficient for all archs we have ported to)
  */
-typedef epicsOldString dbr_string_t;
-typedef epicsUInt8 dbr_char_t;
-typedef epicsInt16 dbr_short_t;
+typedef epicsOldString  dbr_string_t;
+typedef epicsUInt8      dbr_char_t;
+typedef epicsInt16      dbr_short_t;
 typedef epicsUInt16     dbr_ushort_t;
-typedef epicsInt16 dbr_int_t;
-typedef epicsUInt16 dbr_enum_t;
-typedef epicsInt32 dbr_long_t;
-typedef epicsUInt32 dbr_ulong_t;
-typedef epicsFloat32 dbr_float_t;
-typedef epicsFloat64 dbr_double_t;
+typedef epicsInt16      dbr_int_t;
+typedef epicsUInt16     dbr_enum_t;
+typedef epicsInt32      dbr_long_t;
+typedef epicsUInt32     dbr_ulong_t;
+typedef epicsFloat32    dbr_float_t;
+typedef epicsFloat64    dbr_double_t;
 typedef epicsUInt16     dbr_put_ackt_t;
 typedef epicsUInt16     dbr_put_acks_t;
-typedef epicsOldString dbr_stsack_string_t;
-typedef epicsOldString dbr_class_name_t;
+typedef epicsOldString  dbr_stsack_string_t;
+typedef epicsOldString  dbr_class_name_t;
 
 #ifndef db_accessHFORdb_accessC
 /* database field types */
@@ -63,8 +64,8 @@ typedef epicsOldString dbr_class_name_t;
 #define DBF_DOUBLE      6
 #define DBF_NO_ACCESS   7
 #define LAST_TYPE       DBF_DOUBLE
-#define VALID_DB_FIELD(x)       ((x >= 0) && (x <= LAST_TYPE))
-#define INVALID_DB_FIELD(x)     ((x < 0) || (x > LAST_TYPE))
+#define VALID_DB_FIELD(x)   ((unsigned)(x) <= LAST_TYPE)
+#define INVALID_DB_FIELD(x) !VALID_DB_FIELD(x)
 
 /* data request buffer types */
 #define DBR_STRING      DBF_STRING
@@ -107,13 +108,13 @@ typedef epicsOldString dbr_class_name_t;
 #define DBR_CTRL_CHAR   32
 #define DBR_CTRL_LONG   33
 #define DBR_CTRL_DOUBLE 34
-#define DBR_PUT_ACKT    DBR_CTRL_DOUBLE + 1
-#define DBR_PUT_ACKS    DBR_PUT_ACKT + 1
-#define DBR_STSACK_STRING DBR_PUT_ACKS + 1
-#define DBR_CLASS_NAME DBR_STSACK_STRING + 1
-#define LAST_BUFFER_TYPE        DBR_CLASS_NAME
-#define VALID_DB_REQ(x) ((x >= 0) && (x <= LAST_BUFFER_TYPE))
-#define INVALID_DB_REQ(x)       ((x < 0) || (x > LAST_BUFFER_TYPE))
+#define DBR_PUT_ACKT        DBR_CTRL_DOUBLE + 1
+#define DBR_PUT_ACKS        DBR_PUT_ACKT + 1
+#define DBR_STSACK_STRING   DBR_PUT_ACKS + 1
+#define DBR_CLASS_NAME      DBR_STSACK_STRING + 1
+#define LAST_BUFFER_TYPE    DBR_CLASS_NAME
+#define VALID_DB_REQ(x)     ((unsigned)(x) <= LAST_BUFFER_TYPE)
+#define INVALID_DB_REQ(x)   !VALID_DB_REQ(x)
 
 /*
  * The enumeration "epicsType" is an index to this array
@@ -516,23 +517,6 @@ struct dbr_ctrl_double{
         dbr_double_t    value;                  /* current value */
 };
 
-/** \brief Returns the size in bytes for a `DBR_XXXX` type with `COUNT` elements.
- *
- * If the DBR type is a structure then the value field is the last field in the
- * structure. If `COUNT` is greater than one then `COUNT-1` elements are
- * appended to the end of the structure so that they can be addressed as an
- * array through a pointer to the value field.
- *
- * \sa dbr_size, dbr_value_size
- *
- * \param[in] TYPE The data type.
- * \param[in] COUNT The element count.
- * \returns The size in bytes of the specified type
- * with the specified number of elements.
- */
-#define dbr_size_n(TYPE,COUNT)\
-((unsigned)((COUNT)<0?dbr_size[TYPE]:dbr_size[TYPE]+((COUNT)-1)*dbr_value_size[TYPE]))
-
 /** \brief Size in bytes for each `DBR_XXXX` type.
  *
  * Array indexed by the `DBR_XXXX` type code.
@@ -553,6 +537,28 @@ LIBCA_API extern const unsigned short dbr_size[];
 LIBCA_API extern const unsigned short dbr_value_size[];
 
 #ifndef db_accessHFORdb_accessC
+/** \brief Returns the size in bytes for a `DBR_XXXX` type with `count` elements.
+ *
+ * If the DBR type is a structure then the value field is the last field in the
+ * structure. If `count` is greater than one then `count-1` elements are
+ * appended to the end of the structure so that they can be addressed as an
+ * array through a pointer to the value field.
+ *
+ * \sa dbr_size, dbr_value_size
+ *
+ * \param[in] dbr_type The data type.
+ * \param[in] count The element count.
+ * \returns The size in bytes of the specified type
+ * with the specified number of elements.
+ */
+
+static EPICS_ALWAYS_INLINE size_t dbr_size_n(unsigned dbr_type, long count)
+{
+    assert(VALID_DB_REQ(dbr_type));
+    assert(count < 0 || (((size_t)~0UL)-dbr_size[dbr_type])/dbr_value_size[dbr_type] > (unsigned long)count);
+    return count < 0 ? dbr_size[dbr_type] : dbr_size[dbr_type]+((size_t)(count)-1)*dbr_value_size[dbr_type];
+}
+
 /* class for each type's value */
 enum dbr_value_class_e {
                 dbr_class_int,
@@ -668,8 +674,8 @@ union db_access_val{
 #define db_state_dim            MAX_ENUM_STATES
 #define db_state_text_dim       MAX_ENUM_STRING_SIZE
 
-#define dbf_type_is_valid(type)   ((type) >= 0 && (type) <= LAST_TYPE)
-#define dbr_type_is_valid(type)   ((type) >= 0 && (type) <= LAST_BUFFER_TYPE)
+#define dbf_type_is_valid(type)   VALID_DB_FIELD(type)
+#define dbr_type_is_valid(type)   VALID_DB_REQ(type)
 #define dbr_type_is_plain(type)   \
                 ((type) >= DBR_STRING && (type) <= DBR_DOUBLE)
 #define dbr_type_is_STS(type)   \
@@ -681,26 +687,19 @@ union db_access_val{
 #define dbr_type_is_CTRL(type)   \
                 ((type) >= DBR_CTRL_STRING && (type) <= DBR_CTRL_DOUBLE)
 #define dbr_type_is_STRING(type)   \
-                ((type) >= 0 && (type) <= LAST_BUFFER_TYPE && \
-                 (type)%(LAST_TYPE+1) == DBR_STRING)
+                (dbr_type_is_valid(type) && (type)%(LAST_TYPE+1) == DBR_STRING)
 #define dbr_type_is_SHORT(type)   \
-                ((type) >= 0 && (type) <= LAST_BUFFER_TYPE && \
-                 (type)%(LAST_TYPE+1) == DBR_SHORT)
+                (dbr_type_is_valid(type) && (type)%(LAST_TYPE+1) == DBR_SHORT)
 #define dbr_type_is_FLOAT(type)   \
-                ((type) >= 0 && (type) <= LAST_BUFFER_TYPE && \
-                 (type)%(LAST_TYPE+1) == DBR_FLOAT)
+                (dbr_type_is_valid(type) && (type)%(LAST_TYPE+1) == DBR_FLOAT)
 #define dbr_type_is_ENUM(type)   \
-                ((type) >= 0 && (type) <= LAST_BUFFER_TYPE && \
-                 (type)%(LAST_TYPE+1) == DBR_ENUM)
+                (dbr_type_is_valid(type) && (type)%(LAST_TYPE+1) == DBR_ENUM)
 #define dbr_type_is_CHAR(type)   \
-                ((type) >= 0 && (type) <= LAST_BUFFER_TYPE && \
-                 (type)%(LAST_TYPE+1) == DBR_CHAR)
+                (dbr_type_is_valid(type) && (type)%(LAST_TYPE+1) == DBR_CHAR)
 #define dbr_type_is_LONG(type)   \
-                ((type) >= 0 && (type) <= LAST_BUFFER_TYPE && \
-                 (type)%(LAST_TYPE+1) == DBR_LONG)
+                (dbr_type_is_valid(type) && (type)%(LAST_TYPE+1) == DBR_LONG)
 #define dbr_type_is_DOUBLE(type)   \
-                ((type) >= 0 && (type) <= LAST_BUFFER_TYPE && \
-                 (type)%(LAST_TYPE+1) == DBR_DOUBLE)
+                (dbr_type_is_valid(type) && (type)%(LAST_TYPE+1) == DBR_DOUBLE)
 
 #define dbf_type_to_text(type)   \
     (  ((type+1) >= 0 && (type) < dbf_text_dim-2) ? \

@@ -40,9 +40,10 @@
 # They must be set in CONFIG_SITE.linux-loong64.linux-loong64 or for
 # cross-builds in CONFIG_SITE.<host-arch>.linux-loong64 instead.
 
-# Tune GNU compiler output for a specific cpu-type
-# (e.g. loongarch64, la264, la364, la464 etc.)
-#GNU_ARCH_CFLAGS = -march=loongarch64
-#GNU_TUNE_CFLAGS = -mtune=loongarch64
-# Enable soft-float feature (e.g. none, 32, 64)
-#GNU_DEP_CFLAGS = -mfpu=none
+# By default no architecture-specific flags are passed to the compiler,
+# i.e. the generic LoongArch64 ISA and the default ABI are used. If a
+# site needs a different cpu-type, ABI or FPU setting, uncomment and
+# adjust one of the following (they end up in the compile commands):
+#ARCH_DEP_CFLAGS = -march=la464 -mtune=la464
+# To use soft-float, combine -mfpu=none with the matching ABI:
+#ARCH_DEP_CFLAGS = -mabi=lp64s -mfpu=none

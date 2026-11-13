@@ -9,5 +9,7 @@ include $(CONFIG)/os/CONFIG.Common.linuxCommon
 
 ARCH_CLASS = loongarch
 
-ARCH_DEP_CFLAGS = $(GNU_ARCH_CFLAGS) $(GNU_TUNE_CFLAGS)
-ARCH_DEP_CFLAGS += $(GNU_DEP_CFLAGS)
+# No architecture-specific compiler flags: use the compiler's default
+# settings (generic LoongArch64 ISA, -mabi=lp64d). If a site needs
+# -march/-mtune/-mabi/-mfpu, set ARCH_DEP_CFLAGS in
+# CONFIG_SITE.Common.linux-loong64.

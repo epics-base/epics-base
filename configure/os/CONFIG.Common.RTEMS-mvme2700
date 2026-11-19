@@ -12,21 +12,7 @@ ARCH_DEP_CFLAGS += -DMY_DO_BOOTP=NULL
 ARCH_DEP_CFLAGS += -DHAVE_PPCBUG
 ARCH_DEP_CFLAGS += -DNVRAM_INDIRECT
 
-MUNCH_SUFFIX = .boot
-define MUNCH_CMD
-	$(RTEMS_TOOLS)/bin/$(OBJCOPY_FOR_TARGET) -O binary -R .comment -S $< rtems
-	gzip -f9 rtems
-	$(RTEMS_TOOLS)/bin/$(LD_FOR_TARGET) -o $@.elf \
-		 $(PROJECT_RELEASE)/lib/bootloader.o \
-		--just-symbols=$< \
-		-b binary rtems.gz \
-		--no-warn-mismatch \
-		-T $(PROJECT_RELEASE)/lib/ppcboot.lds \
-		-Map $<.map
-	$(RTEMS_TOOLS)/bin/$(OBJCOPY_FOR_TARGET) -O binary $@.elf $@
-	rm -f rtems.gz $@.elf
-endef
-
+include $(CONFIG)/os/CONFIG.Common.RTEMS-mvmeCommon-ppcboot
 include $(CONFIG)/os/CONFIG.Common.RTEMS
 
 ifeq ($(sort $(RTEMS_VERSION) 5),$(RTEMS_VERSION) 5)

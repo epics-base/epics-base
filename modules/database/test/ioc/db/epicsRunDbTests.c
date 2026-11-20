@@ -30,6 +30,7 @@ int scanIoTest(void);
 int dbLockTest(void);
 int dbPutLinkTest(void);
 int dbStaticTest(void);
+int dbCompleteRecordTest(void);
 int dbCaLinkTest(void);
 int dbDbLinkTest(void);
 int testDbChannel(void);
@@ -54,6 +55,7 @@ void epicsRunDbTests(void)
     runTest(dbLockTest);
     runTest(dbPutLinkTest);
     runTest(dbStaticTest);
+    runTest(dbCompleteRecordTest);
     runTest(dbCaLinkTest);
     runTest(dbDbLinkTest);
     runTest(testDbChannel);

@@ -206,6 +206,13 @@ TESTFILES += ../dbStaticTestAliasAgainError2.db
 TESTFILES += ../dbStaticTestRemove.db
 TESTS += dbStaticTest
 
+TESTPROD_HOST += dbCompleteRecordTest
+dbCompleteRecordTest_SRCS += dbCompleteRecordTest.c
+dbCompleteRecordTest_SRCS += dbTestIoc_registerRecordDeviceDriver.cpp
+testHarness_SRCS += dbCompleteRecordTest.c
+TESTFILES += ../dbCompleteRecordTest.db
+TESTS += dbCompleteRecordTest
+
 # This runs all the test programs in a known working order:
 testHarness_SRCS += epicsRunDbTests.c
 

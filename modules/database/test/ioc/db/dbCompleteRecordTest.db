@@ -1,0 +1,5 @@
+record(x, "CA_TESTS:SEQ") {
+    alias("ALIAS:SEQ")
+}
+record(x, "CA_TESTS:LONG") {}
+record(x, "CA_TESTS:DONE") {}

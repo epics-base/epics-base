@@ -74,7 +74,9 @@ again with VAL set to 0 after the number of seconds specified by HIGH.
 Thus, HIGH implements a momentary output which changes the state of the
 device back to 0 after I<N> number of seconds.
 
-=fields DTYP, OUT, VAL, RVAL, HIGH, ZNAM, ONAM
+The IVAL field is always the inverse of the VAL field.
+
+=fields DTYP, OUT, VAL, IVAL, RVAL, HIGH, ZNAM, ONAM
 
 =head2 Conversion Parameters
 
@@ -212,6 +214,11 @@ for more information on simulation mode and its fields.
 		asl(ASL0)
 		pp(TRUE)
 	}
+	field(IVAL, DBF_SHORT) {
+        prompt("Inverted Value")
+        special(SPC_NOMOD)
+        interest(1)
+    }
 	field(OMSL,DBF_MENU) {
 		prompt("Output Mode Select")
 		promptgroup("50 - Output")

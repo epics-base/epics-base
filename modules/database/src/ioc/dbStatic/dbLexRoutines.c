@@ -94,7 +94,7 @@ static void dbBreakHead(char *name);
 static void dbBreakItem(char *value);
 static void dbBreakBody(void);
 
-static void dbRecordHead(char *recordType,char*name,int visible);
+static void dbRecordHead(char *recordType,char*name);
 static void dbRecordField(char *name,char *value);
 static void dbRecordBody(void);
 
@@ -1120,7 +1120,7 @@ int dbRecordNameValidate(const char *name)
     return 0;
 }
 
-static void dbRecordHead(char *recordType, char *name, int visible)
+static void dbRecordHead(char *recordType, char *name)
 {
     DBENTRY *pdbentry;
     long status;
@@ -1192,9 +1192,6 @@ static void dbRecordHead(char *recordType, char *name, int visible)
             recordType, name);
         yyerrorAbort(NULL);
     }
-
-    if (visible)
-        dbVisibleRecord(pdbentry);
 }
 
 /* For better suggestions for wrong field names

@@ -116,7 +116,6 @@ typedef struct dbInfoNode {
     void            *pointer;
 }dbInfoNode;
 
-#define DBRN_FLAGS_VISIBLE 1
 #define DBRN_FLAGS_ISALIAS 2
 #define DBRN_FLAGS_HASALIAS 4
 

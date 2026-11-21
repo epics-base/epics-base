@@ -20,6 +20,7 @@
 #include "dbDefs.h"
 #include "epicsStdio.h"
 #include "epicsThread.h"
+#include "envDefs.h"
 #include "errlog.h"
 #include "taskwd.h"
 
@@ -77,6 +78,7 @@ int asSetFilename(const char *acf)
             errMessage(0, "asSetFilename calloc failure");
         } else {
             strcpy(pacf, acf);
+            epicsEnvSet ("ASFILENAME",acf);
             if (*pacf != '/' && !strchr(pacf, ':')) {
                 printf("asSetFilename: Warning - relative paths won't usually "
                     "work\n");

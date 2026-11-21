@@ -1569,7 +1569,7 @@ void multiSubscriptionDeleteTest ( chid chan, unsigned interestLevel  )
  */
 void singleSubscriptionDeleteTest ( chid chan, unsigned interestLevel  )
 {
-    unsigned count = 0u;
+    unsigned count;
     evid sid;
     dbr_float_t temp, getResp;
     unsigned i;

@@ -253,7 +253,7 @@ static int seekLatestLine (struct ioc_log_server *pserver)
             static const char *pMonths[] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun",
                 "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
             static const unsigned nMonths = sizeof(pMonths)/sizeof(pMonths[0]);
-            time_t lineTime = (time_t) -1;
+            time_t lineTime;
             unsigned iMonth;
 
             for (iMonth=0; iMonth<nMonths; iMonth++) {

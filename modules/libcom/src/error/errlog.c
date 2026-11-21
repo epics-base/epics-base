@@ -497,7 +497,7 @@ void errPrintf(long status, const char *pFileName, int lineno,
     va_start(pvar, pformat);
 
     if(buf) {
-        char    name[256] = "";
+        char name[ERRSYM_BUFLEN] = "";
 
         if (status > 0) {
             errSymLookup(status, name, sizeof(name));

@@ -51,8 +51,9 @@ typedef enum { get, callback } RequestT;
 static int nConn = 0;           /* Number of connected PVs */
 static int nRead = 0;           /* Number of channels that were read */
 static int floatAsString = 0;   /* Flag: fetch floats as string */
+static int showIfAnyConn = 0;   /* Flag: print PV values if at least one connects */
 
-
+
 static void usage (void)
 {
     fprintf (stderr, "\nUsage: caget [options] <PV name> ...\n\n"
@@ -62,6 +63,7 @@ static void usage (void)
     "  -w <sec>: Wait time, specifies CA timeout, default is %f second(s)\n"
     "  -c: Asynchronous get (use ca_get_callback and wait for completion)\n"
     "  -p <prio>: CA priority (0-%u, default 0=lowest)\n"
+    "  -i: Incrementally print values, even when a PV in the list is disconnected\n"
     "Format options:\n"
     "      Default output format is \"name value\"\n"
     "  -t: Terse mode - print only value, without name\n"
@@ -168,6 +170,10 @@ static int caget (pv *pvs, int nPvs, RequestT request, OutputT format,
     for (n = 0; n < nPvs; n++) {
         unsigned long nElems;
 
+                                /* Channel creation fails = no chid to query */
+        if (!pvs[n].chid)
+            continue;
+
                                 /* Set up pvs structure */
                                 /* -------------------- */
 
@@ -257,6 +263,13 @@ static int caget (pv *pvs, int nPvs, RequestT request, OutputT format,
 
                                 /* Print the data */
                                 /* -------------- */
+                                /* Suppress all output if any PV is missing,
+                                 * unless the user issued -i */
+    if (!showIfAnyConn && nConn < nPvs) {
+        for (n = 0; n < nPvs; n++)
+            free(pvs[n].value);
+        return 1;
+    }
 
     for (n = 0; n < nPvs; n++) {
 
@@ -417,6 +430,9 @@ int main (int argc, char *argv[])
         case 'c':               /* Callback mode */
             request = callback;
             break;
+        case 'i':               /* Print even when one PV is disconnected */
+            showIfAnyConn = 1;
+            break;
         case 'd':               /* Data type specification */
             complainIfNotPlainAndSet(&format, specifiedDbr);
                                 /* Argument (type) may be text or number */
@@ -558,8 +574,8 @@ int main (int argc, char *argv[])
     result = connect_pvs(pvs, nPvs);
 
                                 /* Read and print data */
-    if (!result)
-        result = caget(pvs, nPvs, request, format, type, count);
+    if (caget(pvs, nPvs, request, format, type, count))
+        result = 1;
 
                                 /* Shut down Channel Access */
     free(pvs);

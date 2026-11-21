@@ -16,6 +16,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "epicsAtomic.h"
 #include "epicsEvent.h"
 #include "epicsMessageQueue.h"
 #include "epicsPrint.h"
@@ -208,8 +209,9 @@ static void testcbmulti(xpriv *priv, void *raw)
 static void testcompmulti(void *raw, IOSCANPVT scan, int prio)
 {
     int *mask = raw;
-    testOk(((*mask)&(1<<prio))==0, "(0x%x)&(0x%x)==0", *mask, 1<<prio);
-    *mask |= 1<<prio;
+    /* atomic OR: called concurrently, each bit added once */
+    int prev = epicsAtomicAddIntT(mask, 1<<prio) - (1<<prio);
+    testOk((prev&(1<<prio))==0, "(0x%x)&(0x%x)==0", prev, 1<<prio);
 }
 
 static void testMultiThreading(void)
@@ -283,8 +285,8 @@ static void testMultiThreading(void)
     for(i=0; i<NELEMENTS(data); i++) {
         testOk(data[i].getcomplete==1, "data[%d].getcomplete==0 (%d)", i, data[i].getcomplete);
     }
-    testOk1(masks[0]==0x7);
-    testOk1(masks[1]==0x7);
+    testOk1(epicsAtomicGetIntT(&masks[0])==0x7);
+    testOk1(epicsAtomicGetIntT(&masks[1])==0x7);
 
     testdbCleanup();
 

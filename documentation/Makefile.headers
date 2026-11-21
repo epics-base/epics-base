@@ -29,6 +29,7 @@ libcom_HEADERS += epicsExport
 libcom_HEADERS += epicsGeneralTime
 libcom_HEADERS += epicsGuard
 libcom_HEADERS += epicsMessageQueue
+libcom_HEADERS += epicsMPMCQueue
 libcom_HEADERS += epicsMutex
 libcom_HEADERS += epicsReadline
 libcom_HEADERS += epicsRingBytes

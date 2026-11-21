@@ -18,11 +18,14 @@
 #include <string.h>
 #include <math.h>
 #include <float.h>
+#include <limits.h>
 
 #include "cvtFast.h"
+#include "epicsMath.h"
 #include "dbDefs.h"
 #include "epicsConvert.h"
 #include "epicsStdlib.h"
+#include "epicsTypes.h"
 #include "errlog.h"
 #include "errMdef.h"
 
@@ -123,6 +126,71 @@ static void copyNoConvert(const void *pfrom,
         return 0; \
     } \
     COPYNOCONVERT(sizeof(typeb), pfrom, paddr->pfield, nRequest, no_elements, offset); \
+    return 0; \
+}
+
+/* Saturating floating-point -> integer assignment.
+ *
+ * A bare C cast of a floating value that is out of the integer type's
+ * range, or is NaN, to that integer type is undefined behaviour
+ * (C17 6.3.1.4p1). The value produced diverges by target: x86-64
+ * (cvttsd2si) yields INT_MIN, aarch64 (fcvtzs) saturates and maps NaN
+ * to 0 -- both ordinary EPICS platforms. Define the conversion instead:
+ * clamp to [imin, imax] and map NaN to 0 (the aarch64 behaviour).
+ *
+ * imin/imax are the destination type's min/max as integer constants; the
+ * (double) casts are the saturation thresholds. For the 64-bit types the
+ * true max is not representable as a double and (double)imax rounds up to
+ * 2^63 / 2^64, which is exactly the threshold at which the value no longer
+ * fits, so the comparison stays correct while the assigned constant is the
+ * exact type max. +/-Inf fall through to the imax/imin branches.
+ */
+#define ASSIGN_SAT(pdst, val, typeb, imin, imax) \
+    do { \
+        double _v = (double) (val); \
+        if (isnan(_v))                 *(pdst) = 0; \
+        else if (_v <= (double)(imin)) *(pdst) = (imin); \
+        else if (_v >= (double)(imax)) *(pdst) = (imax); \
+        else                           *(pdst) = (typeb) _v; \
+    } while (0)
+
+#define GET_SAT(typea, typeb, imin, imax) (const dbAddr *paddr, \
+    void *pto, long nRequest, long no_elements, long offset) \
+{ \
+    typea *psrc = (typea *) paddr->pfield; \
+    typeb *pdst = (typeb *) pto; \
+    \
+    if (nRequest==1 && offset==0) { \
+        ASSIGN_SAT(pdst, *psrc, typeb, imin, imax); \
+        return 0; \
+    } \
+    psrc += offset; \
+    while (nRequest--) { \
+        ASSIGN_SAT(pdst, *psrc, typeb, imin, imax); \
+        pdst++; psrc++; \
+        if (++offset == no_elements) \
+            psrc = (typea *) paddr->pfield; \
+    } \
+    return 0; \
+}
+
+#define PUT_SAT(typea, typeb, imin, imax) (dbAddr *paddr, \
+    const void *pfrom, long nRequest, long no_elements, long offset) \
+{ \
+    const typea *psrc = (const typea *) pfrom; \
+    typeb *pdst = (typeb *) paddr->pfield; \
+    \
+    if (nRequest==1 && offset==0) { \
+        ASSIGN_SAT(pdst, *psrc, typeb, imin, imax); \
+        return 0; \
+    } \
+    pdst += offset; \
+    while (nRequest--) { \
+        ASSIGN_SAT(pdst, *psrc, typeb, imin, imax); \
+        pdst++; psrc++; \
+        if (++offset == no_elements) \
+            pdst = (typeb *) paddr->pfield; \
+    } \
     return 0; \
 }
 
@@ -757,17 +825,17 @@ static long getFloatString(const dbAddr *paddr,
     return(status);
 }
 
-static long getFloatChar GET(epicsFloat32, char)
-static long getFloatUchar GET(epicsFloat32, epicsUInt8)
-static long getFloatShort GET(epicsFloat32, epicsInt16)
-static long getFloatUshort GET(epicsFloat32, epicsUInt16)
-static long getFloatLong GET(epicsFloat32, epicsInt32)
-static long getFloatUlong GET(epicsFloat32, epicsUInt32)
-static long getFloatInt64 GET(epicsFloat32, epicsInt64)
-static long getFloatUInt64 GET(epicsFloat32, epicsUInt64)
+static long getFloatChar GET_SAT(epicsFloat32, char, CHAR_MIN, CHAR_MAX)
+static long getFloatUchar GET_SAT(epicsFloat32, epicsUInt8, 0, UCHAR_MAX)
+static long getFloatShort GET_SAT(epicsFloat32, epicsInt16, SHRT_MIN, SHRT_MAX)
+static long getFloatUshort GET_SAT(epicsFloat32, epicsUInt16, 0, USHRT_MAX)
+static long getFloatLong GET_SAT(epicsFloat32, epicsInt32, INT_MIN, INT_MAX)
+static long getFloatUlong GET_SAT(epicsFloat32, epicsUInt32, 0, UINT_MAX)
+static long getFloatInt64 GET_SAT(epicsFloat32, epicsInt64, epicsInt64Min, epicsInt64Max)
+static long getFloatUInt64 GET_SAT(epicsFloat32, epicsUInt64, 0, epicsUInt64Max)
 static long getFloatFloat GET_NOCONVERT(epicsFloat32, epicsFloat32)
 static long getFloatDouble GET(epicsFloat32, epicsFloat64)
-static long getFloatEnum GET(epicsFloat32, epicsEnum16)
+static long getFloatEnum GET_SAT(epicsFloat32, epicsEnum16, 0, USHRT_MAX)
 
 static long getDoubleString(const dbAddr *paddr,
     void *pto, long nRequest, long no_elements, long offset)
@@ -798,14 +866,14 @@ static long getDoubleString(const dbAddr *paddr,
     return(status);
 }
 
-static long getDoubleChar GET(epicsFloat64, char)
-static long getDoubleUchar GET(epicsFloat64, epicsUInt8)
-static long getDoubleShort GET(epicsFloat64, epicsInt16)
-static long getDoubleUshort GET(epicsFloat64, epicsUInt16)
-static long getDoubleLong GET(epicsFloat64, epicsInt32)
-static long getDoubleUlong GET(epicsFloat64, epicsUInt32)
-static long getDoubleInt64 GET(epicsFloat64, epicsInt64)
-static long getDoubleUInt64 GET(epicsFloat64, epicsUInt64)
+static long getDoubleChar GET_SAT(epicsFloat64, char, CHAR_MIN, CHAR_MAX)
+static long getDoubleUchar GET_SAT(epicsFloat64, epicsUInt8, 0, UCHAR_MAX)
+static long getDoubleShort GET_SAT(epicsFloat64, epicsInt16, SHRT_MIN, SHRT_MAX)
+static long getDoubleUshort GET_SAT(epicsFloat64, epicsUInt16, 0, USHRT_MAX)
+static long getDoubleLong GET_SAT(epicsFloat64, epicsInt32, INT_MIN, INT_MAX)
+static long getDoubleUlong GET_SAT(epicsFloat64, epicsUInt32, 0, UINT_MAX)
+static long getDoubleInt64 GET_SAT(epicsFloat64, epicsInt64, epicsInt64Min, epicsInt64Max)
+static long getDoubleUInt64 GET_SAT(epicsFloat64, epicsUInt64, 0, epicsUInt64Max)
 
 static long getDoubleFloat(const dbAddr *paddr,
     void *pto, long nRequest, long no_elements, long offset)
@@ -828,7 +896,7 @@ static long getDoubleFloat(const dbAddr *paddr,
 }
 
 static long getDoubleDouble GET_NOCONVERT(epicsFloat64, epicsFloat64)
-static long getDoubleEnum GET(epicsFloat64, epicsEnum16)
+static long getDoubleEnum GET_SAT(epicsFloat64, epicsEnum16, 0, USHRT_MAX)
 
 static long getEnumString(const dbAddr *paddr,
     void *pto, long nRequest, long no_elements, long offset)
@@ -1585,17 +1653,17 @@ static long putFloatString(dbAddr *paddr,
     return(status);
 }
 
-static long putFloatChar PUT(epicsFloat32, char)
-static long putFloatUchar PUT(epicsFloat32, epicsUInt8)
-static long putFloatShort PUT(epicsFloat32, epicsInt16)
-static long putFloatUshort PUT(epicsFloat32, epicsUInt16)
-static long putFloatLong PUT(epicsFloat32, epicsInt32)
-static long putFloatUlong PUT(epicsFloat32, epicsUInt32)
-static long putFloatInt64 PUT(epicsFloat32, epicsInt64)
-static long putFloatUInt64 PUT(epicsFloat32, epicsUInt64)
+static long putFloatChar PUT_SAT(epicsFloat32, char, CHAR_MIN, CHAR_MAX)
+static long putFloatUchar PUT_SAT(epicsFloat32, epicsUInt8, 0, UCHAR_MAX)
+static long putFloatShort PUT_SAT(epicsFloat32, epicsInt16, SHRT_MIN, SHRT_MAX)
+static long putFloatUshort PUT_SAT(epicsFloat32, epicsUInt16, 0, USHRT_MAX)
+static long putFloatLong PUT_SAT(epicsFloat32, epicsInt32, INT_MIN, INT_MAX)
+static long putFloatUlong PUT_SAT(epicsFloat32, epicsUInt32, 0, UINT_MAX)
+static long putFloatInt64 PUT_SAT(epicsFloat32, epicsInt64, epicsInt64Min, epicsInt64Max)
+static long putFloatUInt64 PUT_SAT(epicsFloat32, epicsUInt64, 0, epicsUInt64Max)
 static long putFloatFloat PUT_NOCONVERT(epicsFloat32, epicsFloat32)
 static long putFloatDouble PUT(epicsFloat32, epicsFloat64)
-static long putFloatEnum PUT(epicsFloat32, epicsEnum16)
+static long putFloatEnum PUT_SAT(epicsFloat32, epicsEnum16, 0, USHRT_MAX)
 
 static long putDoubleString(dbAddr *paddr,
     const void *pfrom, long nRequest, long no_elements, long offset)
@@ -1627,14 +1695,14 @@ static long putDoubleString(dbAddr *paddr,
     return status;
 }
 
-static long putDoubleChar PUT(epicsFloat64, char)
-static long putDoubleUchar PUT(epicsFloat64, epicsUInt8)
-static long putDoubleShort PUT(epicsFloat64, epicsInt16)
-static long putDoubleUshort PUT(epicsFloat64, epicsUInt16)
-static long putDoubleLong PUT(epicsFloat64, epicsInt32)
-static long putDoubleUlong PUT(epicsFloat64, epicsUInt32)
-static long putDoubleInt64 PUT(epicsFloat64, epicsInt64)
-static long putDoubleUInt64 PUT(epicsFloat64, epicsUInt64)
+static long putDoubleChar PUT_SAT(epicsFloat64, char, CHAR_MIN, CHAR_MAX)
+static long putDoubleUchar PUT_SAT(epicsFloat64, epicsUInt8, 0, UCHAR_MAX)
+static long putDoubleShort PUT_SAT(epicsFloat64, epicsInt16, SHRT_MIN, SHRT_MAX)
+static long putDoubleUshort PUT_SAT(epicsFloat64, epicsUInt16, 0, USHRT_MAX)
+static long putDoubleLong PUT_SAT(epicsFloat64, epicsInt32, INT_MIN, INT_MAX)
+static long putDoubleUlong PUT_SAT(epicsFloat64, epicsUInt32, 0, UINT_MAX)
+static long putDoubleInt64 PUT_SAT(epicsFloat64, epicsInt64, epicsInt64Min, epicsInt64Max)
+static long putDoubleUInt64 PUT_SAT(epicsFloat64, epicsUInt64, 0, epicsUInt64Max)
 
 static long putDoubleFloat(dbAddr *paddr,
     const void *pfrom, long nRequest, long no_elements, long offset)
@@ -1656,7 +1724,7 @@ static long putDoubleFloat(dbAddr *paddr,
 }
 
 static long putDoubleDouble PUT_NOCONVERT(epicsFloat64, epicsFloat64)
-static long putDoubleEnum PUT(epicsFloat64, epicsEnum16)
+static long putDoubleEnum PUT_SAT(epicsFloat64, epicsEnum16, 0, USHRT_MAX)
 
 static long putEnumString(dbAddr *paddr,
     const void *pfrom, long nRequest, long no_elements, long offset)

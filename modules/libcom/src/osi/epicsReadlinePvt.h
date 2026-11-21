@@ -9,6 +9,12 @@
 #ifndef EPICSREADLINEPVT_H
 #define EPICSREADLINEPVT_H
 
+#if defined(__unix__) || defined(darwin)
+#  include <signal.h> /* sigaction() and associated macros */
+#  include <unistd.h> /* for close() */
+#  include <fcntl.h>  /* open() */
+#endif
+
 #include "epicsReadline.h"
 
 /* Basic command-line input, no editing or history: */
@@ -33,6 +39,11 @@ struct readlineContext {
     FILE    *in;
     char    *line;
     struct osdContext *osd;
+#ifdef SA_RESETHAND
+    struct sigaction sigint;
+    int devnull;
+    int clone_stdin;
+#endif
 };
 
 #endif // EPICSREADLINEPVT_H

@@ -211,7 +211,8 @@ typedef struct chfPluginIf {
 
     /** @brief Channel close request.
      *
-     * <em>Called as part of connection shutdown.</em>
+     * Called as part of filter destruction,
+     * even if channel_open() was never called.
      * @param chan dbChannel for which the connection is being shut down.
      * @param pvt Pointer to private structure.
      */

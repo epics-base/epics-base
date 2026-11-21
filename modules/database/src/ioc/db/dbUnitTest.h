@@ -181,6 +181,11 @@ DBCORE_API unsigned testMonitorCount(testMonitor*, unsigned reset);
  */
 DBCORE_API void testSyncCallback(void);
 
+/** Whether the shared callback queues are idle: every worker thread
+ * asleep with no job queued, running, or still counted in use.
+ */
+DBCORE_API int testCallbackIdle(void);
+
 /** Lock Global convenience mutex for use by test code.
  *
  * @see @ref dbtestmutex
@@ -314,6 +319,7 @@ DBCORE_API void testGlobalUnlock(void);
  * Helpers to synchronize with some database worker threads
  *
  * @li testSyncCallback()
+ * @li testCallbackIdle()
  *
  * @section dbtestmutex Global mutex for use by test code.
  *

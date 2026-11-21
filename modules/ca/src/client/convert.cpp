@@ -583,6 +583,8 @@ arrayElementCount   num         /* number of values     */
     pDest->status           = dbr_ntohs(pSrc->status);
     pDest->severity         = dbr_ntohs(pSrc->severity);
     pDest->no_str           = dbr_ntohs(pSrc->no_str);
+    if ( pDest->no_str > MAX_ENUM_STATES || pDest->no_str < 0 )
+        pDest->no_str = MAX_ENUM_STATES;
     if ( s != d ) {
         memcpy(pDest->strs, pSrc->strs, sizeof(pSrc->strs));
     }
@@ -1003,6 +1005,8 @@ arrayElementCount   num         /* number of values     */
     pDest->status           = dbr_ntohs(pSrc->status);
     pDest->severity         = dbr_ntohs(pSrc->severity);
     pDest->no_str           = dbr_ntohs(pSrc->no_str);
+    if ( pDest->no_str > MAX_ENUM_STATES || pDest->no_str < 0 )
+        pDest->no_str = MAX_ENUM_STATES;
     if ( s != d ) {
         memcpy(pDest->strs, pSrc->strs, sizeof(pSrc->strs));
     }

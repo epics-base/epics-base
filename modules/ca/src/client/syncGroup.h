@@ -86,6 +86,8 @@ private:
     CASG & sg;
     void * pValue;
     const unsigned magic;
+    arrayElementCount requestedCount;
+    unsigned requestedType;
     cacChannel::ioid id;
     bool idIsValid;
     bool ioComplete;

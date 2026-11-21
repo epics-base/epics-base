@@ -256,6 +256,15 @@ DBCORE_API long dbProcess(struct dbCommon *precord);
  */
 DBCORE_API long dbNameToAddr(const char *pname, struct dbAddr *paddr);
 
+/** Start process timeout on record
+ * If the TOUT field is > 0 make record raise INVALID/TIMEOUT alarm
+ * If not being processed for TOUT seconds.
+ *
+ * \since UNRELEASED
+ */
+DBCORE_API void dbProcessTimeoutStart(struct dbCommon *precord);
+DBCORE_API void dbProcessTimeoutCancel(struct dbCommon *precord);
+
 /** Initialize DBADDR from a dbEntry
  * Also handles SPC_DBADDR processing. This is really an internal
  * routine for use by dbNameToAddr() and dbChannelCreate().

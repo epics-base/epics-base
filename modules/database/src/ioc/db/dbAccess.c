@@ -131,6 +131,11 @@ long dbPutSpecial(DBADDR *paddr,int pass)
                 scanAdd(precord);
         }else if((special==SPC_AS) && (pass==1)) {
             if(spcAsCallback) (*spcAsCallback)(precord);
+        }else if(special==SPC_TOUT) {
+            if(pass==0)
+                dbProcessTimeoutCancel(precord);
+            else
+                dbProcessTimeoutStart(precord);
         }
     }else {
         if( prset && (pspecial = (prset->special))) {
@@ -376,7 +381,9 @@ static void getOptions(DBADDR *paddr, char **poriginal, long *options,
         }
         if( (*options) & DBR_UNITS ) {
             memset(pbuffer,'\0',dbr_units_size);
-            if( prset && prset->get_units ){
+            if (paddr->special == SPC_TOUT) {
+                pbuffer[0] = 's';
+            } else if (prset && prset->get_units) {
                 (*prset->get_units)(paddr, pbuffer);
                 pbuffer[DB_UNITS_SIZE-1] = '\0';
             } else {
@@ -473,6 +480,59 @@ int dbGetFieldIndex(const struct dbAddr *paddr)
     return paddr->pfldDes->indRecordType;
 }
 
+static void dbProcessTimeoutCallback(void* arg)
+{
+    dbCommon *precord = (dbCommon *)arg;
+
+    dbScanLock(precord);
+    if (!precord->pact && precord->stat != DISABLE_ALARM) {
+        unsigned short monitor_mask;
+        epicsTimeGetCurrent(&precord->time);
+        recGblSetSevrMsg(precord, TIMEOUT_ALARM, INVALID_ALARM, "dbProcessTimeout");
+        monitor_mask = recGblResetAlarms(precord);
+        monitor_mask |= DBE_VALUE|DBE_LOG;
+        db_post_events(precord,
+            ((char *)precord) + precord->rdes->pvalFldDes->offset,
+            monitor_mask);
+    }
+    dbScanUnlock(precord);
+}
+
+static void dbProcessTimeoutCallbackQueueInit(void* arg)
+{
+    epicsTimerQueueId* pqueue = (epicsTimerQueueId*)arg;
+    unsigned int priority;
+    epicsThreadLowestPriorityLevelAbove(epicsThreadPriorityScanHigh, &priority);
+    *pqueue = epicsTimerQueueAllocate(1, priority);
+}
+
+void dbProcessTimeoutStart(dbCommon *precord)
+{
+    static epicsThreadOnceId dbProcessTimeoutQueueOnceId = EPICS_THREAD_ONCE_INIT;
+    static epicsTimerQueueId dbProcessTimeoutQueue = NULL;
+    dbCommonPvt* pvt;
+
+    if (precord->pact || precord->stat == DISABLE_ALARM || precord->tout <= 0)
+        return;
+
+    epicsThreadOnce(&dbProcessTimeoutQueueOnceId, dbProcessTimeoutCallbackQueueInit, &dbProcessTimeoutQueue);
+
+    pvt = dbRec2Pvt(precord);
+
+    if (!pvt->inactivityTimeout) {
+        pvt->inactivityTimeout = epicsTimerQueueCreateTimer(dbProcessTimeoutQueue,
+            dbProcessTimeoutCallback, precord);
+    }
+    epicsTimerStartDelay(pvt->inactivityTimeout, precord->tout);
+}
+
+void dbProcessTimeoutCancel(dbCommon *precord)
+{
+    dbCommonPvt* pvt = dbRec2Pvt(precord);
+    if (pvt->inactivityTimeout)
+        epicsTimerCancel(pvt->inactivityTimeout);
+}
+
 /*
  *   Process the record.
  *     1.  Check for breakpoints.
@@ -493,6 +553,8 @@ long dbProcess(dbCommon *precord)
     int set_trace = FALSE;
     dbFldDes *pdbFldDes;
     int callNotifyCompletion = FALSE;
+
+    dbProcessTimeoutCancel(precord);
 
     ptrace = dbLockSetAddrTrace(precord);
     /*
@@ -616,6 +678,9 @@ long dbProcess(dbCommon *precord)
         dbPrint(precord);
     }
 
+    /* restart inactivity timeout */
+    if (precord->tout > 0)
+        dbProcessTimeoutStart(precord);
 all_done:
     if (set_trace)
         *ptrace = 0;

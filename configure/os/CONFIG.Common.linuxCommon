@@ -20,8 +20,10 @@ OP_SYS_LDFLAGS += -rdynamic
 
 # Linker flags for static & shared-library builds
 STATIC_LDFLAGS_YES= -Wl,-Bstatic
+STATIC_LDFLAGS_FULL= -Wl,-Bstatic
 STATIC_LDFLAGS_NO=
 STATIC_LDLIBS_YES= -Wl,-Bdynamic
+STATIC_LDLIBS_FULL= -Wl,-Bstatic
 
 # Set runtime path for shared libraries if LINKER_USE_RPATH=YES
 SHRLIBDIR_RPATH_LDFLAGS_YES = $(SHRLIB_DEPLIB_DIRS:%=-Wl,-rpath,%)

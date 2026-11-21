@@ -195,6 +195,29 @@ epicsStdCall macPopScope(
     MAC_HANDLE  *handle         /**< opaque handle */
 );
 /**
+ * \brief Callback routine type for macIterateMacros
+ * \return 0 = continue; non-zero = stop
+ *
+ * See macIterateMacros()
+ */
+typedef long (*macIteratorCallback) (
+    void *user,         /**< User's context pointer */
+    const char *name,   /**< entry name */
+    const char *value); /**< expanded macro value */
+/**
+ * \brief Iterate macros to user callback function
+ * \return 0 = OK, -1 = ERROR, else the value returned by the function.
+ * Calls the user's callback function for each defined macro. Provides
+ * the name and expanded value for each macro in turn, and allows the
+ * callback routine to stop iteration early by returning non-zero.
+ */
+LIBCOM_API long
+epicsStdCall macIterateMacros(
+    MAC_HANDLE  *handle,          /**< opaque handle */
+    macIteratorCallback callback, /**< callback function */
+    void *user );                 /**< caller's context */
+
+/**
  * \brief Reports details of current definitions
  * \return 0 = OK; <0 = ERROR
  * This sends details of current definitions to standard output,

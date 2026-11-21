@@ -31,6 +31,7 @@
 #include "epicsExport.h"
 
 static void processNextLink(seqRecord *prec);
+static void processLink(seqRecord *prec);
 static long asyncFinish(seqRecord *prec);
 static void processCallback(epicsCallback *arg);
 
@@ -201,7 +202,10 @@ static long process(struct dbCommon *pcommon)
 static void processNextLink(seqRecord *prec)
 {
     seqRecPvt *pcb = (seqRecPvt *) prec->dpvt;
-    linkGrp *pgrp = pcb->grps[pcb->index];
+    linkGrp *pgrp;
+
+    while ((pgrp = pcb->grps[pcb->index]) && pgrp->dly < 0.0)
+        processLink(prec);
 
     if (pgrp == NULL) {
         /* None left, finish up. */
@@ -209,11 +213,33 @@ static void processNextLink(seqRecord *prec)
         return;
     }
 
-    /* Always use the callback task to avoid recursion */
+    /* Use the callback task to avoid recursion. */
     if (pgrp->dly > 0.0)
         callbackRequestDelayed(&pcb->callback, pgrp->dly);
     else
         callbackRequest(&pcb->callback);
+}
+
+static void processLink(seqRecord *prec)
+{
+    seqRecPvt *pcb = (seqRecPvt *) prec->dpvt;
+    linkGrp *pgrp = pcb->grps[pcb->index];
+    double odov;
+
+    /* Save the old value */
+    odov = pgrp->dov;
+
+    dbGetLink(&pgrp->dol, DBR_DOUBLE, &pgrp->dov, 0, 0);
+
+    recGblGetTimeStamp(prec);
+
+    /* Dump the value to the destination field */
+    dbPutLink(&pgrp->lnk, DBR_DOUBLE, &pgrp->dov, 1);
+
+    if (odov != pgrp->dov)
+        db_post_events(prec, &pgrp->dov, DBE_VALUE | DBE_LOG);
+
+    pcb->index++;
 }
 
 static long asyncFinish(seqRecord *prec)
@@ -244,31 +270,12 @@ static void processCallback(epicsCallback *arg)
 {
     seqRecPvt *pcb;
     seqRecord *prec;
-    linkGrp *pgrp;
-    double odov;
 
     callbackGetUser(pcb, arg);
     prec = pcb->prec;
     dbScanLock((struct dbCommon *)prec);
 
-    pgrp = pcb->grps[pcb->index];
-
-    /* Save the old value */
-    odov = pgrp->dov;
-
-    dbGetLink(&pgrp->dol, DBR_DOUBLE, &pgrp->dov, 0, 0);
-
-    recGblGetTimeStamp(prec);
-
-    /* Dump the value to the destination field */
-    dbPutLink(&pgrp->lnk, DBR_DOUBLE, &pgrp->dov, 1);
-
-    if (odov != pgrp->dov) {
-        db_post_events(prec, &pgrp->dov, DBE_VALUE | DBE_LOG);
-    }
-
-    /* Start the next link-group */
-    pcb->index++;
+    processLink(prec);
     processNextLink(prec);
 
     dbScanUnlock((struct dbCommon *)prec);
@@ -326,7 +333,7 @@ static long get_graphic_double(DBADDR *paddr, struct dbr_grDouble *pgd)
     if (fieldOffset >= 0)
         switch (fieldOffset & 3) {
         case 0: /* DLYn */
-            pgd->lower_disp_limit = 0.0;
+            pgd->lower_disp_limit = -1.0;
             pgd->upper_disp_limit = 10.0;
             return 0;
         case 2: /* DOn */
@@ -344,7 +351,7 @@ static long get_control_double(DBADDR *paddr, struct dbr_ctrlDouble *pcd)
     int fieldOffset = dbGetFieldIndex(paddr) - indexof(DLY0);
 
     if (fieldOffset >= 0 && (fieldOffset & 3) == 0) { /* DLYn */
-        pcd->lower_ctrl_limit = 0.0;
+        pcd->lower_ctrl_limit = -1.0;
         pcd->upper_ctrl_limit = seqDLYlimit;
     }
     else

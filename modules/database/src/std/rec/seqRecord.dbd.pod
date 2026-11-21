@@ -176,7 +176,11 @@ the link. For instance, if the user gives the DLY1 field a value of 3.0, each
 time the record is processed at run-time, the record will delay processing the
 DOL1, DOV1, and LNK1 fields for three seconds. That is, the desired output value
 will not be fetched and written to the output link until three seconds have
-lapsed.
+lapsed. A negative DLYI<x> value processes that link group synchronously. The
+sequence record keeps its lockset locked while it processes consecutive link
+groups with negative delays. This can prevent interleaved processing of records
+in that lockset, but it can also delay other records in the lockset. Use negative
+delays only when this behavior is required.
 
 =fields DLY0 - DLY9, DLYA - DLYF
 
@@ -216,16 +220,18 @@ increasing numerical order, from LNK0 to LNKF.
 
 =item 2.
 
-When LNKI<x> is to be processed, the corresponding DLYI<x> value is first used
-to generate the requested time delay, using the IOC's Callback subsystem to
+When LNKI<x> is to be processed with a non-negative DLYI<x> value, the value is
+used to generate the requested time delay, using the IOC's Callback subsystem to
 perform subsequent operations. This means that although PACT remains TRUE, the
 lockset that the sequence record belongs to will be unlocked for the duration of
-the delay time (an unlock occurs even when the delay is zero).
+the delay time (an unlock occurs even when the delay is zero). A negative
+DLYI<x> value processes that link group directly, without unlocking the lockset.
 
 =item 3.
 
-After DLYI<x> seconds have expired, the value in DOI<x> is saved locally and a
-new value is read into DOI<x> through the link DOLI<x> (if the link is valid).
+After a non-negative DLYI<x> delay has expired, or immediately when DLYI<x> is
+negative, the value in DOI<x> is saved locally and a new value is read into
+DOI<x> through the link DOLI<x> (if the link is valid).
 Next the record's timestamp is set, and the value in DOI<x> is written through
 the LNKI<x> output link. If the value of DOI<x> was changed when it was read in
 a monitor event is triggered on that field.

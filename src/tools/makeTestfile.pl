@@ -65,6 +65,10 @@ elsif ($TA =~ /^RTEMS-/) {
     # Explicitly fail for other RTEMS targets
     die "$tool: I don't know how to create scripts for testing $TA on $HA\n";
 }
+elsif ($HA =~ /^linux-x86/ && $TA =~ /^linux-arm/) {
+    $exec = "qemu-arm-static -L /usr/arm-linux-gnueabihf $exe";
+    $error= "qemu-arm-static ... $exe";
+}
 else {
     # Assume it's directly executable on other targets
     $error = $exec = "./$exe";

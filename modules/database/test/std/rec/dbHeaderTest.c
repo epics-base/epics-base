@@ -178,7 +178,6 @@
 #include <menuSimm.h>
 #include <menuYesNo.h>
 #include <miscIocRegister.h>
-#include <osiClockTime.h>
 #include <osiPoolStatus.h>
 #include <osiProcess.h>
 #include <osiSock.h>

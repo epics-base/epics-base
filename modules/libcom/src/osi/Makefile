@@ -38,7 +38,6 @@ INC += epicsTime.h
 INC += epicsGeneralTime.h
 INC += osdTime.h
 INC += generalTimeSup.h
-INC += osiClockTime.h
 INC += epicsSignal.h
 INC += osiProcess.h
 INC += osiUnistd.h
@@ -80,9 +79,8 @@ Com_SRCS += epicsAtomicOSD.cpp
 Com_SRCS += epicsGeneralTime.c
 
 # Time providers
-Com_SRCS += osiClockTime.c
-Com_SRCS_vxWorks += osiNTPTime.c tz2timezone.c
-Com_SRCS_RTEMS += osiNTPTime.c
+Com_SRCS_vxWorks += osiClockTime.c osiNTPTime.c tz2timezone.c
+Com_SRCS_RTEMS += osiClockTime.c osiNTPTime.c
 
 ifeq ($(OS_CLASS),vxWorks)
 osdTime.o: USR_CXXFLAGS += -DBUILD_TIME=$(shell perl -e 'print time')

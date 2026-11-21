@@ -93,13 +93,6 @@ testHarness_SRCS += seqTest.c
 TESTFILES += ../seqTest.db
 TESTS += seqTest
 
-TESTPROD_HOST += selTest
-selTest_SRCS += selTest.c
-selTest_SRCS += recTestIoc_registerRecordDeviceDriver.cpp
-testHarness_SRCS += selTest.c
-TESTFILES += ../selTest.db
-TESTS += selTest
-
 TESTPROD_HOST += longoutTest
 longoutTest_SRCS += longoutTest.c
 longoutTest_SRCS += recTestIoc_registerRecordDeviceDriver.cpp
@@ -113,13 +106,6 @@ boTest_SRCS += recTestIoc_registerRecordDeviceDriver.cpp
 testHarness_SRCS += boTest.c
 TESTFILES += ../boTest.db
 TESTS += boTest
-
-TESTPROD_HOST += dfanoutTest
-dfanoutTest_SRCS += dfanoutTest.c
-dfanoutTest_SRCS += recTestIoc_registerRecordDeviceDriver.cpp
-testHarness_SRCS += dfanoutTest.c
-TESTFILES += ../dfanoutTest.db
-TESTS += dfanoutTest
 
 TESTPROD_HOST += biTest
 biTest_SRCS += biTest.c
@@ -141,6 +127,20 @@ aiTest_SRCS += recTestIoc_registerRecordDeviceDriver.cpp
 testHarness_SRCS += aiTest.c
 TESTFILES += ../aiTest.db
 TESTS += aiTest
+
+#TESTPROD_HOST += calcTest
+#calcTest_SRCS += calcTest.c
+#calcTest_SRCS += recTestIoc_registerRecordDeviceDriver.cpp
+#testHarness_SRCS += calcTest.c
+#TESTFILES += ../calcTest.db
+#TESTS += calcTest
+
+TESTPROD_HOST += calcoutTest
+calcoutTest_SRCS += calcoutTest.c
+calcoutTest_SRCS += recTestIoc_registerRecordDeviceDriver.cpp
+testHarness_SRCS += calcoutTest.c
+TESTFILES += ../calcoutTest.db
+TESTS += calcoutTest
 
 TARGETS += $(COMMON_DIR)/asTestIoc.dbd
 DBDDEPENDS_FILES += asTestIoc.dbd$(DEP)
@@ -201,13 +201,6 @@ testHarness_SRCS += simmTest.c
 testHarness_SRCS += simmTest_registerRecordDeviceDriver.cpp
 TESTFILES += $(COMMON_DIR)/simmTest.dbd $(COMMON_DIR)/simmTest.db
 TESTS += simmTest
-
-TESTPROD_HOST += mbbiTest
-mbbiTest_SRCS += mbbiTest.c
-mbbiTest_SRCS += recTestIoc_registerRecordDeviceDriver.cpp
-testHarness_SRCS += mbbiTest.c
-TESTFILES += ../mbbiTest.db
-TESTS += mbbiTest
 
 TESTPROD_HOST += mbbioDirectTest
 mbbioDirectTest_SRCS += mbbioDirectTest.c

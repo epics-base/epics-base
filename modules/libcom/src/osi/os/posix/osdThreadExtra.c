@@ -39,8 +39,8 @@ void epicsThreadShowInfo(epicsThreadOSD *pthreadInfo, unsigned int level)
         fprintf(epicsGetStdout(),"%16.16s %14p %12lu    %3d%8d %8.8s%s\n",
              pthreadInfo->name,
              pthreadInfo,(unsigned long)pthreadInfo->tid,
-             pthreadInfo->osiPriority,priority,
-             pthreadInfo->isSuspended?"SUSPEND":"OK",
+             epicsThreadGetPriority(pthreadInfo),priority,
+             epicsThreadIsSuspended(pthreadInfo)?"SUSPEND":"OK",
              epicsAtomicGetIntT(&pthreadInfo->isRunning) ? "" : " ZOMBIE");
     }
 }

@@ -76,4 +76,8 @@
 #   define EPICS_PRINTF_FMT(a) a
 #endif
 
+#ifndef EPICS_FALLTHROUGH
+#define EPICS_FALLTHROUGH
+#endif
+
 #endif  /* ifndef compilerDependencies_h */

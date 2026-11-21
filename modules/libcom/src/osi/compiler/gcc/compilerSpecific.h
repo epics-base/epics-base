@@ -78,4 +78,10 @@
 #define EPICS_MALLOC(...) __attribute__((__malloc__))
 #endif
 
+#if __GNUC__ * 100 + __GNUC_MINOR__  >= 700
+#define EPICS_FALLTHROUGH __attribute__((fallthrough))
+#else
+#define EPICS_FALLTHROUGH
+#endif
+
 #endif  /* ifndef compilerSpecific_h */

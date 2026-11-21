@@ -294,7 +294,8 @@ static long chf_parse(dbChannel *chan, const char **pjson)
         err = yajl_get_error(yh, 1, (const unsigned char *) json, jlen);
         printf("dbChannelCreate: %s\n", err);
         yajl_free_error(yh, err);
-    } /* fall through */
+        EPICS_FALLTHROUGH;
+    }
     default:
         status = S_db_notFound;
     }

@@ -29,6 +29,8 @@
 #include "epicsEvent.h"
 #include "epicsThread.h"
 
+#include "osdThread.h"
+
 void epicsThreadShowInfo(epicsThreadId pthreadInfo, unsigned int level)
 {
     if (!pthreadInfo) {

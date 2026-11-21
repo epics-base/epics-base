@@ -214,6 +214,50 @@ LIBCOM_API double epicsStrSimilarity(const char *A, const char *B);
  */
 LIBCOM_API int dbTranslateEscape(char *s, const char *ct);
 
+/** \brief Converts an error number into a message string with the code embedded.
+ *
+ * Copies the system error string corresponding to an error number (usually errno)
+ * into a user-supplied buffer. Unlike standard strerror(), this function safely
+ * appends the numerical error code onto the end of the text message.
+ *
+ * This function is thread-safe and optimized for POSIX environments.
+ *
+ * \param errnum The system error number or status code to translate.
+ * \param buf    Pointer to the destination character array buffer.
+ * \param buflen Maximum capacity of the destination buffer in bytes.
+ */
+LIBCOM_API void epicsStrerror(int errnum, char *buf, size_t buflen);
+
+#ifdef __cplusplus
+  #define EPICS_TLS thread_local
+#elif defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
+  #define EPICS_TLS _Thread_local
+#else
+  #define EPICS_TLS __thread
+#endif
+
+/** \brief Inline drop-in replacement for strerror() with embedded error codes.
+ *
+ * A convenient wrapper function around epicsStrerror(). It automatically manages 
+ * an internal thread-local storage (TLS) string buffer, allowing it to be safely 
+ * used as an inline expression inside formatted print loops (e.g. printf, errlogPrintf) 
+ * without risking data races across thread contexts.
+ *
+ * \warning The returned pointer points to a thread-local static buffer. Subsequent 
+ *          calls to this function within the same operating thread will overwrite 
+ *          the buffer contents.
+ *
+ * \param errnum The system error number or status code (usually errno).
+ * \return A pointer to a null-terminated string containing the text error message 
+ *         and the appended numerical error code.
+ */
+static inline const char* epicsStrerrorStr(int errnum) {
+    static EPICS_TLS char buf[256];
+    epicsStrerror(errnum, buf, sizeof(buf));
+    return buf;
+}
+
+
 #ifdef __cplusplus
 }
 #endif

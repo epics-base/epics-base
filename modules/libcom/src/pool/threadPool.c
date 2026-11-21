@@ -331,7 +331,7 @@ LIBCOM_API epicsThreadPool* epicsThreadPoolGetShared(epicsThreadPoolConfig *opts
     ELLNODE *node;
     epicsThreadPool *cur;
     epicsThreadPoolConfig defopts;
-    size_t N = epicsThreadGetCPUs();
+    unsigned N = epicsThreadGetCPUs();
 
     if (!opts) {
         epicsThreadPoolConfigDefaults(&defopts);

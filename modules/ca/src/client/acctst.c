@@ -2863,7 +2863,7 @@ void fdcb ( void * parg )
     ca_poll ();
 }
 
-void fdRegCB ( void * parg, int fd, int opened )
+void fdRegCB ( void * parg, SOCKET fd, int opened )
 {
     int status;
 

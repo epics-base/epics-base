@@ -26,7 +26,7 @@ static void check(const char *str, const char *expect)
 {
     char output[MAC_SIZE] = {'\0'};
     long status = macExpandString(h, str, output, MAC_SIZE);
-    long expect_len = strlen(expect+1);
+    long expect_len = (long)strlen(expect+1);
     int expect_error = (expect[0] == '!');
     int statBad = expect_error ^ (status < 0);
     int strBad = strcmp(output, expect+1);

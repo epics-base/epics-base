@@ -216,7 +216,7 @@ epicsStdCall macExpandString(
     trans( handle, &entry, 0, "", &s, &d, d + capacity - 1 );
 
     /* return +/- #chars copied depending on successful expansion */
-    length = d - dest;
+    length = (long)(d - dest);
     length = ( entry.error ) ? -length : length;
 
     /* debug output */
@@ -292,7 +292,7 @@ epicsStdCall macPutValue(
     }
 
     /* return length of value */
-    return strlen( value );
+    return (long)strlen( value );
 }
 
 /*
@@ -348,7 +348,7 @@ epicsStdCall macGetValue(
     /* copy value and return +/- #chars copied depending on successful
        expansion */
     strncpy( value, entry->value, capacity );
-    length = ( value[capacity-1] == '\0' ) ? entry->length : capacity;
+    length = ( value[capacity-1] == '\0' ) ? (long)entry->length : capacity;
 
     return ( entry->error ) ? -length : length;
 }

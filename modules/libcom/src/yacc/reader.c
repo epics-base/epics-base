@@ -28,7 +28,7 @@ bucket **pitem;
 int maxrules;
 bucket **plhs;
 
-int name_pool_size;
+static size_t name_pool_size;
 char *name_pool;
 
 char line_format[] = "#line %d \"%s\"\n";
@@ -1758,7 +1758,7 @@ print_grammar(void)
         {
             if (i != 2) fprintf(f, "\n");
             fprintf(f, "%4d  %s :", i - 2, symbol_name[rlhs[i]]);
-            spacing = strlen(symbol_name[rlhs[i]]) + 1;
+            spacing = (int)strlen(symbol_name[rlhs[i]]) + 1;
         }
         else
         {

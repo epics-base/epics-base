@@ -96,15 +96,15 @@ unsigned netiiu::getHostName (
     char * pBuf, unsigned bufLen ) const throw ()
 {
     if ( bufLen ) {
-        unsigned len = strlen ( pHostNameNetIIU );
+        size_t len = strlen ( pHostNameNetIIU );
         strncpy ( pBuf, pHostNameNetIIU, bufLen );
         if ( len < bufLen ) {
-            return len;
+            return static_cast<unsigned>(len);
         }
         else {
-            unsigned reducedSize = bufLen - 1u;
+            size_t reducedSize = bufLen - 1u;
             pBuf[reducedSize] = '\0';
-            return reducedSize;
+            return static_cast<unsigned>(reducedSize); // or have function return size_t
         }
     }
     return 0u;

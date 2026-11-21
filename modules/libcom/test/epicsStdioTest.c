@@ -36,8 +36,8 @@ static void testEpicsSnprintf(void) {
     const char *svalue = "OneTwoThreeFour";
     const char *format = "int %d float %8.2e string %s";
     const char *expected = exbuffer;
-    int size;
-    int rtn, rlen;
+    size_t size, blen, rlen;
+    int rtn;
 
 #ifdef _WIN32
 #if (defined(_MSC_VER) && _MSC_VER < 1900) || \
@@ -47,20 +47,20 @@ static void testEpicsSnprintf(void) {
 #endif
 
     sprintf(exbuffer, format, ivalue, fvalue, svalue);
-    rlen = strlen(expected)+1;
+    rlen = strlen(expected) + 1;
 
     strcpy(buffer, "AAAA");
 
     for (size = 1; size < strlen(expected) + 5; ++size) {
         rtn = epicsSnprintf(buffer, size, format, ivalue, fvalue, svalue);
-        testOk(rtn <= rlen-1, "epicsSnprintf(size=%d) = %d", size, rtn);
+        testOk(rtn <= rlen-1, "epicsSnprintf(size=%lu) = %d", (unsigned long)size, rtn);
         if (rtn != rlen-1)
             testDiag("Return value does not indicate buffer size needed");
         testOk(strncmp(buffer, expected, size - 1) == 0,
             "buffer = '%s'", buffer);
-        rtn = strlen(buffer);
-        testOk(rtn == (size < rlen ? size : rlen) - 1,
-            "length = %d", rtn);
+        blen = strlen(buffer);
+        testOk(blen == (size < rlen ? size : rlen) - 1,
+            "length = %lu", (unsigned long)blen);
     }
 }
 
@@ -78,7 +78,7 @@ void testStdoutRedir (const char *report)
     FILE *realStdout = stdout;
     FILE *stream = 0;
     char linebuf[80];
-    size_t buflen = sizeof linebuf;
+    int buflen = (int)(sizeof linebuf);
 
     testOk1(epicsGetStdout() == stdout);
 

@@ -12,7 +12,7 @@
 
 char *epicsGetExecName(void)
 {
-    size_t max = 128;
+    DWORD max = 128;
     char *ret = NULL;
     DWORD n;
 

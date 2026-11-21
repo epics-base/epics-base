@@ -30,7 +30,7 @@ MAIN(buckTest)
     unsigned i;
     epicsTimeStamp start, finish;
     double duration;
-    const int LOOPS = 500000;
+    const unsigned LOOPS = 500000;
 
     pb = bucketCreate(8);
     if (!pb) {
@@ -73,7 +73,7 @@ MAIN(buckTest)
     epicsTimeGetCurrent(&finish);
 
     duration = epicsTimeDiffInSeconds(&finish, &start);
-    printf("%d loops took %.10f seconds\n", LOOPS, duration);
+    printf("%u loops took %.10f seconds\n", LOOPS, duration);
     duration /= 10 * LOOPS;
     printf("which is %.3f nanoseconds per hash lookup\n", duration * 1e9);
 

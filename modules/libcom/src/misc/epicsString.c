@@ -395,15 +395,13 @@ unsigned int epicsMemHash(const char *str, size_t length, unsigned int seed)
  * All normal integer weights are multiplied by two, with case
  * insensitive added in as one.
  */
-double epicsStrSimilarity(const char *A, const char *B)
+double epicsStrNSimilarity(const char *A, size_t lA,
+                           const char *B, size_t lB)
 {
     double ret = 0;
-    size_t lA, lB, a, b;
+    size_t a, b;
     size_t norm;
     size_t *dist0, *dist1, *stemp;
-
-    lA = strlen(A);
-    lB = strlen(B);
 
     /* max number of edits to change A into B is max(lA, lB) */
     norm = lA > lB ? lA : lB;
@@ -453,4 +451,9 @@ done:
     free(dist0);
     free(dist1);
     return ret;
+}
+
+double epicsStrSimilarity(const char *A, const char *B)
+{
+    return epicsStrNSimilarity(A, strlen(A), B, strlen(B));
 }

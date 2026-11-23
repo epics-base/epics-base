@@ -1,0 +1,31 @@
+# CONFIG.Common.RTEMS-mvmeCommon-ppcboot
+#
+# Definitions common to the PowerPC RTEMS BSPs that make a bootable image by
+# wrapping the compressed application in the PREP/ppcboot bootloader, i.e.
+# mvme2100, mvme2700 and mvme5100.
+#
+# A BSP fragment uses these by including this file before CONFIG.Common.RTEMS:
+#
+#     include $(CONFIG)/os/CONFIG.Common.RTEMS-mvmeCommon-ppcboot
+#     include $(CONFIG)/os/CONFIG.Common.RTEMS
+#-------------------------------------------------------
+
+MUNCH_SUFFIX = .boot
+
+# The blob must be given to ld as exactly 'rtems.gz' with no directory part.
+# ld derives the symbol names from the filename. So keep
+# the generic name and run ld within a target specific subdirectory to avoid clashes across 
+# multiple targets.
+define MUNCH_CMD
+	$(MKDIR) $*.munch
+	$(RTEMS_TOOLS)/bin/$(OBJCOPY_FOR_TARGET) -O binary -R .comment -S $< $*.munch/rtems
+	gzip -f9 $*.munch/rtems
+	cd $*.munch && $(RTEMS_TOOLS)/bin/$(LD_FOR_TARGET) -o boot.elf \
+		 $(PROJECT_RELEASE)/lib/bootloader.o \
+		--just-symbols=../$< \
+		-b binary rtems.gz \
+		--no-warn-mismatch \
+		-T $(PROJECT_RELEASE)/lib/ppcboot.lds \
+		-Map ../$<.map
+	$(RTEMS_TOOLS)/bin/$(OBJCOPY_FOR_TARGET) -O binary $*.munch/boot.elf $@
+endef

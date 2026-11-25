@@ -58,6 +58,13 @@ include $(CONFIG)/CONFIG_BASE
 #
 include $(CONFIG)/CONFIG_SITE
 
+ifeq ($(EPICS_BASE),$(INSTALL_LOCATION))
+  ifndef BASE_TOP
+    # Undo override from Base CONFIG_SITE files
+    INSTALL_LOCATION = $(TOP)
+  endif
+endif
+
 #  Version numbering
 #
 include $(CONFIG)/CONFIG_BASE_VERSION

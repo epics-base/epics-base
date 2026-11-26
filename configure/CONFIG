@@ -102,6 +102,14 @@ ifdef T_A
 
 endif # ifdef T_A
 
+# Base's FINAL_LOCATION only applies to modules installing into Base
+# (e.g. bundled submodules); others default to their own location.
+ifndef BASE_TOP
+  # Copy the (unexpanded) definition, it may use $(INSTALL_ABSOLUTE)
+  $(eval EPICS_BASE_FINAL_LOCATION = $(value FINAL_LOCATION))
+  FINAL_LOCATION = $(if $(filter $(abspath $(EPICS_BASE)),$(INSTALL_ABSOLUTE)),$(EPICS_BASE_FINAL_LOCATION),$(INSTALL_ABSOLUTE))
+endif
+
 
 # Include <top>/cfg/CONFIG* definitions from tops defined in RELEASE* files
 #

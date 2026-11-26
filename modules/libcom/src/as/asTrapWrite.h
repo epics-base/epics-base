@@ -33,7 +33,20 @@ struct dbChannel;
  */
 typedef struct asTrapWriteMessage {
     const char *userid; /**< \brief Userid of whoever originated the request. */
+    const char *method; /**< \brief How the account was authenticated, e.g.
+                         * "anonymous", "ca", or "x509". May be NULL or empty if the
+                         * forwarding server does not supply one; listeners must
+                         * tolerate both. */
+    const char *authority; /**< \brief Who vouches for the account. For the "x509"
+                         * method this is the common name of the root certificate
+                         * authority; for methods without a certificate (e.g.
+                         * "anonymous", "ca") it is NULL or empty. Listeners must
+                         * tolerate both. */
     const char *hostid; /**< \brief Hostid of whoever originated the request. */
+    epicsInt8 protocol; /**< \brief Transport security of the connection, as an
+                         * \c AsProtocol value (see asLib.h): \c AS_PROTOCOL_TCP (0)
+                         * for plain TCP or \c AS_PROTOCOL_TLS (1) for TLS. Servers
+                         * that predate transport security report \c AS_PROTOCOL_TCP. */
     /** \brief A field for use by the server.
      *
      * Any listener that uses this field must know what type of

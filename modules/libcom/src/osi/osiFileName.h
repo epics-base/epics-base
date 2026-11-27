@@ -40,6 +40,11 @@ char *epicsGetExecName(void);
 LIBCOM_API
 char *epicsGetExecDir(void);
 
+/** Return the absolute path of the current working directory
+ \return NULL or the path.  Caller must free(). May return NULL if out of memory  */
+LIBCOM_API
+char *epicsGetCwd(void);
+
 #ifdef __cplusplus
 }
 #endif

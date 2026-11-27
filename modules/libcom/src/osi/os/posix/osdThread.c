@@ -52,6 +52,8 @@
 #include "epicsAtomic.h"
 #include "envDefs.h"
 
+#include "osdThread.h"
+
 LIBCOM_API void epicsThreadShowInfo(epicsThreadOSD *pthreadInfo, unsigned int level);
 LIBCOM_API void osdThreadHooksRun(epicsThreadId id);
 LIBCOM_API void osdThreadHooksRunMain(epicsThreadId id);

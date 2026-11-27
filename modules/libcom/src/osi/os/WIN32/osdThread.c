@@ -35,7 +35,8 @@
 #include "ellLib.h"
 #include "epicsExit.h"
 #include "epicsAtomic.h"
-#include "osdThreadPvt.h"
+
+#include "osdThread.h"
 
 /* Windows Vista and higher supports fibre functions, but the
  * prototypes only appear in the windows SDK 8 and above.

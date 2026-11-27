@@ -15,6 +15,7 @@
 #include "libComAPI.h"
 #include "ellLib.h"
 #include "epicsEvent.h"
+#include "epicsThread.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -40,9 +41,6 @@ typedef struct epicsThreadOSD {
     int                joinable;
     char               name[1];     /* actually larger */
 } epicsThreadOSD;
-
-LIBCOM_API pthread_t epicsThreadGetPosixThreadId(epicsThreadId id);
-LIBCOM_API int epicsThreadGetPosixPriority(epicsThreadId id);
 
 #ifdef __cplusplus
 }

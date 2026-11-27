@@ -301,12 +301,9 @@ epicsStdCall macPutValue(
 long                            /* strlen(value), <0 if undefined */
 epicsStdCall macGetValue(
     MAC_HANDLE  *handle,        /* opaque handle */
-
     const char  *name,          /* macro name or reference */
-
     char        *value,         /* string to receive macro value or name */
                                 /* argument if macro is undefined */
-
     long        capacity )      /* capacity of destination buffer (value) */
 {
     MAC_ENTRY   *entry;         /* pointer to this macro's entry structure */
@@ -466,13 +463,74 @@ epicsStdCall macPopScope(
 }
 
 /*
+ * Iterate macros visible in the current scope
+ */
+long
+epicsStdCall macIterateMacros(
+    MAC_HANDLE  *handle,          /* opaque handle */
+    macIteratorCallback callback, /* callback function */
+    void *user )                  /* caller's context */
+{
+    MAC_ENTRY *entry;
+    long status;
+
+    /* check handle */
+    if ( handle == NULL || handle->magic != MAC_MAGIC ) {
+        errlogPrintf( "macIterateMacros: NULL or invalid handle\n" );
+        return -1;
+    }
+
+    /* expand raw values if not already done; ignore failures */
+    (void) expand( handle );
+
+    for ( entry = first( handle ); entry != NULL; entry = next( entry ) ) {
+        const char *value;
+        MAC_ENTRY *final;
+
+        /* Ignore scope markers */
+        if ( entry->special ) continue;
+
+        /* There may be new values for this name in later scopes.
+         * Find the latest matching entry visible in any scope. */
+        final = lookup( handle, entry->name, FALSE );
+
+        /* Ignore values we've already reported */
+        if ( final->visited ) continue;
+
+        /* Don't report environment variables */
+        if ( strcmp(final->type, "environment variable") == 0 ) continue;
+
+        if ( final != entry ) /* ? Is this if needed ? */
+            final->visited = TRUE;
+
+        if ( final->error ) /* expansion failed, pass rawval */
+            value = final->rawval;
+        else
+            value = final->value;
+
+        if ( value == NULL )
+            value = "";
+
+        status = callback( user, entry->name, value );
+        if ( status ) break;
+    }
+
+    /* Clear all visited flags */
+    for ( entry = first( handle ); entry != NULL; entry = next( entry ) ) {
+        entry->visited = FALSE;
+    }
+
+    return status;
+}
+
+/*
  * Report macro details to standard output
  */
 long                            /* 0 = OK; <0 = ERROR */
 epicsStdCall macReportMacros(
     MAC_HANDLE  *handle )       /* opaque handle */
 {
-    const char *format = "%-1s %-16s %-16s %s\n";
+    const char *format = "%c %-20s %-20s %-20s\n";
     MAC_ENTRY *entry;
 
     /* check handle */
@@ -486,16 +544,21 @@ epicsStdCall macReportMacros(
         errlogPrintf( "macGetValue: failed to expand raw values\n" );
 
     /* loop through macros, reporting names and values */
-    printf( format, "e", "name", "rawval", "value" );
-    printf( format, "-", "----", "------", "-----" );
+    printf( format, 't', "name", "rawval", "value" );
+    printf( format, '-', "----", "------", "-----" );
     for ( entry = first( handle ); entry != NULL; entry = next( entry ) ) {
+        char t = ' ';
+
+        if ( entry->special ) t = 's';
+        if ( strcmp(entry->type, "environment variable") == 0 ) t = 'e';
+        if ( entry->error ) t = 'e';
 
         /* differentiate between "special" (scope marker) and ordinary
            entries */
         if ( entry->special )
-            printf( format, "s", "----", "------", "-----" );
+            printf( format, 's', "----", "------", "-----" );
         else
-            printf( format, entry->error ? "*" : " ", entry->name,
+            printf( format, t, entry->name,
                          entry->rawval ? entry->rawval : "",
                          entry->value  ? entry->value  : "");
     }

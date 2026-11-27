@@ -568,6 +568,186 @@ static MAC_ENTRY *create( MAC_HANDLE *handle, const char *name, int special )
     return entry;
 }
 
+#define SUCCESS 0
+#define NOVALUE 1
+#define UNTERMINATED 2
+#define DIVZERO 3
+
+static int parseExpr( const char** pp, int* v, int level );
+
+/* Value is a number or an expression in () */
+static int parseValue( const char** pp, int* v )
+{
+    int status;
+    int val;
+    const char *p = *pp;
+    int neg = 0;
+
+    while (isspace((unsigned char)*p)) p++;
+    if (*p == '+' || *p == '-') neg = *p++ == '-';
+    while (isspace((unsigned char)*p)) p++;
+    if (*p == '(')
+    {
+        p++;
+        if ((status = parseExpr(&p, &val, 0)) != SUCCESS) return status;
+        if (*p++ != ')')
+        {
+            printf("macLib: missing ) after '%s'\n", *pp);
+            return UNTERMINATED;
+        }
+    }
+    else
+    {
+        char* e;
+        val = strtol(p, &e, 0);
+        if (e == p) return NOVALUE;
+        p = e;
+    }
+    if (neg) val = -val;
+    *pp = p;
+    *v = val;
+    return SUCCESS;
+}
+
+/* Expr is a sum or product of Values or a conditional */
+static int parseExpr( const char** pp, int* v, int level )
+{
+    const char *p = *pp;
+    int o = 0;
+    int val0, val1, val2;
+    int status = SUCCESS;
+    int stat1, stat2;
+
+    val0 = 0;
+    /* handle sums and differences */
+    do {
+        if ((stat1 = parseValue(&p, &val1)) != SUCCESS)
+        {
+            if (o && stat1 == NOVALUE)
+                printf ("macLib: missing operand after '%c'\n", o);
+            return stat1;
+        }
+        while (isspace((unsigned char)*p)) p++;
+        o = *p;
+        /* handle products and quotients */
+        while (o == '*' || o == '/' || o == '%')
+        {
+            p++;
+            if ((stat2 = parseValue(&p, &val2)) != SUCCESS)
+            {
+                if (stat2 == NOVALUE)
+                    printf ("macLib: missing operand after '%c'\n", o);
+                return stat2;
+            }
+            if (o == '*') val1 *= val2;
+            else if (val2 == 0)
+            {
+                status = DIVZERO;
+                val1 = 1;
+            }
+            else if (o == '/') val1 /= val2;
+            else val1 %= val2;
+            while (isspace((unsigned char)*p)) p++;
+            o = *p;
+        }
+        val0 += val1;
+    } while (o == '+' || o == '-');
+
+    /* handle comparisons */
+    o = *p;
+    if (o == '<' || o == '>')
+    {
+        p++;
+        if ((stat1 = parseExpr(&p, &val1, 1)) != SUCCESS)
+        {
+            if (stat1 == NOVALUE)
+                printf ("macLib: missing expression after '%c'\n", o);
+            return stat1;
+        }
+        if (o == '<')
+            val0 = (val0 < val1);
+        else
+            val0 = (val0 > val1);
+    }
+
+    /* handle conditionals */
+    if (*p == '?' && level == 0)
+    {
+        p++;
+        while (isspace((unsigned char)*p)) p++;
+        if (*p != ':')
+        {
+            stat1 = parseExpr(&p, &val1, 0);
+        }
+        else
+        {
+            val1 = val0;
+            stat1 = status;
+        }
+        if (*p != ':')
+        {
+            printf("macLib: missing : after '%s'\n", *pp);
+            return UNTERMINATED;
+        }
+        p++;
+        stat2 = parseExpr(&p, &val2, 0);
+        status = val0 ? stat1 : stat2;
+        val0 = val0 ? val1 : val2;
+    }
+
+    *v = val0;
+    *pp = p;
+    return status;
+}
+
+static MAC_ENTRY *evalExpr( MAC_HANDLE *handle, const char *expr )
+{
+    MAC_ENTRY *entry = NULL;
+    int status;
+    const char* p = expr;
+    int value;
+    char valuestr[40];
+    char format[20] = "%d";
+
+    while (isspace((unsigned char)*p)) p++;
+    if (*p == '%')
+    {
+        int i = 1;
+        p++;
+        while (i < sizeof(format) && strchr(" #-+0", *p))
+            format[i++] = *p++;
+        while (i < sizeof(format) && strchr("0123456789", *p))
+            format[i++] = *p++;
+        if (i < sizeof(format) && strchr("diouxXc", *p))
+        {
+            format[i++] = *p++;
+            format[i] = 0;
+        }
+        else
+            return NULL;
+    }
+    status = parseExpr(&p, &value, 0);
+    if (status == DIVZERO)
+        printf ("macLib: division by zero\n");
+    if (status != SUCCESS)
+        return NULL;
+    while (isspace((unsigned char)*p)) p++;
+    if (*p)
+    {
+        printf("macLib: rubbish at end of expression: %s\n", p);
+        return NULL;
+    }
+    sprintf(valuestr, format, value);
+    entry = create( handle, expr, TRUE );
+    if ( entry )
+    {
+        entry->type = "calculation";
+        if ( rawval( handle, entry, valuestr ) == NULL )
+            return NULL;
+    }
+    return entry;
+}
+
 /*
  * Look up macro entry with matching "special" attribute by name
  */
@@ -579,6 +759,10 @@ static MAC_ENTRY *lookup( MAC_HANDLE *handle, const char *name, int special )
         printf( "lookup-> level = %d, name = %s, special = %d\n",
                 handle->level, name, special );
 
+    if ( (special == FALSE) ) {
+        entry = evalExpr( handle, name );
+        if (entry) return entry;
+    }
     /* search backwards so scoping works */
     for ( entry = last( handle ); entry != NULL; entry = previous( entry ) ) {
         if ( entry->special != special )

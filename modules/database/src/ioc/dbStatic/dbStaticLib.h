@@ -268,6 +268,7 @@ extern int dbConvertStrict;
 #define S_dbLib_infoNotFound (M_dbLib|29)        /* Info item Not Found */
 #define S_dbLib_postInitRecRegister (M_dbLib|31) /* IOC already initialized - No new records can be added */
 #define S_dbLib_recordNameMissing (M_dbLib|33)   /* Record name is required */
+#define S_dbLib_badDbAddr (M_dbLib|34)           /* Record support cvt_dbaddr logic error */
 
 #ifdef __cplusplus
 }

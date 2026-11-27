@@ -300,6 +300,10 @@ LIBCOM_API long
                 goto bad;
             }
             /* Convert fetch into a store on the stack */
+            if (pstacktop >= &stack[NELEMENTS(stack) - 1]) {
+                *perror = CALC_ERR_OVERFLOW;
+                goto bad;
+            }
             *++pstacktop = *pel;
             pstacktop->code = STORE_A + *pout - FETCH_A;
             runtime_depth -= 1;
@@ -320,6 +324,10 @@ LIBCOM_API long
             }
 
             /* Push new operator onto stack */
+            if (pstacktop >= &stack[NELEMENTS(stack) - 1]) {
+                *perror = CALC_ERR_OVERFLOW;
+                goto bad;
+            }
             pstacktop++;
             *pstacktop = *pel;
             break;
@@ -337,6 +345,10 @@ LIBCOM_API long
             }
 
             /* Push new operator onto stack */
+            if (pstacktop >= &stack[NELEMENTS(stack) - 1]) {
+                *perror = CALC_ERR_OVERFLOW;
+                goto bad;
+            }
             pstacktop++;
             *pstacktop = *pel;
 
@@ -417,6 +429,10 @@ LIBCOM_API long
             if (pel->name[0] == ':') {
                 if (--cond_count < 0) {
                     *perror = CALC_ERR_CONDITIONAL;
+                    goto bad;
+                }
+                if (pstacktop >= &stack[NELEMENTS(stack) - 1]) {
+                    *perror = CALC_ERR_OVERFLOW;
                     goto bad;
                 }
                 pstacktop++;

@@ -32,6 +32,11 @@ void loadCom()
 {
     testDiag("Lookup symbol from Com");
 
+#if defined(LINKING_STATIC_FULL)
+    testSkip(1, "fully static build");
+    return;
+#endif
+
 #if defined (_WIN32) && defined(LINKING_STATIC)
     testTodoBegin("windows static build");
 #endif

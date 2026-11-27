@@ -37,7 +37,7 @@ Usage('Nothing to install') if @ARGV < 2;
 
 my $install_dir = pop @ARGV;    # Last arg
 
-$install_dir =~ s[\\][/]g if $^O eq 'cygwin' || $^O eq 'MSWin32';
+$install_dir =~ s[\\][/]g if $^O eq 'MSWin32';
 $install_dir =~ s[/$][];	# remove trailing '/'
 $install_dir =~ s[//][/]g;	# replace '//' by '/'
 

@@ -58,6 +58,7 @@ int fdManagerTest(void);
 int osiSockTest(void);
 int ringBytesTest(void);
 int ringPointerTest(void);
+int epicsMPMCQueueTest(void);
 int taskwdTest(void);
 
 void epicsRunLibComTests(void)
@@ -115,6 +116,7 @@ void epicsRunLibComTests(void)
     runTest(osiSockTest);
     runTest(ringBytesTest);
     runTest(ringPointerTest);
+    runTest(epicsMPMCQueueTest);
     runTest(taskwdTest);
 
     /*

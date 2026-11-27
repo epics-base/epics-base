@@ -1298,7 +1298,7 @@ void tcpiiu::hostNameSetRequest ( epicsGuard < epicsMutex > & guard )
     }
 
     const char * pName = this->cacRef.pLocalHostName ();
-    unsigned size = strlen ( pName ) + 1u;
+    size_t size = strlen ( pName ) + 1u;
     unsigned postSize = CA_MESSAGE_ALIGN ( size );
     assert ( postSize < 0xffff );
 
@@ -1328,7 +1328,7 @@ void tcpiiu::userNameSetRequest ( epicsGuard < epicsMutex > & guard )
     }
 
     const char *pName = this->cacRef.userNamePointer ();
-    unsigned size = strlen ( pName ) + 1u;
+    size_t size = strlen ( pName ) + 1u;
     unsigned postSize = CA_MESSAGE_ALIGN ( size );
     assert ( postSize < 0xffff );
 

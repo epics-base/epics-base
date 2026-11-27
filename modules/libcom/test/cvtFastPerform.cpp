@@ -96,7 +96,7 @@ void Perf :: execute (const int count, bool verbose_)
         float srcFlt = (float) srcDbl;
 
         for ( int prec = 0; prec <= maxPrecision; prec++ ) {
-            measure (srcFlt, srcDbl, prec);
+            measure (srcDbl, srcFlt, prec);
         }
     }
     report ( "Small numbers, -10..+10", count );
@@ -115,7 +115,7 @@ void Perf :: execute (const int count, bool verbose_)
         float srcFlt = (float) srcDbl;
 
         for ( int prec = 0; prec <= maxPrecision; prec++ ) {
-            measure (srcFlt, srcDbl, prec);
+            measure (srcDbl, srcFlt, prec);
         }
     }
     report ( "Random mantissa+exponent", count );

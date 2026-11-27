@@ -170,20 +170,14 @@ static BUCKETID bucketPointerHash (BUCKET *pb, const void *pId)
     size_t      src;
     BUCKETID    hashid;
 
-    /*
-     * This makes the assumption that size_t
-     * can be used to hold a pointer value
-     * (this assumption may not port to all
-     * CPU architectures)
-     */
-    src = (size_t) *ppId;
-    hashid = src;
-    src = src >> pb->hashIdNBits;
+    src = (size_t)*ppId;
+    hashid = (BUCKETID)src;
+    src >>= pb->hashIdNBits;
     while(src){
-        hashid = hashid ^ src;
-        src = src >> pb->hashIdNBits;
+        hashid ^= src;
+        src >>= pb->hashIdNBits;
     }
-    hashid = hashid & pb->hashIdMask;
+    hashid &= pb->hashIdMask;
 
     return hashid;
 }

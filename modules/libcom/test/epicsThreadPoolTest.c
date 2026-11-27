@@ -61,7 +61,7 @@ static void oneop(void)
  */
 typedef struct {
     epicsMutexId guard;
-    unsigned int count;
+    size_t count;
     epicsEventId allrunning;
     epicsEventId done;
     epicsJob **job;
@@ -93,7 +93,7 @@ static void countjob(void *param, epicsJobMode mode)
  * "cork" checks the function of pausing the run queue
  * with epicsThreadPoolQueueRun
  */
-static void postjobs(size_t icnt, size_t mcnt, int cork)
+static void postjobs(unsigned icnt, unsigned mcnt, int cork)
 {
     size_t i;
     epicsThreadPool *pool;

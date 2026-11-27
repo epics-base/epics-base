@@ -69,6 +69,9 @@ static void globalAttrInit()
     status = pthread_mutexattr_settype(&globalAttrRecursive, PTHREAD_MUTEX_RECURSIVE);
     checkStatusQuit(status, "pthread_mutexattr_settype(&globalAttrRecursive, PTHREAD_MUTEX_RECURSIVE)", "globalAttrInit");
 #if defined _POSIX_THREAD_PRIO_INHERIT
+    /* PI is only needed with real-time scheduling */
+    if (!osdPosixRealtimeScheduling())
+        return;
     status = pthread_mutexattr_setprotocol(&globalAttrDefault, PTHREAD_PRIO_INHERIT);
     if (errVerbose) checkStatus(status, "pthread_mutexattr_setprotocol(&globalAttrDefault, PTHREAD_PRIO_INHERIT)");
     status = pthread_mutexattr_setprotocol(&globalAttrRecursive, PTHREAD_PRIO_INHERIT);

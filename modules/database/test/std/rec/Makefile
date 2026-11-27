@@ -114,6 +114,13 @@ testHarness_SRCS += boTest.c
 TESTFILES += ../boTest.db
 TESTS += boTest
 
+TESTPROD_HOST += waveformTest
+waveformTest_SRCS += waveformTest.c
+waveformTest_SRCS += recTestIoc_registerRecordDeviceDriver.cpp
+testHarness_SRCS += waveformTest.c
+TESTFILES += ../waveformTest.db
+TESTS += waveformTest
+
 TESTPROD_HOST += dfanoutTest
 dfanoutTest_SRCS += dfanoutTest.c
 dfanoutTest_SRCS += recTestIoc_registerRecordDeviceDriver.cpp

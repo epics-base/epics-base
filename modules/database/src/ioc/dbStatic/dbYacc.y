@@ -27,7 +27,7 @@ static int yyAbort = 0;
 %token tokenALIAS tokenMENU tokenCHOICE tokenRECORDTYPE
 %token tokenFIELD tokenINFO tokenREGISTRAR
 %token tokenDEVICE tokenDRIVER tokenLINK tokenBREAKTABLE
-%token tokenRECORD tokenGRECORD tokenVARIABLE tokenFUNCTION
+%token tokenRECORD tokenVARIABLE tokenFUNCTION
 %token <Str> tokenSTRING tokenCDEFS
 
 %token jsonNULL jsonTRUE jsonFALSE
@@ -58,7 +58,6 @@ database_item:  include
     |   variable
     |   tokenBREAKTABLE break_head break_body
     |   tokenRECORD record_head record_body
-    |   tokenGRECORD grecord_head record_body
     |   alias
     ;
 
@@ -222,16 +221,10 @@ break_item: tokenSTRING
 };
 
 
-grecord_head: '(' tokenSTRING ',' tokenSTRING ')'
-{
-    if(dbStaticDebug>2) printf("grecord_head %s %s\n",$2,$4);
-    dbRecordHead($2,$4,1); dbmfFree($2); dbmfFree($4);
-};
-
 record_head: '(' tokenSTRING ',' tokenSTRING ')'
 {
     if(dbStaticDebug>2) printf("record_head %s %s\n",$2,$4);
-    dbRecordHead($2,$4,0); dbmfFree($2); dbmfFree($4);
+    dbRecordHead($2,$4); dbmfFree($2); dbmfFree($4);
 };
 
 record_body: /* empty */

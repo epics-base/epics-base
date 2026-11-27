@@ -1,0 +1,49 @@
+# .github/workflows/install-location.yml
+#
+# Build a minimal Base (without the PVA submodules) and downstream
+# modules created from the makeBaseApp example template, setting
+# INSTALL_LOCATION (and FINAL_LOCATION / LINKER_USE_RPATH=ORIGIN) in
+# configure/CONFIG_SITE, on the make command line, or both (with
+# different values). Check the library paths that are embedded in the
+# installed executables and libraries.
+# See .github/scripts/test-install-location.sh for details.
+
+name: INSTALL_LOCATION
+
+on:
+  push:
+    paths-ignore:
+      - 'documentation/*'
+      - 'startup/*'
+      - '.appveyor/*'
+      - '.tools/*'
+      - '.gitattributes'
+      - '**/*.html'
+      - '**/*.md'
+  pull_request:
+    paths-ignore:
+      - 'documentation/*'
+      - 'startup/*'
+      - '.appveyor/*'
+      - '.tools/*'
+      - '.gitattributes'
+      - '**/*.html'
+      - '**/*.md'
+  workflow_dispatch:
+
+jobs:
+  install-location:
+    name: Base ${{ matrix.method }}, rpath ${{ matrix.mode }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        method: [file, cmdline, both]
+        mode: [install, final, origin]
+    steps:
+    - uses: actions/checkout@v6
+      with:
+        # Minimal Base: no PVA submodules
+        submodules: false
+    - name: Build and check
+      run: bash .github/scripts/test-install-location.sh ${{ matrix.method }} ${{ matrix.mode }} "$RUNNER_TEMP/install-location"

@@ -89,8 +89,7 @@ void syncGroupReadNotify::completion (
     }
 
     if ( this->pValue ) {
-        size_t size = dbr_size_n ( type, count );
-        memcpy ( this->pValue, pData, size );
+        memcpy ( this->pValue, pData, dbr_size_n ( type, count ) );
     }
     this->sg.completionNotify ( guard, *this );
     this->idIsValid = false;

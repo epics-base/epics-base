@@ -96,8 +96,6 @@ These are the record types supplied with EPICS Base:
 
 =item * L<Sequence Record (seq)|seqRecord>
 
-=item * L<State Record (state)|stateRecord>
-
 =item * L<String Input Record (stringin)|stringinRecord>
 
 =item * L<String Output Record (stringout)|stringoutRecord>

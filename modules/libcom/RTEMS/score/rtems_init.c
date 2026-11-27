@@ -250,7 +250,7 @@ initialize_remote_filesystem(char **argv, int hasLocalFilesystem)
     char *server_path;
     char *mount_point;
     char *cp;
-    int l = 0;
+    int l;
 
     printf ("***** Initializing NFS *****\n");
     NFS_INIT

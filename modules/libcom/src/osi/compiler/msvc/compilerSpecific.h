@@ -42,6 +42,10 @@
 #define CXX_PLACEMENT_DELETE
 #define CXX_THROW_SPECIFICATION
 
+#if _MSC_VER >= 1910 && __cplusplus >= 201703L
+# define EPICS_FALLTHROUGH [[fallthrough]]
+#endif
+
 #endif /* __cplusplus */
 
 /*

@@ -41,5 +41,4 @@
 
 #endif /* __cplusplus */
 
-
 #endif  /* ifndef compilerSpecific_h */

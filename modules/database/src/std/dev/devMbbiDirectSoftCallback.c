@@ -189,7 +189,7 @@ static long read_mbbiDirect(mbbiDirectRecord *prec)
         case pvlOptMSI:
             if (pdevPvt->buffer.severity < INVALID_ALARM)
                 break;
-            /* else fall through */
+            EPICS_FALLTHROUGH;
         case pvlOptMS:
             recGblSetSevr(prec, LINK_ALARM, pdevPvt->buffer.severity);
             break;

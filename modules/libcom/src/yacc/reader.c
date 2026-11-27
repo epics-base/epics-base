@@ -1,4 +1,5 @@
 #include "defs.h"
+#include "compilerDependencies.h"
 
 /*  The line size must be a positive integer.  One hundred was chosen   */
 /*  because few lines in Yacc input grammars exceed 100 characters.     */
@@ -201,7 +202,7 @@ nextc(void)
                 s = cptr;
                 break;
             }
-            /* fall through */
+            EPICS_FALLTHROUGH;
 
         default:
             cptr = s;
@@ -426,7 +427,7 @@ loop:
             FREE(t_line);
             return;
         }
-        /* fall through */
+        EPICS_FALLTHROUGH;
 
     default:
         putc(c, f);

@@ -981,7 +981,7 @@ static void eventCallbackComm(struct event_handler_args arg, unsigned initmask)
     case DBR_TIME_ENUM:
         /* Disable the record scan if we also have a string monitor */
         doScan = !(plink->value.pv_link.pvlMask & pvlOptInpString);
-        /* fall through */
+        EPICS_FALLTHROUGH;
     case DBR_TIME_STRING:
     case DBR_TIME_SHORT:
     case DBR_TIME_FLOAT:

@@ -36,6 +36,12 @@
 #define CXX_THROW_SPECIFICATION
 #define CXX_PLACEMENT_DELETE
 
+#if __cplusplus >= 201703L
+#define EPICS_FALLTHROUGH [[fallthrough]]
+#else
+#define EPICS_FALLTHROUGH
+#endif
+
 #endif /* __cplusplus */
 
 

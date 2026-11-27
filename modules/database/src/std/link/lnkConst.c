@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "compilerDependencies.h"
 #include "dbDefs.h"
 #include "errlog.h"
 #include "epicsAssert.h"
@@ -21,7 +22,6 @@
 #include "dbLink.h"
 #include "dbJLink.h"
 #include "epicsExport.h"
-
 
 typedef struct const_link {
     jlink jlink;        /* embedded object */
@@ -74,7 +74,7 @@ static void lnkConst_free(jlink *pjlink)
     case ac40:
         for (i=0; i<clink->nElems; i++)
             free(clink->value.pstrings[i]);
-        /* fall through */
+        EPICS_FALLTHROUGH;
     case sc40:
     case ai64:
     case af64:
@@ -106,7 +106,7 @@ static jlif_result lnkConst_integer(jlink *pjlink, long long num)
 
     case a0:
         clink->type = ai64;
-        /* fall through */
+        EPICS_FALLTHROUGH;
     case ai64:
         buf = realloc(clink->value.pmem, newElems * sizeof(epicsInt64));
         if (!buf)
@@ -131,7 +131,7 @@ static jlif_result lnkConst_integer(jlink *pjlink, long long num)
 
     case ac40:
         errlogPrintf("lnkConst: Mixed data types in array\n");
-        /* fall through */
+        EPICS_FALLTHROUGH;
     default:
         return jlif_stop;
     }
@@ -161,7 +161,7 @@ static jlif_result lnkConst_double(jlink *pjlink, double num)
 
     case a0:
         clink->type = af64;
-        /* fall through */
+        EPICS_FALLTHROUGH;
     case af64:
         f64buf = realloc(clink->value.pmem, newElems * sizeof(epicsFloat64));
         if (!f64buf)
@@ -187,7 +187,7 @@ static jlif_result lnkConst_double(jlink *pjlink, double num)
 
     case ac40:
         errlogPrintf("lnkConst: Mixed data types in array\n");
-        /* fall through */
+        EPICS_FALLTHROUGH;
     default:
         return jlif_stop;
     }
@@ -217,7 +217,7 @@ static jlif_result lnkConst_string(jlink *pjlink, const char *val, size_t len)
 
     case a0:
         clink->type = ac40;
-        /* fall thorough */
+        EPICS_FALLTHROUGH;
     case ac40:
         vec = realloc(clink->value.pmem, newElems * sizeof(char *));
         if (!vec)
@@ -235,7 +235,7 @@ static jlif_result lnkConst_string(jlink *pjlink, const char *val, size_t len)
     case af64:
     case ai64:
         errlogPrintf("lnkConst: Mixed data types in array\n");
-        /* fall thorough */
+        EPICS_FALLTHROUGH;
     default:
         return jlif_stop;
     }

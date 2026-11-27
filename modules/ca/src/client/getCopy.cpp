@@ -59,7 +59,7 @@ void getCopy::completion (
     epicsGuard < epicsMutex > & guard, unsigned typeIn,
     arrayElementCount countIn, const void *pDataIn )
 {
-    if ( this->type == typeIn ) {
+    if ( this->type == typeIn && countIn <= this->count ) {
         unsigned size = dbr_size_n ( typeIn, countIn );
         memcpy ( this->pValue, pDataIn, size );
         this->cacCtx.decrementOutstandingIO ( guard, this->ioSeqNo );

@@ -317,6 +317,8 @@ private:
         const epicsTime & currentTime, const caHdrLargeArray &, void *pMsgBdy );
     bool badTCPRespAction ( callbackManager &, tcpiiu &,
         const epicsTime & currentTime, const caHdrLargeArray &, void *pMsgBdy );
+    bool badResponsePayload ( epicsGuard < epicsMutex > &,
+        baseNMIU &, const caHdrLargeArray & );
 
     typedef bool ( cac::*pProtoStubTCP ) (
         callbackManager &, tcpiiu &,

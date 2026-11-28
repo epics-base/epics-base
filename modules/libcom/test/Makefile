@@ -332,6 +332,10 @@ TESTPROD_HOST += epicsAtomicPerform
 epicsAtomicPerform_SRCS += epicsAtomicPerform.cpp
 testHarness_SRCS += epicsAtomicPerform.cpp
 
+TESTPROD_HOST += epicsEventPerform
+epicsEventPerform_SRCS += epicsEventPerform.cpp
+testHarness_SRCS += epicsEventPerform.cpp
+
 TESTPROD_HOST += cvtFastPerform
 cvtFastPerform_SRCS += cvtFastPerform.cpp
 testHarness_SRCS += cvtFastPerform.cpp

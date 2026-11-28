@@ -61,7 +61,7 @@ static int callbackQueueSize = 2000;
  *   sleeper if every awake worker is busy;
  * - a worker woken CB_STALE_US ago that still has not run is stopped
  *   where it cannot migrate, so a requester stops counting on it and
- *   wakes another.
+ *   wakes another; a lone fresh wake-up gets a second beside it.
  */
 #ifndef CB_FREE_EVERY
 #define CB_FREE_EVERY 16   /* callbacks run between pool returns */
@@ -533,14 +533,17 @@ static void pokeSleeper(cbQueueSet *mySet)
 }
 
 /* whether some worker will read the inbox before its next callback or
- * sleep: one running outside a callback, or one woken less than
- * CB_STALE_US ago. Ageing reads the clock, floating point on vxWorks,
- * so an interrupt context counts every woken worker and leaves the
- * age to the next request made from a thread. */
+ * sleep: one running outside a callback, or two woken less than
+ * CB_STALE_US ago. One woken worker alone is not enough: it may be
+ * stopped with no later request to notice. Ageing reads the clock,
+ * floating point on vxWorks, so an interrupt context counts every
+ * woken worker and leaves the age to the next request made from a
+ * thread. */
 static int anyReady(cbQueueSet *mySet)
 {
     int j;
     size_t now = 0;
+    int fresh = 0;
 
     for (j = 0; j < mySet->threadsConfigured; j++) {
         cbWorker *w = &mySet->workers[j];
@@ -555,11 +558,11 @@ static int anyReady(cbQueueSet *mySet)
             if (epicsInterruptIsInterruptContext()) return 1;
             if (!now) now = (size_t)(epicsMonotonicGet() >> 10) | 1;
             at = CB_GET_SIZE(&w->claimedAt);
-            if (at == 0) {
+            if (at == 0)
                 epicsAtomicSetSizeT(&w->claimedAt, now);
-                return 1;
-            }
-            if (now - at < CB_STALE_US) return 1;
+            else if (now - at >= CB_STALE_US)
+                continue;
+            if (++fresh == 2) return 1;
         }
     }
     return 0;
@@ -822,11 +825,11 @@ int callbackRequest(epicsCallback *pcallback)
         /* a worker that is awake and not inside a callback will take
          * this; recruiting more is its job. If every awake worker is
          * inside a callback, or was woken and has not run for
-         * CB_STALE_US, while one sleeps, wake it now. nAwake lags its
-         * claim CAS: a claimer stopped between the claim and its
-         * increment lets the claimed worker run and sleep first, so
-         * the count can read below zero; anything non-positive means
-         * nobody is counted. */
+         * CB_STALE_US, or only one was just woken, while one sleeps,
+         * wake it now. nAwake lags its claim CAS: a claimer stopped
+         * between the claim and its increment lets the claimed worker
+         * run and sleep first, so the count can read below zero;
+         * anything non-positive means nobody is counted. */
         awake = CB_GET_INT(&mySet->nAwake);
         if (awake <= 0)
             pokeSleeper(mySet);

@@ -261,6 +261,98 @@ EPICS_ATOMIC_INLINE EpicsAtomicPtrT epicsAtomicCmpAndSwapPtrT (
                                             EpicsAtomicPtrT oldVal,
                                             EpicsAtomicPtrT newVal );
 
+/** \name Atomic exchange
+ *
+ * Atomically replace the target with \p newVal and return the value
+ * it held before. Like the other read-modify-write operations above,
+ * an exchange is a full memory barrier.
+ *
+ * \param pTarget pointer to target
+ * \param newVal value to store in target
+ *
+ * \return the original value stored in the target
+ *
+ * \since UNRELEASED
+ */
+/** @{ */
+EPICS_ATOMIC_INLINE int epicsAtomicExchangeIntT ( int * pTarget, int newVal );
+EPICS_ATOMIC_INLINE size_t epicsAtomicExchangeSizeT ( size_t * pTarget,
+                                            size_t newVal );
+EPICS_ATOMIC_INLINE EpicsAtomicPtrT epicsAtomicExchangePtrT (
+                                            EpicsAtomicPtrT * pTarget,
+                                            EpicsAtomicPtrT newVal );
+/** @} */
+
+/** \name Loads and stores with explicit memory ordering
+ *
+ * These functions load or store a target atomically, i.e. without
+ * tearing, and with a memory ordering as defined by C11 and C++11:
+ *
+ * - \b Relaxed: the access is atomic, but does not order any other
+ *   memory accesses of the calling thread. Use for counters, flags
+ *   and statistics that do not protect other data.
+ * - \b Release (stores only): memory accesses of the calling thread
+ *   that come before the store in program order cannot be moved after
+ *   it.
+ * - \b Acquire (loads only): memory accesses of the calling thread
+ *   that come after the load in program order cannot be moved before
+ *   it.
+ *
+ * If a thread reads with an acquire load the value written by
+ * a release store of another thread, all memory writes the other thread
+ * made before its release store are visible to the reading thread after
+ * its acquire load. This is the usual pattern to publish data through
+ * a flag or a pointer:
+ *
+ * \code
+ * // producer                         // consumer
+ * pNode->value = 42;                  node *p = epicsAtomicGetPtrTAcquire(&pHead);
+ * epicsAtomicSetPtrTRelease(&pHead,   if (p)
+ *                           pNode);       assert(p->value == 42);
+ * \endcode
+ *
+ * Unlike epicsAtomicGetIntT() and friends, which combine a plain access
+ * with a full memory barrier, these functions use the cheapest
+ * instructions the target provides: on x86 and x86_64 they all compile
+ * to plain moves, on ARM and POWER acquire and release need only
+ * lightweight barriers, and relaxed accesses need none.
+ *
+ * Where the compiler provides no suitable intrinsics, they are
+ * implemented with volatile accesses and (except for the relaxed
+ * variants) both epicsAtomicReadMemoryBarrier() and
+ * epicsAtomicWriteMemoryBarrier().
+ *
+ * \param pTarget pointer to target
+ * \param newVal value to store in target
+ *
+ * \return value of target (loads)
+ *
+ * \since UNRELEASED
+ */
+/** @{ */
+EPICS_ATOMIC_INLINE int epicsAtomicGetIntTRelaxed ( const int * pTarget );
+EPICS_ATOMIC_INLINE size_t epicsAtomicGetSizeTRelaxed ( const size_t * pTarget );
+EPICS_ATOMIC_INLINE EpicsAtomicPtrT epicsAtomicGetPtrTRelaxed (
+                                            const EpicsAtomicPtrT * pTarget );
+
+EPICS_ATOMIC_INLINE int epicsAtomicGetIntTAcquire ( const int * pTarget );
+EPICS_ATOMIC_INLINE size_t epicsAtomicGetSizeTAcquire ( const size_t * pTarget );
+EPICS_ATOMIC_INLINE EpicsAtomicPtrT epicsAtomicGetPtrTAcquire (
+                                            const EpicsAtomicPtrT * pTarget );
+
+EPICS_ATOMIC_INLINE void epicsAtomicSetIntTRelaxed ( int * pTarget, int newVal );
+EPICS_ATOMIC_INLINE void epicsAtomicSetSizeTRelaxed ( size_t * pTarget,
+                                            size_t newVal );
+EPICS_ATOMIC_INLINE void epicsAtomicSetPtrTRelaxed ( EpicsAtomicPtrT * pTarget,
+                                            EpicsAtomicPtrT newVal );
+
+EPICS_ATOMIC_INLINE void epicsAtomicSetIntTRelease ( int * pTarget, int newVal );
+EPICS_ATOMIC_INLINE void epicsAtomicSetSizeTRelease ( size_t * pTarget,
+                                            size_t newVal );
+EPICS_ATOMIC_INLINE void epicsAtomicSetPtrTRelease ( EpicsAtomicPtrT * pTarget,
+                                            EpicsAtomicPtrT newVal );
+/** @} */
+
 #ifdef __cplusplus
 } /* end of extern "C" */
 #endif
@@ -517,6 +609,100 @@ EPICS_ATOMIC_INLINE EpicsAtomicPtrT compareAndSwap ( EpicsAtomicPtrT & v,
 {
     return epicsAtomicCmpAndSwapPtrT ( & v, oldVal, newVal );
 }
+
+/** \name C++ API for atomic exchange
+ *
+ * See epicsAtomicExchangeIntT()
+ *
+ * \since UNRELEASED
+ */
+/** @{ */
+EPICS_ATOMIC_INLINE int exchange ( int & v, int newVal )
+{
+    return epicsAtomicExchangeIntT ( & v, newVal );
+}
+
+EPICS_ATOMIC_INLINE size_t exchange ( size_t & v, size_t newVal )
+{
+    return epicsAtomicExchangeSizeT ( & v, newVal );
+}
+
+EPICS_ATOMIC_INLINE EpicsAtomicPtrT exchange ( EpicsAtomicPtrT & v,
+                                               EpicsAtomicPtrT newVal )
+{
+    return epicsAtomicExchangePtrT ( & v, newVal );
+}
+/** @} */
+
+/** \name C++ API for loads and stores with explicit memory ordering
+ *
+ * See epicsAtomicGetIntTRelaxed()
+ *
+ * \since UNRELEASED
+ */
+/** @{ */
+EPICS_ATOMIC_INLINE int getRelaxed ( const int & v )
+{
+    return epicsAtomicGetIntTRelaxed ( & v );
+}
+
+EPICS_ATOMIC_INLINE size_t getRelaxed ( const size_t & v )
+{
+    return epicsAtomicGetSizeTRelaxed ( & v );
+}
+
+EPICS_ATOMIC_INLINE EpicsAtomicPtrT getRelaxed ( const EpicsAtomicPtrT & v )
+{
+    return epicsAtomicGetPtrTRelaxed ( & v );
+}
+
+EPICS_ATOMIC_INLINE int getAcquire ( const int & v )
+{
+    return epicsAtomicGetIntTAcquire ( & v );
+}
+
+EPICS_ATOMIC_INLINE size_t getAcquire ( const size_t & v )
+{
+    return epicsAtomicGetSizeTAcquire ( & v );
+}
+
+EPICS_ATOMIC_INLINE EpicsAtomicPtrT getAcquire ( const EpicsAtomicPtrT & v )
+{
+    return epicsAtomicGetPtrTAcquire ( & v );
+}
+
+EPICS_ATOMIC_INLINE void setRelaxed ( int & v, int newVal )
+{
+    epicsAtomicSetIntTRelaxed ( & v, newVal );
+}
+
+EPICS_ATOMIC_INLINE void setRelaxed ( size_t & v, size_t newVal )
+{
+    epicsAtomicSetSizeTRelaxed ( & v, newVal );
+}
+
+EPICS_ATOMIC_INLINE void setRelaxed ( EpicsAtomicPtrT & v,
+                                      EpicsAtomicPtrT newVal )
+{
+    epicsAtomicSetPtrTRelaxed ( & v, newVal );
+}
+
+EPICS_ATOMIC_INLINE void setRelease ( int & v, int newVal )
+{
+    epicsAtomicSetIntTRelease ( & v, newVal );
+}
+
+EPICS_ATOMIC_INLINE void setRelease ( size_t & v, size_t newVal )
+{
+    epicsAtomicSetSizeTRelease ( & v, newVal );
+}
+
+EPICS_ATOMIC_INLINE void setRelease ( EpicsAtomicPtrT & v,
+                                      EpicsAtomicPtrT newVal )
+{
+    epicsAtomicSetPtrTRelease ( & v, newVal );
+}
+/** @} */
 
 } /* end of name space atomic */
 } /* end of name space epics */

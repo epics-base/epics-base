@@ -67,6 +67,16 @@ EPICS_ATOMIC_INLINE int epicsAtomicCmpAndSwapIntT ( int * pTarget,
 }
 #endif
 
+#ifndef EPICS_ATOMIC_EXCHANGE_INTT
+#define EPICS_ATOMIC_EXCHANGE_INTT
+EPICS_ATOMIC_INLINE int epicsAtomicExchangeIntT ( int * pTarget, int newVal )
+{
+    STATIC_ASSERT ( sizeof ( MS_LONG ) == sizeof ( int ) );
+    MS_LONG * const pTarg = ( MS_LONG * ) ( pTarget );
+    return (int) MS_InterlockedExchange ( pTarg, (MS_LONG) newVal );
+}
+#endif
+
 #if ! defined ( MS_ATOMIC_64 )
 
 /*
@@ -142,6 +152,27 @@ EPICS_ATOMIC_INLINE EpicsAtomicPtrT epicsAtomicCmpAndSwapPtrT (
 }
 #endif
 
+#ifndef EPICS_ATOMIC_EXCHANGE_SIZET
+#define EPICS_ATOMIC_EXCHANGE_SIZET
+EPICS_ATOMIC_INLINE size_t epicsAtomicExchangeSizeT ( size_t * pTarget,
+                                    size_t newVal )
+{
+    MS_LONG * const pTarg = ( MS_LONG * ) ( pTarget );
+    return (size_t) MS_InterlockedExchange ( pTarg, (MS_LONG) newVal );
+}
+#endif
+
+#ifndef EPICS_ATOMIC_EXCHANGE_PTRT
+#define EPICS_ATOMIC_EXCHANGE_PTRT
+EPICS_ATOMIC_INLINE EpicsAtomicPtrT epicsAtomicExchangePtrT (
+                                    EpicsAtomicPtrT * pTarget,
+                                    EpicsAtomicPtrT newVal )
+{
+    MS_LONG * const pTarg = ( MS_LONG * ) ( pTarget );
+    return (EpicsAtomicPtrT) MS_InterlockedExchange ( pTarg, (MS_LONG) newVal );
+}
+#endif
+
 #else /* ! MS_ATOMIC_64 */
 
 /*
@@ -210,6 +241,27 @@ EPICS_ATOMIC_INLINE EpicsAtomicPtrT epicsAtomicCmpAndSwapPtrT (
     MS_LONGLONG * const pTarg = ( MS_LONGLONG * ) ( pTarget );
     return (EpicsAtomicPtrT) MS_InterlockedCompareExchange64 ( pTarg,
                                     (MS_LONGLONG) newVal, (MS_LONGLONG) oldVal );
+}
+#endif
+
+#ifndef EPICS_ATOMIC_EXCHANGE_SIZET
+#define EPICS_ATOMIC_EXCHANGE_SIZET
+EPICS_ATOMIC_INLINE size_t epicsAtomicExchangeSizeT ( size_t * pTarget,
+                                    size_t newVal )
+{
+    MS_LONGLONG * const pTarg = ( MS_LONGLONG * ) ( pTarget );
+    return (size_t) MS_InterlockedExchange64 ( pTarg, (MS_LONGLONG) newVal );
+}
+#endif
+
+#ifndef EPICS_ATOMIC_EXCHANGE_PTRT
+#define EPICS_ATOMIC_EXCHANGE_PTRT
+EPICS_ATOMIC_INLINE EpicsAtomicPtrT epicsAtomicExchangePtrT (
+                                    EpicsAtomicPtrT * pTarget,
+                                    EpicsAtomicPtrT newVal )
+{
+    MS_LONGLONG * const pTarg = ( MS_LONGLONG * ) ( pTarget );
+    return (EpicsAtomicPtrT) MS_InterlockedExchange64 ( pTarg, (MS_LONGLONG) newVal );
 }
 #endif
 

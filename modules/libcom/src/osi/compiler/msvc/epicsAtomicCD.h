@@ -96,6 +96,66 @@ EPICS_ATOMIC_INLINE void epicsAtomicWriteMemoryBarrier (void)
     epicsAtomicMemoryBarrier ();
 }
 
+/*
+ * Ordered loads and stores: on x86 and x64, aligned loads already have
+ * acquire and aligned stores release semantics in hardware, so only
+ * the compiler must be kept from reordering. On IA64 use full barriers.
+ */
+#if defined ( _M_IX86 ) || defined ( _M_X64 )
+#   pragma intrinsic ( _ReadWriteBarrier )
+#   define MS_ACQ_REL_BARRIER() _ReadWriteBarrier ()
+#else
+#   define MS_ACQ_REL_BARRIER() epicsAtomicMemoryBarrier ()
+#endif
+
+#define EPICS_ATOMIC_GET_INTT_ACQUIRE
+EPICS_ATOMIC_INLINE int epicsAtomicGetIntTAcquire ( const int * pTarget )
+{
+    int val = *( const volatile int * ) pTarget;
+    MS_ACQ_REL_BARRIER ();
+    return val;
+}
+
+#define EPICS_ATOMIC_GET_SIZET_ACQUIRE
+EPICS_ATOMIC_INLINE size_t epicsAtomicGetSizeTAcquire ( const size_t * pTarget )
+{
+    size_t val = *( const volatile size_t * ) pTarget;
+    MS_ACQ_REL_BARRIER ();
+    return val;
+}
+
+#define EPICS_ATOMIC_GET_PTRT_ACQUIRE
+EPICS_ATOMIC_INLINE EpicsAtomicPtrT epicsAtomicGetPtrTAcquire (
+                                    const EpicsAtomicPtrT * pTarget )
+{
+    EpicsAtomicPtrT val = *( EpicsAtomicPtrT const volatile * ) pTarget;
+    MS_ACQ_REL_BARRIER ();
+    return val;
+}
+
+#define EPICS_ATOMIC_SET_INTT_RELEASE
+EPICS_ATOMIC_INLINE void epicsAtomicSetIntTRelease ( int * pTarget, int newVal )
+{
+    MS_ACQ_REL_BARRIER ();
+    *( volatile int * ) pTarget = newVal;
+}
+
+#define EPICS_ATOMIC_SET_SIZET_RELEASE
+EPICS_ATOMIC_INLINE void epicsAtomicSetSizeTRelease ( size_t * pTarget,
+                                    size_t newVal )
+{
+    MS_ACQ_REL_BARRIER ();
+    *( volatile size_t * ) pTarget = newVal;
+}
+
+#define EPICS_ATOMIC_SET_PTRT_RELEASE
+EPICS_ATOMIC_INLINE void epicsAtomicSetPtrTRelease ( EpicsAtomicPtrT * pTarget,
+                                    EpicsAtomicPtrT newVal )
+{
+    MS_ACQ_REL_BARRIER ();
+    *( EpicsAtomicPtrT volatile * ) pTarget = newVal;
+}
+
 #ifdef __cplusplus
 } /* end of extern "C" */
 #endif /* __cplusplus */

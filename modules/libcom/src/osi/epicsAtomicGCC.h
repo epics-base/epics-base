@@ -149,6 +149,132 @@ EPICS_ATOMIC_INLINE EpicsAtomicPtrT epicsAtomicCmpAndSwapPtrT (
 
 #endif
 
+/*
+ * The __atomic builtins (GCC >= 4.7, all Clang versions) provide
+ * exchange and the C11 memory orderings. Use them only where the
+ * compiler implements them inline, so that no libatomic is needed.
+ */
+#if defined(__ATOMIC_ACQUIRE) && defined(__GCC_ATOMIC_INT_LOCK_FREE) \
+    && __GCC_ATOMIC_INT_LOCK_FREE == 2
+#define GCC_ATOMIC_BUILTINS_AVAIL_INT_T 1
+#else
+#define GCC_ATOMIC_BUILTINS_AVAIL_INT_T 0
+#endif
+
+/* we assume __SIZEOF_POINTER__ == __SIZEOF_SIZE_T__ (see above) */
+#if defined(__ATOMIC_ACQUIRE) && defined(__GCC_ATOMIC_POINTER_LOCK_FREE) \
+    && __GCC_ATOMIC_POINTER_LOCK_FREE == 2
+#define GCC_ATOMIC_BUILTINS_AVAIL_SIZE_T 1
+#else
+#define GCC_ATOMIC_BUILTINS_AVAIL_SIZE_T 0
+#endif
+
+#if GCC_ATOMIC_BUILTINS_AVAIL_INT_T
+
+#define EPICS_ATOMIC_EXCHANGE_INTT
+EPICS_ATOMIC_INLINE int epicsAtomicExchangeIntT ( int * pTarget, int newVal )
+{
+    return __atomic_exchange_n ( pTarget, newVal, __ATOMIC_SEQ_CST );
+}
+
+#define EPICS_ATOMIC_GET_INTT_RELAXED
+EPICS_ATOMIC_INLINE int epicsAtomicGetIntTRelaxed ( const int * pTarget )
+{
+    return __atomic_load_n ( pTarget, __ATOMIC_RELAXED );
+}
+
+#define EPICS_ATOMIC_GET_INTT_ACQUIRE
+EPICS_ATOMIC_INLINE int epicsAtomicGetIntTAcquire ( const int * pTarget )
+{
+    return __atomic_load_n ( pTarget, __ATOMIC_ACQUIRE );
+}
+
+#define EPICS_ATOMIC_SET_INTT_RELAXED
+EPICS_ATOMIC_INLINE void epicsAtomicSetIntTRelaxed ( int * pTarget, int newVal )
+{
+    __atomic_store_n ( pTarget, newVal, __ATOMIC_RELAXED );
+}
+
+#define EPICS_ATOMIC_SET_INTT_RELEASE
+EPICS_ATOMIC_INLINE void epicsAtomicSetIntTRelease ( int * pTarget, int newVal )
+{
+    __atomic_store_n ( pTarget, newVal, __ATOMIC_RELEASE );
+}
+
+#endif /* GCC_ATOMIC_BUILTINS_AVAIL_INT_T */
+
+#if GCC_ATOMIC_BUILTINS_AVAIL_SIZE_T
+
+#define EPICS_ATOMIC_EXCHANGE_SIZET
+EPICS_ATOMIC_INLINE size_t epicsAtomicExchangeSizeT ( size_t * pTarget,
+                                                      size_t newVal )
+{
+    return __atomic_exchange_n ( pTarget, newVal, __ATOMIC_SEQ_CST );
+}
+
+#define EPICS_ATOMIC_EXCHANGE_PTRT
+EPICS_ATOMIC_INLINE EpicsAtomicPtrT epicsAtomicExchangePtrT (
+                            EpicsAtomicPtrT * pTarget, EpicsAtomicPtrT newVal )
+{
+    return __atomic_exchange_n ( pTarget, newVal, __ATOMIC_SEQ_CST );
+}
+
+#define EPICS_ATOMIC_GET_SIZET_RELAXED
+EPICS_ATOMIC_INLINE size_t epicsAtomicGetSizeTRelaxed ( const size_t * pTarget )
+{
+    return __atomic_load_n ( pTarget, __ATOMIC_RELAXED );
+}
+
+#define EPICS_ATOMIC_GET_SIZET_ACQUIRE
+EPICS_ATOMIC_INLINE size_t epicsAtomicGetSizeTAcquire ( const size_t * pTarget )
+{
+    return __atomic_load_n ( pTarget, __ATOMIC_ACQUIRE );
+}
+
+#define EPICS_ATOMIC_GET_PTRT_RELAXED
+EPICS_ATOMIC_INLINE EpicsAtomicPtrT epicsAtomicGetPtrTRelaxed (
+                            const EpicsAtomicPtrT * pTarget )
+{
+    return __atomic_load_n ( pTarget, __ATOMIC_RELAXED );
+}
+
+#define EPICS_ATOMIC_GET_PTRT_ACQUIRE
+EPICS_ATOMIC_INLINE EpicsAtomicPtrT epicsAtomicGetPtrTAcquire (
+                            const EpicsAtomicPtrT * pTarget )
+{
+    return __atomic_load_n ( pTarget, __ATOMIC_ACQUIRE );
+}
+
+#define EPICS_ATOMIC_SET_SIZET_RELAXED
+EPICS_ATOMIC_INLINE void epicsAtomicSetSizeTRelaxed ( size_t * pTarget,
+                                                      size_t newVal )
+{
+    __atomic_store_n ( pTarget, newVal, __ATOMIC_RELAXED );
+}
+
+#define EPICS_ATOMIC_SET_SIZET_RELEASE
+EPICS_ATOMIC_INLINE void epicsAtomicSetSizeTRelease ( size_t * pTarget,
+                                                      size_t newVal )
+{
+    __atomic_store_n ( pTarget, newVal, __ATOMIC_RELEASE );
+}
+
+#define EPICS_ATOMIC_SET_PTRT_RELAXED
+EPICS_ATOMIC_INLINE void epicsAtomicSetPtrTRelaxed ( EpicsAtomicPtrT * pTarget,
+                                                     EpicsAtomicPtrT newVal )
+{
+    __atomic_store_n ( pTarget, newVal, __ATOMIC_RELAXED );
+}
+
+#define EPICS_ATOMIC_SET_PTRT_RELEASE
+EPICS_ATOMIC_INLINE void epicsAtomicSetPtrTRelease ( EpicsAtomicPtrT * pTarget,
+                                                     EpicsAtomicPtrT newVal )
+{
+    __atomic_store_n ( pTarget, newVal, __ATOMIC_RELEASE );
+}
+
+#endif /* GCC_ATOMIC_BUILTINS_AVAIL_SIZE_T */
+
 #ifdef __cplusplus
 } /* end of extern "C" */
 #endif

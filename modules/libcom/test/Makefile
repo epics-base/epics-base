@@ -192,6 +192,11 @@ epicsAtomicTest_SRCS += epicsAtomicTest.cpp
 testHarness_SRCS += epicsAtomicTest.cpp
 TESTS += epicsAtomicTest
 
+TESTPROD_HOST += epicsLifoTest
+epicsLifoTest_SRCS += epicsLifoTest.c
+testHarness_SRCS += epicsLifoTest.c
+TESTS += epicsLifoTest
+
 TESTPROD_HOST += macDefExpandTest
 macDefExpandTest_SRCS += macDefExpandTest.c
 testHarness_SRCS += macDefExpandTest.c

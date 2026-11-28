@@ -21,6 +21,7 @@ int aslibtest(void);
 int blockingSockTest(void);
 int epicsAlgorithm(void);
 int epicsAtomicTest(void);
+int epicsLifoTest(void);
 int epicsCalcTest(void);
 int epicsEllTest(void);
 int epicsEnvTest(void);
@@ -81,6 +82,7 @@ void epicsRunLibComTests(void)
     runTest(blockingSockTest);
     runTest(epicsAlgorithm);
     runTest(epicsAtomicTest);
+    runTest(epicsLifoTest);
     runTest(epicsCalcTest);
     runTest(epicsEllTest);
     runTest(epicsEnvTest);

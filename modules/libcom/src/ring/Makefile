@@ -11,5 +11,6 @@ SRC_DIRS += $(LIBCOM)/ring
 #following needed for locating epicsRingPointer.h and epicsRingBytes.h
 INC += epicsRingPointer.h
 INC += epicsRingBytes.h
+INC += epicsLifo.h
 Com_SRCS += epicsRingPointer.cpp
 Com_SRCS += epicsRingBytes.c

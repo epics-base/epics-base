@@ -346,6 +346,18 @@ static void testClassify()
 #ifndef EPICS_ATOMIC_CAS_PTRT
     testDiag("Use default epicsAtomicCmpAndSwapPtrT()");
 #endif
+#ifndef EPICS_ATOMIC_EXCHANGE_INTT
+    testDiag("Use default epicsAtomicExchangeIntT()");
+#endif
+#ifndef EPICS_ATOMIC_EXCHANGE_SIZET
+    testDiag("Use default epicsAtomicExchangeSizeT()");
+#endif
+#ifndef EPICS_ATOMIC_EXCHANGE_PTRT
+    testDiag("Use default epicsAtomicExchangePtrT()");
+#endif
+#ifndef EPICS_ATOMIC_GET_PTRT_ACQUIRE
+    testDiag("Use default ordered get/set");
+#endif
 #endif /* __GNUC__ */
 }
 
@@ -406,18 +418,214 @@ void testBasic()
     testOk1(get(voidp)==&Sizet);
 }
 
+static
+void testOrdered()
+{
+    using epics::atomic::getRelaxed;
+    using epics::atomic::getAcquire;
+    using epics::atomic::setRelaxed;
+    using epics::atomic::setRelease;
+    using epics::atomic::exchange;
+
+    testDiag("Test ordered get/set and exchange semantics");
+
+    int Int = 0;
+    size_t Sizet = 0;
+    void *voidp = NULL;
+
+    setRelaxed(Int, -5);
+    setRelaxed(Sizet, 5);
+    setRelaxed(voidp, &Int);
+    testOk1(getRelaxed(Int)==-5);
+    testOk1(getRelaxed(Sizet)==5);
+    testOk1(getRelaxed(voidp)==&Int);
+
+    setRelease(Int, -7);
+    setRelease(Sizet, 7);
+    setRelease(voidp, &Sizet);
+    testOk1(getAcquire(Int)==-7);
+    testOk1(getAcquire(Sizet)==7);
+    testOk1(getAcquire(voidp)==&Sizet);
+
+    testOk1(exchange(Int, -9)==-7);
+    testOk1(exchange(Sizet, 9)==7);
+    testOk1(exchange(voidp, &voidp)==&Sizet);
+    testOk1(getRelaxed(Int)==-9);
+    testOk1(getRelaxed(Sizet)==9);
+    testOk1(getRelaxed(voidp)==&voidp);
+
+    /* C API */
+    epicsAtomicSetIntTRelease(&Int, 11);
+    testOk1(epicsAtomicGetIntTAcquire(&Int)==11);
+    epicsAtomicSetIntTRelaxed(&Int, 12);
+    testOk1(epicsAtomicExchangeIntT(&Int, 13)==12);
+    testOk1(epicsAtomicGetIntTRelaxed(&Int)==13);
+    epicsAtomicSetSizeTRelaxed(&Sizet, 14);
+    testOk1(epicsAtomicExchangeSizeT(&Sizet, 15)==14);
+    epicsAtomicSetSizeTRelease(&Sizet, 16);
+    testOk1(epicsAtomicGetSizeTAcquire(&Sizet)==16);
+    testOk1(epicsAtomicGetSizeTRelaxed(&Sizet)==16);
+    epicsAtomicSetPtrTRelaxed(&voidp, &Int);
+    epicsAtomicSetPtrTRelease(&voidp, &Sizet);
+    testOk1(epicsAtomicExchangePtrT(&voidp, NULL)==&Sizet);
+    testOk1(epicsAtomicGetPtrTRelaxed(&voidp)==NULL);
+    testOk1(epicsAtomicGetPtrTAcquire(&voidp)==NULL);
+}
+
+static
+epicsThreadId startJoinable ( const char *name, EPICSTHREADFUNC func,
+                              void *arg )
+{
+    epicsThreadOpts opts = EPICS_THREAD_OPTS_INIT;
+    opts.joinable = 1;
+    opts.stackSize = epicsThreadStackSmall;
+    epicsThreadId tid = epicsThreadCreateOpt ( name, func, arg, & opts );
+    if ( ! tid )
+        testAbort ( "Failed to create thread %s", name );
+    return tid;
+}
+
+/* Spin until a condition holds, yielding now and then so that the test
+ * also completes on a single CPU.
+ */
+#define SPIN_UNTIL(COND) \
+    for ( unsigned spin_ = 0u; ! ( COND ); spin_++ ) { \
+        if ( spin_ % 1024u == 1023u ) \
+            epicsThreadSleep ( 0.0 ); \
+    }
+
+/* Several threads repeatedly swap their own token with a shared one.
+ * If exchange is atomic, no token is lost or duplicated.
+ */
+static const size_t nExchangers = 4u;
+
+struct ExchangeData {
+    size_t shared;
+    size_t token[nExchangers];
+    size_t iterations;
+};
+
+struct ExchangerArg {
+    ExchangeData *pData;
+    size_t index;
+};
+
+static void exchanger ( void *arg )
+{
+    const ExchangerArg * const pArg = static_cast < ExchangerArg * > ( arg );
+    ExchangeData * const pData = pArg->pData;
+    size_t token = pData->token[pArg->index];
+
+    for ( size_t i = 0u; i < pData->iterations; i++ ) {
+        token = epics::atomic::exchange ( pData->shared, token );
+    }
+    pData->token[pArg->index] = token;
+}
+
+static
+void testExchangeThreads ()
+{
+    ExchangeData data;
+    ExchangerArg args[nExchangers];
+    epicsThreadId tids[nExchangers];
+
+    testDiag("Test exchange with %u threads", (unsigned) nExchangers);
+
+    data.shared = 0u;
+    data.iterations = 100000u;
+    for ( size_t i = 0u; i < nExchangers; i++ ) {
+        data.token[i] = i + 1u;
+        args[i].pData = & data;
+        args[i].index = i;
+    }
+    for ( size_t i = 0u; i < nExchangers; i++ ) {
+        tids[i] = startJoinable ( "exchanger", exchanger, & args[i] );
+    }
+    for ( size_t i = 0u; i < nExchangers; i++ ) {
+        epicsThreadMustJoin ( tids[i] );
+    }
+
+    /* tokens must still be a permutation of 0 .. nExchangers */
+    unsigned seen = 0u;
+    if ( data.shared <= nExchangers )
+        seen |= 1u << data.shared;
+    for ( size_t i = 0u; i < nExchangers; i++ ) {
+        if ( data.token[i] <= nExchangers )
+            seen |= 1u << data.token[i];
+    }
+    testOk ( seen == ( 1u << ( nExchangers + 1u ) ) - 1u,
+             "no token lost or duplicated (mask 0x%x)", seen );
+}
+
+/* Message passing: a producer fills a buffer and publishes it with
+ * a release store; the consumer reads the flag with an acquire load and
+ * must see the complete contents, then hands the buffer back the same
+ * way.
+ */
+static const size_t nPayload = 16u;
+
+struct MessageData {
+    int full;
+    size_t payload[nPayload];
+    size_t rounds;
+};
+
+static void producer ( void *arg )
+{
+    MessageData * const pData = static_cast < MessageData * > ( arg );
+
+    for ( size_t r = 1u; r <= pData->rounds; r++ ) {
+        SPIN_UNTIL ( epics::atomic::getAcquire ( pData->full ) == 0 );
+        for ( size_t k = 0u; k < nPayload; k++ )
+            pData->payload[k] = r * nPayload + k;
+        epics::atomic::setRelease ( pData->full, 1 );
+    }
+}
+
+static
+void testMessagePassing ()
+{
+    MessageData data;
+    size_t errors = 0u;
+
+    testDiag("Test message passing with acquire/release");
+
+    data.full = 0;
+    data.rounds = 100000u;
+    for ( size_t k = 0u; k < nPayload; k++ )
+        data.payload[k] = 0u;
+
+    epicsThreadId tid = startJoinable ( "producer", producer, & data );
+
+    for ( size_t r = 1u; r <= data.rounds; r++ ) {
+        SPIN_UNTIL ( epics::atomic::getAcquire ( data.full ) == 1 );
+        for ( size_t k = 0u; k < nPayload; k++ ) {
+            if ( data.payload[k] != r * nPayload + k )
+                errors++;
+        }
+        epics::atomic::setRelease ( data.full, 0 );
+    }
+    epicsThreadMustJoin ( tid );
+
+    testOk ( errors == 0u, "consumer saw complete messages (%u errors)",
+             (unsigned) errors );
+}
+
 } // namespace
 
 MAIN ( epicsAtomicTest )
 {
 
-    testPlan ( 50 );
+    testPlan ( 73 );
     testDiag("In %s", EPICS_FUNCTION);
     testClassify ();
     testBasic();
+    testOrdered();
 #if defined(__rtems__)
-    testSkip(31, "Tests assume time sliced thread scheduling");
+    testSkip(33, "Tests assume time sliced thread scheduling");
 #else
+    testExchangeThreads ();
+    testMessagePassing ();
     testIncrDecr < int > ();
     testIncrDecr < size_t > ();
     testAddSub < int > ();

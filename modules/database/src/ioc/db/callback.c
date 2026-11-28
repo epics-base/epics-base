@@ -59,11 +59,12 @@ static int callbackQueueSize = 2000;
  * - a worker sets busy before reading the queue, a request pushes
  *   before reading busy, so one of them sees the other and wakes a
  *   sleeper if every awake worker is busy;
- * - a single awake worker with no progress for CB_STALE_US is stopped
- *   where it cannot migrate, so the requester wakes another.
+ * - a worker woken CB_STALE_US ago that still has not run is stopped
+ *   where it cannot migrate, so a requester stops counting on it and
+ *   wakes another.
  */
 #ifndef CB_FREE_EVERY
-#define CB_FREE_EVERY 16   /* callbacks run between pool returns and progress updates */
+#define CB_FREE_EVERY 16   /* callbacks run between pool returns */
 #endif
 #ifndef CB_STALE_US
 #define CB_STALE_US 20
@@ -157,6 +158,9 @@ typedef CB_ALIGN_PRE struct cbWorker {
                                  * * -> AWAKE by the worker, SLEEPING ->
                                  * CLAIMED by a waker */
     int busy;                   /* atomic: inside a callback */
+    size_t claimedAt;           /* atomic: when (us) the claim was made,
+                                 * 0 if made in interrupt context and not
+                                 * yet seen by a thread */
     epicsThreadId tid;
     unsigned idx;
 } CB_ALIGN_POST cbWorker;
@@ -172,12 +176,7 @@ typedef CB_ALIGN_PRE struct cbQueueSet {
     int nQueued;            /* atomic: nodes taken but not yet run */
     int maxQueued;          /* atomic, racy high-water mark */
     int queueOverflows;
-    int batches;            /* atomic: progress by any worker */
-    int lastBatches;        /* atomic: batches as last seen by a requester
-                             * behind a backlog */
-    size_t staleSince;      /* atomic: when (us) a requester first saw that
-                             * value behind a backlog, 0 if none */
-    char pad2[CB_WORKER_ALIGN - 5 * sizeof(int) - sizeof(size_t)];
+    char pad2[CB_WORKER_ALIGN - 3 * sizeof(int)];
     size_t ready;           /* atomic, packed like freeHead: nodes taken
                              * from the inbox, oldest first */
     char pad3[CB_WORKER_ALIGN - sizeof(size_t)];
@@ -485,6 +484,8 @@ static int takeSleeperBit(cbQueueSet *mySet, unsigned i)
  * worst wakes its next sleep once for nothing. */
 static void triggerAndClaim(cbQueueSet *mySet, cbWorker *w, size_t s)
 {
+    epicsAtomicSetSizeT(&w->claimedAt, epicsInterruptIsInterruptContext() ? 0 :
+        ((size_t)(epicsMonotonicGet() >> 10) | 1));
     epicsEventSignal(w->wake);
     if (epicsAtomicCmpAndSwapSizeT(&w->state, s, CB_STATE(CB_EPOCH(s), CB_CLAIMED)) != s)
         return;
@@ -531,17 +532,35 @@ static void pokeSleeper(cbQueueSet *mySet)
     }
 }
 
-/* whether some worker is neither sleeping nor inside a callback, so
- * will read the inbox before its next callback or sleep */
+/* whether some worker will read the inbox before its next callback or
+ * sleep: one running outside a callback, or one woken less than
+ * CB_STALE_US ago. Ageing reads the clock, floating point on vxWorks,
+ * so an interrupt context counts every woken worker and leaves the
+ * age to the next request made from a thread. */
 static int anyReady(cbQueueSet *mySet)
 {
     int j;
+    size_t now = 0;
 
     for (j = 0; j < mySet->threadsConfigured; j++) {
         cbWorker *w = &mySet->workers[j];
-        if (CB_ST(CB_GET_SIZE(&w->state)) != CB_SLEEPING &&
-            !CB_GET_INT(&w->busy))
-            return 1;
+        unsigned st = CB_ST(CB_GET_SIZE(&w->state));
+
+        if (st == CB_AWAKE) {
+            if (!CB_GET_INT(&w->busy)) return 1;
+        }
+        else if (st == CB_CLAIMED) {
+            size_t at;
+
+            if (epicsInterruptIsInterruptContext()) return 1;
+            if (!now) now = (size_t)(epicsMonotonicGet() >> 10) | 1;
+            at = CB_GET_SIZE(&w->claimedAt);
+            if (at == 0) {
+                epicsAtomicSetSizeT(&w->claimedAt, now);
+                return 1;
+            }
+            if (now - at < CB_STALE_US) return 1;
+        }
     }
     return 0;
 }
@@ -584,7 +603,6 @@ static void callbackTask(void *arg)
                 nodeFreeChain(mySet, done, doneLast);
                 done = doneLast = NULL;
                 epicsAtomicAddIntT(&mySet->nQueued, -ran);
-                epicsAtomicIncrIntT(&mySet->batches);
                 ran = 0;
             }
         }
@@ -594,7 +612,6 @@ static void callbackTask(void *arg)
             nodeFreeChain(mySet, done, doneLast);
             done = doneLast = NULL;
             epicsAtomicAddIntT(&mySet->nQueued, -ran);
-            epicsAtomicIncrIntT(&mySet->batches);
             ran = 0;
         }
 
@@ -804,41 +821,18 @@ int callbackRequest(epicsCallback *pcallback)
 
         /* a worker that is awake and not inside a callback will take
          * this; recruiting more is its job. If every awake worker is
-         * inside a callback while one sleeps, wake it now; that check
-         * is owed only when the inbox was empty, as a request already
-         * there has a worker on its way whose take-all covers ours.
-         * And if only one of several workers is counted awake and for
-         * CB_STALE_US no worker made progress, that worker is
-         * stopped, so wake a sleeper now. nAwake lags its claim CAS: a
-         * claimer stopped between the claim and its increment lets the
-         * claimed worker run and sleep first, so the count can read
-         * below zero; anything non-positive means nobody is counted.
-         * The stale check reads the clock, floating point on vxWorks,
-         * so an interrupt context leaves it to the next request made
-         * from a thread. */
+         * inside a callback, or was woken and has not run for
+         * CB_STALE_US, while one sleeps, wake it now. nAwake lags its
+         * claim CAS: a claimer stopped between the claim and its
+         * increment lets the claimed worker run and sleep first, so
+         * the count can read below zero; anything non-positive means
+         * nobody is counted. */
         awake = CB_GET_INT(&mySet->nAwake);
         if (awake <= 0)
             pokeSleeper(mySet);
-        else if (old == NULL && awake < mySet->threadsConfigured
+        else if (awake < mySet->threadsConfigured
                  && CB_GET_SIZE(&mySet->sleepers) && !anyReady(mySet))
             pokeSleeper(mySet);
-        else if (awake == 1 && mySet->threadsConfigured > 1) {
-            int b = CB_GET_INT(&mySet->batches);
-            if (b != CB_GET_INT(&mySet->lastBatches)) {
-                epicsAtomicSetIntT(&mySet->lastBatches, b);
-                epicsAtomicSetSizeT(&mySet->staleSince, 0);
-            }
-            else if (!epicsInterruptIsInterruptContext()) {
-                size_t now = (size_t)(epicsMonotonicGet() >> 10) | 1;
-                size_t since = CB_GET_SIZE(&mySet->staleSince);
-                if (since == 0)
-                    epicsAtomicSetSizeT(&mySet->staleSince, now);
-                else if (now - since >= CB_STALE_US) {
-                    epicsAtomicSetSizeT(&mySet->staleSince, 0);
-                    pokeSleeper(mySet);
-                }
-            }
-        }
     }
     return 0;
 }
